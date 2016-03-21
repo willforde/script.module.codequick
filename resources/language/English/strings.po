@@ -1,0 +1,57 @@
+# Kodi Media Center language file
+# Addon Name: Kodiutil
+# Addon id: script.module.codequick
+# Addon Provider: willforde
+msgid ""
+msgstr ""
+"Project-Id-Version: XBMC Addons\n"
+"Report-Msgid-Bugs-To: alanwww1@xbmc.org\n"
+"POT-Creation-Date: 2014-05-28 21:10+0000\n"
+"PO-Revision-Date: 2014-05-28 21:10+0000\n"
+"Last-Translator: XBMC Translation Team\n"
+"Language-Team: English (http://www.transifex.com/projects/p/xbmc-addons/language/en/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#####################################
+# Common Addon Codes: 32900 - 32969 #
+#####################################
+
+msgctxt "#32901"
+msgid "Youtube Channel"
+msgstr ""
+
+msgctxt "#32902"
+msgid "Go to:"
+msgstr ""
+
+msgctxt "#32903"
+msgid "Most Recent"
+msgstr ""
+
+msgctxt "#32904"
+msgid "Related Videos"
+msgstr ""
+
+#######################################
+# Common Setting Codes: 32970 - 32999 #
+#######################################
+
+msgctxt "#32971"
+msgid "Set Folder View Mode"
+msgstr ""
+
+msgctxt "#32972"
+msgid "Set Video View Mode"
+msgstr ""
+
+msgctxt "#32973"
+msgid "Disable Cache"
+msgstr ""
+
+msgctxt "#32974"
+msgid "Disable Bug Reports"
+msgstr ""
