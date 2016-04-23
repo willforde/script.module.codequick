@@ -30,21 +30,20 @@ def youtube_hd(default=0, limit=1):
 	Return youtube quality setting as integer, 0 = SD, 1 = 720p, 2 = 1080p, 3 = 4k
 	
 	[default] : integer --- default value to return if unable to fetch quality setting. (default 0)
-	[limit] : integer --- limit setting value to any one of the quality settings. (default 1)
+	[limit] : integer --- limit setting value to any one of the quality settings. (default 2)
 	"""
 	try: 
-		value = getAddonSetting("plugin.video.youtube", "kodion.video.quality")
-		setting = int(value)
+		quality = int(getAddonSetting("plugin.video.youtube", "kodion.video.quality"))
+		ask = int(getAddonSetting("plugin.video.youtube", "kodion.video.quality.ask")) == "true"
 	except:
 		logger.debug("Unable to fetch youtube video qualit setting")
 		return default
 	else:
-		if setting == 0: return None
-		elif setting > 0 and setting <= 4:
-			if setting > limit+1: return limit
-			else: return setting - 1
+		if ask is True: return None
+		elif setting < 3: return 0
 		else:
-			return default
+			if setting > limit+2: return limit
+			else: return setting - 2
 
 def youtube_lang(lang=u"en"):
 	"""
