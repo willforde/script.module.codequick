@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.module.codequick" name="CodeQuick Utility Pack" provider-name="willforde" version="0.0.1">
-	<requires>
-		<import addon="xbmc.python" version="2.20.0"/>
-		<import addon="script.module.buggalo" version="1.1.6"/>
-		<import addon="script.module.requests" version="2.9.0"/>
-		<import addon="script.module.youtube.dl" version="15.1223.0"/>
-		<import addon="script.module.simplejson" version="3.3.0" optional="true"/>
-		<import addon="plugin.video.youtube" version="5.1.0" optional="true"/>
-	</requires>
-	<extension library="lib" point="xbmc.python.module"/>
-	<extension point="xbmc.addon.metadata">
-		<language>en</language>
-		<platform>all</platform>
-		<summary lang="en">Control Module for Class Integration</summary>
-		<description lang="en">Used for creating add-ons by automating as many task as possible while minimizing the amount of code needed</description>
-		<license>GNU GENERAL PUBLIC LICENSE. Version 3, June 2007</license>
-		<email>willforde+codequick@gmail.com</email>
-		<source>https://github.com/willforde/script.module.codequick</source>
-	</extension>
+    <requires>
+        <import addon="xbmc.python" version="2.20.0"/>
+        <import addon="script.module.buggalo" version="1.1.6"/>
+        <import addon="script.module.requests" version="2.9.0"/>
+        <import addon="script.module.youtube.dl" version="15.1223.0"/>
+        <import addon="script.module.simplejson" version="3.3.0" optional="true"/>
+        <import addon="plugin.video.youtube" version="5.1.0" optional="true"/>
+    </requires>
+    <extension library="lib" point="xbmc.python.module"/>
+    <extension point="xbmc.addon.metadata">
+        <language>en</language>
+        <platform>all</platform>
+        <summary lang="en">Control Module for Class Integration</summary>
+        <description lang="en">Used for creating add-ons by automating as many task as possible while minimizing the amount of code needed</description>
+        <license>GNU GENERAL PUBLIC LICENSE. Version 3, June 2007</license>
+        <email>willforde+codequick@gmail.com</email>
+        <source>https://github.com/willforde/script.module.codequick</source>
+    </extension>
 </addon>
