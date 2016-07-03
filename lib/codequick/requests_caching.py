@@ -3,6 +3,7 @@ import io
 import os
 import zlib
 import time
+import json
 import base64
 import hashlib
 
@@ -14,9 +15,7 @@ from requests.packages.urllib3 import disable_warnings
 from requests.structures import CaseInsensitiveDict
 
 # Package imports
-from .api import addonData, refresh
-from .logging import logger
-from . import json
+from .api import addonData, refresh, logger
 
 
 def _full_cache_dir(cache_dir):
@@ -329,7 +328,7 @@ class CacheHandler(object):
         try:
             with open(self._cache_path, "wb") as stream:
                 stream.write(compressed)
-        except IOError, OSError:
+        except (IOError, OSError):
             logger.debug("Cache Error: Failed to Save serialized response to disk")
             self.delete(self._cache_path)
             return None

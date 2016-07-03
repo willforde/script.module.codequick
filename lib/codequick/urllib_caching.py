@@ -1,5 +1,4 @@
 # Standard Library Imports
-import io
 import os
 import re
 import zlib
@@ -13,11 +12,10 @@ import urlparse
 import StringIO
 import functools
 import htmlentitydefs
+import json
 
 # Package imports
-from .api import addonData, refresh
-from .logging import logger
-from . import json
+from .api import refresh, logger
 
 
 def _full_cache_dir(cache_dir):

@@ -1,10 +1,10 @@
 # Standard Library Imports
 import os
+import json
 
 # Package imports
 from .inheritance import VirtualFS, PlayMedia
 from .api import route, localized
-from . import json
 
 # Prerequisites
 localized({"Go_to_channel": 32902, "Playlists": 136, "All_videos": 16100})
@@ -69,30 +69,27 @@ class YoutubeBase(YTPlaylists):
     Designed to be sub classed by addon to list all the available playlists for
     channel, as well as linking the the channels uploads, shown as "All Videos"
 
-    To use the class just create a new class and inherit from this class
-    and create required method that will return the Channel Name, channel ID
+    To use just subclass this class and set the required property that points to the youtube content
 
-    contentID : string or unicode --- Channel ID or Channel Name to list playlists for, usefull when unsure of the type
-    channelID : string or unicode --- ID of the channel to list playlists for when the channel ID is known
+    content_id : string or unicode --- Channel ID or Channel Name to list playlists for, usefull when unsure of the type
+    channel_id : string or unicode --- ID of the channel to list playlists for when the channel ID is known
 
-    Can create any one of the 2 methods, but if both are giving then channelID has priority
+    Can set any one of the 2 propertys, but not both, if both are given then channel_id has priority
     -------------------------------------------
     @codequick.route("/")
-    class Root(codequick.youtube.asAddon):
-        def channelID(self):
-            return "UCnavGPxEijftXneFxk28srA"
+    class Root(codequick.YoutubeBase):
+        channel_id = "UCnavGPxEijftXneFxk28srA"
     """
+    channel_id = content_id = None
 
     def start(self):
-        if hasattr(self, "channelID"):
-            channelID = self.channelID()
-            results = self._initiate(channelID=channelID)
-            results.append(self.listitem.add_youtube(channelID, label=self.getLocalizedString("All_videos"),
+        if self.channel_id is not None:
+            results = self._initiate(channelID=self.channel_id)
+            results.append(self.listitem.add_youtube(self.channel_id, label=self.getLocalizedString("All_videos"),
                                                      enable_playlists=False, wideThumb=True))
-        elif hasattr(self, "contentID"):
-            contentID = self.contentID()
-            results = self._initiate(contentID=contentID)
-            results.append(self.listitem.add_youtube(contentID, label=self.getLocalizedString("All_videos"),
+        elif self.content_id is not None:
+            results = self._initiate(contentID=self.content_id)
+            results.append(self.listitem.add_youtube(self.content_id, label=self.getLocalizedString("All_videos"),
                                                      enable_playlists=False, wideThumb=True))
         else:
             raise ValueError("No Content ID was set for addon to work")
@@ -152,8 +149,8 @@ class APIControl(object):
         if self.__category_data is not None:
             return self.__category_data
         else:
-            dirPath = os.path.join(self.base._profile_global, "youtube")
-            category_data = self.base.dictStorage("category_data.json", custom_dir=dirPath)
+            dir_path = os.path.join(self.base._profile_global, "youtube")
+            category_data = self.base.dictStorage("category_data.json", custom_dir=dir_path)
             self.__category_data = category_data
             return category_data
 
@@ -163,8 +160,8 @@ class APIControl(object):
         if self.__channel_data is not None:
             return self.__channel_data
         else:
-            dirPath = os.path.join(self.base.profile, "youtube")
-            channel_data = self.base.dictStorage("channel_data.json", custom_dir=dirPath)
+            dir_path = os.path.join(self.base.profile, "youtube")
+            channel_data = self.base.dictStorage("channel_data.json", custom_dir=dir_path)
             self.__channel_data = channel_data
             return channel_data
 
@@ -174,8 +171,8 @@ class APIControl(object):
         if self.__video_data is not None:
             return self.__video_data
         else:
-            dirPath = os.path.join(self.base.profile, "youtube")
-            video_data = self.base.shelfStorage("video_data.shelf", custom_dir=dirPath)
+            dir_path = os.path.join(self.base.profile, "youtube")
+            video_data = self.base.shelfStorage("video_data.shelf", custom_dir=dir_path)
             self.__video_data = video_data
             return video_data
 
@@ -207,15 +204,15 @@ class APIControl(object):
 
         # ContentID must be a channel name so fetch the channelID and uploadsID
         else:
-            channelID = self.base.getSetting(contentID)
-            if not channelID or (returnPlaylistID and not channelID in channel_data):
-                channelID = self.update_channel_cache(forUsername=contentID)
-                if not channelID: self.base.setSetting(contentID, channelID)
+            channel_id = self.base.getSetting(contentID)
+            if not channel_id or (returnPlaylistID and not channel_id in channel_data):
+                channel_id = self.update_channel_cache(forUsername=contentID)
+                if not channel_id: self.base.setSetting(contentID, channel_id)
 
             if returnPlaylistID:
-                return channel_data[channelID]["playlistID"]
+                return channel_data[channel_id]["playlistID"]
             else:
-                return channelID
+                return channel_id
 
     def update_channel_cache(self, id=None, forUsername=None):
         """
@@ -235,12 +232,12 @@ class APIControl(object):
         for item in feed[u"items"]:
             title = item[u"snippet"][u"localized"][u"title"]
             description = item[u"snippet"][u"localized"][u"description"]
-            playlistID = item[u"contentDetails"][u"relatedPlaylists"][u"uploads"]
+            playlist_id = item[u"contentDetails"][u"relatedPlaylists"][u"uploads"]
             if u"brandingSettings" in item:
                 fanart = item[u"brandingSettings"][u"image"][u"bannerTvMediumImageUrl"]
             else:
                 fanart = None
-            channel_data[item[u"id"]] = {"title": title, "description": description, "playlistID": playlistID,
+            channel_data[item[u"id"]] = {"title": title, "description": description, "playlistID": playlist_id,
                                          "fanart": fanart}
 
         # Sync cache to disk

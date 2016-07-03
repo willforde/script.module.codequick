@@ -1,9 +1,7 @@
 # Standard Library Imports
 from shelve import DbfilenameShelf
 import os
-
-# Package imports
-from . import json
+import json
 
 __all__ = ["dictStorage", "listStorage", "setStorage"]
 
@@ -21,7 +19,8 @@ def _unicode_handler(func):
 class _BaseStorage(object):
     def __del__(self):
         """ Close connection to file object if not already closed """
-        if not self.closed: self.close()
+        if not self.closed:
+            self.close()
 
     def __init__(self, filename):
         # Load and set serializer object
@@ -72,16 +71,26 @@ class _BaseStorage(object):
 
         [sync] : boolean --- Syncrnize data to disk before closing file (default False)
         """
-        if sync: self.sync()
-        if self._fileObj and not self.closed: self._fileObj.close()
+        if sync:
+            self.sync()
+
+        if self._fileObj and not self.closed:
+            self._fileObj.close()
+
         self.closed = True
+
+    def update(self, args):
+        """ Dummy method """
+        pass
 
     # Methods to add support for with statement
     def __enter__(self):
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self, *exc):
         self.close()
+
+
 
 
 class dictStorage(_BaseStorage, dict):

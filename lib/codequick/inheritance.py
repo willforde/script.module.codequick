@@ -10,13 +10,12 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .api import Base, route, localized, cls_for_route
+from .api import Base, route, localized, cls_for_route, logger
 
 # Prerequisites
-localized(
-    {"Select_playback_item": 25006, "Related_Videos": 32904, "Next_Page": 33078, "Search": 137, "Most_Recent": 32903,
-     "Youtube_Channel": 32901})
-_sortMethods = set((xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE,))
+localized({"Select_playback_item": 25006, "Related_Videos": 32904, "Next_Page": 33078,
+           "Search": 137, "Most_Recent": 32903, "Youtube_Channel": 32901})
+_sortMethods = {(xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE,)}
 _sortAdd = _sortMethods.add
 _listItem = xbmcgui.ListItem
 _strptime = time.strptime
@@ -532,7 +531,7 @@ class VirtualFS(Base):
             ListItem._imageLocal = os.path.join(self.path, u"resources", u"media", u"%s")
             ListItem._imageGlobal = os.path.join(self._path_global, u"resources", u"media", u"%s")
             ListItem._refreshContext = (
-            "$LOCALIZE[184]", "XBMC.Container.Update(%s)" % self.url_for_current({"refresh": "true"}))
+                "$LOCALIZE[184]", "XBMC.Container.Update(%s)" % self.url_for_current({"refresh": "true"}))
             self.__listitem = ListItem
             return ListItem
 
@@ -547,14 +546,16 @@ class VirtualFS(Base):
 
             # Set Kodi Sort Methods
             _handle = self._handle
+            logger.info(repr(_handle))
+            logger.info(repr(_sortMethods))
             _addSortMethod = xbmcplugin.addSortMethod
             for sortMethod in sorted(_sortMethods):
                 _addSortMethod(_handle, sortMethod)
 
             # Guess Content Type and set View Mode
-            isFolder = self._vidCounter < (len(listitems) / 2)
+            is_folder = self._vidCounter < (len(listitems) / 2)
             # xbmcplugin.setContent(_handle, "files" if isFolder else "episodes")
-            self._setViewMode("folder" if isFolder else "video")
+            self._setViewMode("folder" if is_folder else "video")
 
         # End Directory Listings
         updateListing = u"updatelisting" in self and self[u"updatelisting"] == u"true"
@@ -563,9 +564,9 @@ class VirtualFS(Base):
 
     def _setViewMode(self, mode):
         """ Returns selected View Mode setting if available """
-        settingKey = "%s.%s.view" % (xbmc.getSkinDir(), mode)
-        viewMode = self.getSetting(settingKey, True)
-        if viewMode: xbmc.executebuiltin("Container.SetViewMode(%s)" % viewMode.encode("utf8"))
+        setting_key = "%s.%s.view" % (xbmc.getSkinDir(), mode)
+        view_mode = self.getSetting(setting_key, True)
+        if view_mode: xbmc.executebuiltin("Container.SetViewMode(%s)" % view_mode.encode("utf8"))
 
 
 class PlayMedia(Base):
@@ -664,22 +665,23 @@ class PlayMedia(Base):
         playlist = xbmc.PlayList()
 
         # Create Main listitem
-        mainItem = _listItem()
-        mainItem.setLabel(self[u"title"])
-        if self.__mimeType: mainItem.setMimeType(self.__mimeType)
+        main_item = _listItem()
+        main_item.setLabel(self[u"title"])
+        if self.__mimeType:
+            main_item.setMimeType(self.__mimeType)
         url = self._check_url(url)
-        mainItem.setPath(url)
-        playlist.add(url, mainItem)
+        main_item.setPath(url)
+        playlist.add(url, main_item)
 
         # Create Loopback listitem
-        loopItem = _listItem()
-        loopItem.setLabel("Loopback")
+        loop_item = _listItem()
+        loop_item.setLabel("Loopback")
         url = self.url_for_current(extra_params)
-        loopItem.setPath(url)
-        playlist.add(url, loopItem)
+        loop_item.setPath(url)
+        playlist.add(url, loop_item)
 
         # Return main listitem
-        return mainItem
+        return main_item
 
     def extract_source(self, url, quality=None):
         """
@@ -714,7 +716,7 @@ class PlayMedia(Base):
     def _check_url(self, url):
         """ Check if there are any headers to add to url and return url and a string """
         if isinstance(url, unicode): url = url.encode("ascii")
-        if self.__headers: url = "%s|%s"(url, "&".join(self.__headers))
+        if self.__headers: url = "%s|%s" % (url, "&".join(self.__headers))
         return url
 
     def _send_to_kodi(self, resolved):
@@ -738,7 +740,8 @@ class PlayMedia(Base):
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self._handle, True, listitem)
 
-    def youtube_video_url(self, videoid):
+    @staticmethod
+    def youtube_video_url(videoid):
         """
         Return url that redirects to youtube addon to play video
 
@@ -746,7 +749,8 @@ class PlayMedia(Base):
         """
         return u"plugin://plugin.video.youtube/play/?video_id=%s" % videoid
 
-    def youtube_playlist_url(self, playlistid, mode=u"normal"):
+    @staticmethod
+    def youtube_playlist_url(playlistid, mode=u"normal"):
         """
         Return url that redirects to youtube addon to play playlist
 

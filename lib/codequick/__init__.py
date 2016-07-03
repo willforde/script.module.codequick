@@ -16,17 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Standard Library Imports
-import sys
-
 # Import the fastest json serializer
-if sys.version_info >= (2, 7):
-    import json
-else:
-    try:
-        import simplejson as json
-    except:
-        import json
+import json
 
 # Package imports
 from .api import localized, route, run

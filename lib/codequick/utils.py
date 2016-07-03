@@ -3,7 +3,7 @@ import xbmcaddon
 import xbmc
 
 # Package imports
-from .logging import logger
+from .api import logger
 
 __all__ = ["youtube_hd", "youtube_cache", "keyBoard", "get_skin_name", "strip_tags"]
 
@@ -18,14 +18,14 @@ def getAddonSetting(id, key):
     return unicode(xbmcaddon.Addon(id).getSetting(key), "utf8")
 
 
-def getAddonData(id, key):
+def getAddonData(addon_id, key):
     """
     Returns the value of an addon property as unicode
 
     id : string --- id of the addon that the module needs to access.
     key : string --- id of the property that the module needs to access.
     """
-    return unicode(xbmcaddon.Addon(id).getAddonInfo(key), "utf8")
+    return unicode(xbmcaddon.Addon(addon_id).getAddonInfo(key), "utf8")
 
 
 def youtube_hd(default=0, limit=1):
@@ -38,19 +38,19 @@ def youtube_hd(default=0, limit=1):
     try:
         quality = int(getAddonSetting("plugin.video.youtube", "kodion.video.quality"))
         ask = int(getAddonSetting("plugin.video.youtube", "kodion.video.quality.ask")) == "true"
-    except:
+    except ValueError:
         logger.debug("Unable to fetch youtube video qualit setting")
         return default
     else:
         if ask is True:
             return None
-        elif setting < 3:
+        elif quality < 3:
             return 0
         else:
-            if setting > limit + 2:
+            if quality > limit + 2:
                 return limit
             else:
-                return setting - 2
+                return quality - 2
 
 
 def youtube_lang(lang=u"en"):
@@ -62,11 +62,12 @@ def youtube_lang(lang=u"en"):
     setting = getAddonSetting("plugin.video.youtube", "youtube.language")
     if setting:
         dash = setting.find(u"-")
-        if dash > 0: return setting[:dash]
+        if dash > 0:
+            return setting[:dash]
     return lang
 
 
-def keyBoard(default="", heading="", hidden=False):
+def keyboard(default="", heading="", hidden=False):
     """
     Return User input as a unicode string
 
@@ -83,10 +84,10 @@ def keyBoard(default="", heading="", hidden=False):
         return u""
 
 
-def get_skin_name(skinID):
+def get_skin_name(skin_id):
     """ Return name of giving skin ID """
     try:
-        return getAddonData(skinID, "name")
+        return getAddonData(skin_id, "name")
     except:
         logger.debug("Unable to fetch skin name")
         return u"Unknown"
@@ -96,7 +97,7 @@ def strip_tags(html):
     """ Strips out html code and return plan text """
     sub_start = html.find(u"<")
     sub_end = html.find(u">")
-    while sub_start < sub_end and sub_start > -1:
+    while sub_end > sub_start > -1:
         html = html.replace(html[sub_start:sub_end + 1], u"").strip()
         sub_start = html.find(u"<")
         sub_end = html.find(u">")
