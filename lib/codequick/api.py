@@ -14,7 +14,7 @@ import xbmcgui
 import xbmc
 
 
-def _translatePath(path):
+def translate_path(path):
     """ Returns the translated path as unicode """
     if path[:10] == "special://":
         return unicode(xbmc.translatePath(path), "utf8")
@@ -309,7 +309,7 @@ class Base(collections.MutableMapping):
             return self.__fanart
         else:
             _fanart = addonData.getAddonInfo("fanart")
-            _fanart = _translatePath(_fanart)
+            _fanart = translate_path(_fanart)
             if not os.path.exists(_fanart): _fanart = ""
             self.__fanart = _fanart
             return _fanart
@@ -321,7 +321,7 @@ class Base(collections.MutableMapping):
             return self.__icon
         else:
             _icon = addonData.getAddonInfo("icon")
-            _icon = _translatePath(_icon)
+            _icon = translate_path(_icon)
             if not os.path.exists(_icon): _icon = ""
             self.__icon = _icon
             return _icon
@@ -333,7 +333,7 @@ class Base(collections.MutableMapping):
             return self.__path
         else:
             _path = addonData.getAddonInfo("path")
-            _path = _translatePath(_path)
+            _path = translate_path(_path)
             self.__path = _path
             return _path
 
@@ -344,7 +344,7 @@ class Base(collections.MutableMapping):
             return self.__profile
         else:
             _profile = addonData.getAddonInfo("profile")
-            _profile = _translatePath(_profile)
+            _profile = translate_path(_profile)
             self.__profile = _profile
             return _profile
 
@@ -355,7 +355,7 @@ class Base(collections.MutableMapping):
             return self.__path_global
         else:
             _path = scriptData.getAddonInfo("path")
-            _path = _translatePath(_path)
+            _path = translate_path(_path)
             self.__path_global = _path
             return _path
 
@@ -366,7 +366,7 @@ class Base(collections.MutableMapping):
             return self.__profile_global
         else:
             _profile = scriptData.getAddonInfo("profile")
-            _profile = _translatePath(_profile)
+            _profile = translate_path(_profile)
             self.__profile_global = _profile
             return _profile
 
