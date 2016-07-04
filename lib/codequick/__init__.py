@@ -16,12 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Import the fastest json serializer
-import json
-
 # Package imports
 from .api import localized, route, run
 from .inheritance import VirtualFS, Executer, PlayMedia, PlaySource
 from .youtube import YoutubeBase
 
-__all__ = ["VirtualFS", "PlayMedia", "PlaySource", "YoutubeBase", "localized", "route", "run", "json"]
+__all__ = ["VirtualFS", "PlayMedia", "PlaySource", "YoutubeBase", "localized", "route", "run"]
