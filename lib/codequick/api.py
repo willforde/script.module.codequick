@@ -50,13 +50,21 @@ def localized(strings):
     _strings.update(strings)
 
 
-def route(pattern):
-    """ Decorator to bind a class to a route that can be called via route dispatcher. """
-    pattern = str(pattern.lower())
+def route(route_pattern):
+    """
+    Decorator to bind a class to a route that can be called via route dispatcher.
+
+    Args:
+        route_pattern (str|unicode): The route that will point to the bind class
+
+    Returns:
+        object: Decorated class
+    """
+    route_pattern = str(route_pattern.lower())
 
     def decorator(cls):
-        _routes[cls] = pattern
-        cls._route = pattern
+        _routes[cls] = route_pattern
+        cls._route = route_pattern
         return cls
 
     return decorator
@@ -71,7 +79,6 @@ def run(buggalo_email=None, debug=False, error_time=10000):
     """
 
     # Set logger debug mode
-    #logging.devmode = debug
     before = time.time()
 
     try:
@@ -80,10 +87,10 @@ def run(buggalo_email=None, debug=False, error_time=10000):
         if argv[0][:9] == "plugin://":
             url = argv[0] + argv[2]
         else:
-            argvLen = len(argv)
-            if argvLen == 1:
+            arg_len = len(argv)
+            if arg_len == 1:
                 raise ValueError("No action value was giving from script call")
-            elif argvLen == 2:
+            elif arg_len == 2:
                 url = "plugin://%s/%s" % (str(addonID), argv[1])
             else:
                 query = "&".join(["arg%i=%s" % (count, arg) for count, arg in enumerate(argv[2:], start=1)])
@@ -94,9 +101,9 @@ def run(buggalo_email=None, debug=False, error_time=10000):
         Base._handle = int(argv[1]) if argv[1].isdigit() else -1
 
         # Fetch class that matches route and call
-        route = urlObject.path.lower() if urlObject.path else "/"
-        cls = cls_for_route(route, raise_on_error=True)
-        logger.debug('Dispatching to route "%s": class "%s"', route, cls.__name__)
+        route_path = urlObject.path.lower() if urlObject.path else "/"
+        cls = cls_for_route(route_path, raise_on_error=True)
+        logger.debug('Dispatching to route "%s": class "%s"', route_path, cls.__name__)
 
         # Parse arguments
         if urlObject.query:
