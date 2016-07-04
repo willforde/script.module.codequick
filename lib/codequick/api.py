@@ -22,21 +22,21 @@ def translate_path(path):
         return unicode(path, "utf8")
 
 
-def cls_for_route(route, raise_on_error=False):
+def cls_for_route(route_path, raise_on_error=False):
     """
     Return class thats associated with specified route
 
     route : string or unicode --- Route thats associated with a class
-    [raise_on_error] : Boolean --- State if a KeyError will be raised if no class was found for specified route. (default False)
+    [raise_on_error] : Boolean --- State if a KeyError will be raised if no class was found for specified route.
     """
-    route = str(route)
+    route_path = str(route_path)
     for cls, pattern in _routes.iteritems():
-        if pattern == route.lower():
+        if pattern == route_path.lower():
             return cls
     else:
         # No available class matching specified route was found
         if raise_on_error:
-            raise KeyError("No class for route: %s" % route)
+            raise KeyError("No class for route: %s" % route_path)
         else:
             return None
 
