@@ -131,7 +131,6 @@ def run(buggalo_email=None, debug=False, error_time=10000):
 
 
 class Base(collections.MutableMapping):
-    # Private variables to store addon properties
     __fanart = __icon = __path = __path_global = __profile = _type = _version = _devmode = __session = None
     _route = __utils = __profile_global = None
 
@@ -143,7 +142,7 @@ class Base(collections.MutableMapping):
         route      --- Route for class that will be called when addon is called from kodi
         [query]    --- Query dict that will be urlencode and appended to url
 
-        >>> url_for_route("/videos", {"url":"http://www.google.ie})
+        >>> url_for_route("/videos", {"url":"http://www.google.ie}")
         "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie"
         """
 
@@ -165,7 +164,7 @@ class Base(collections.MutableMapping):
         >>> url_for_current(None, "refresh=true")
         "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie&refresh=true"
 
-        >>> url_for_current({"url":"http://youtube.com/, "id":"5359"}, "refresh=true", "updatelisting=true")
+        >>> url_for_current({"url":"http://youtube.com/", "id":"5359"}, "refresh=true", "updatelisting=true")
         "plugin://<addon.id>/videos?url=http%3A%2F%2Fyoutube.com/&id=5359&refresh=true&updatelisting=true"
         """
         _urlObject = cls._urlObject
@@ -254,10 +253,11 @@ class Base(collections.MutableMapping):
         >>> getLocalizedString("Category")
         "Category" # Localized
         """
-        if id in _strings: id = _strings[id]
-        if id >= 30000 and id <= 30999:
+        if id in _strings:
+            id = _strings[id]
+        if 30000 <= id <= 30999:
             return addonData.getLocalizedString(id)
-        elif id >= 32000 and id <= 32999:
+        elif 32000 <= id <= 32999:
             return scriptData.getLocalizedString(id)
         else:
             return xbmc.getLocalizedString(id)
