@@ -65,7 +65,7 @@ class CacheAdapter(HTTPAdapter):
         """
 
         # Fetch time of last cleanup operation
-        lastTime = addonData.getSetting("_lastcleanup")
+        lastTime = addonData.get_setting("_lastcleanup")
         try:
             lastTime = float(lastTime) + 1209600  # Every 14 Days
         except ValueError:
@@ -85,7 +85,7 @@ class CacheAdapter(HTTPAdapter):
                     cache.delete()
 
             # Save currentTime of cleanup for later use
-            addonData.setSetting(u"_lastcleanup", str(currentTime))
+            addonData.set_setting(u"_lastcleanup", str(currentTime))
 
     def __init__(self, cache_dir, max_age, *args, **kwargs):
         # Call Parent init method

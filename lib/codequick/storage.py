@@ -103,7 +103,7 @@ class dictStorage(_BaseStorage, dict):
     May be slow when working with a lot of data, also not very memory efficient.
     Though can be quite fast when dealing with smaller amounts of data and doing more reads
     than writes sense writes are slow due to having to write all the contents of the file back to disk.
-    shelfStorage is Preferred when working with a lot of data.
+    shelf_storage is Preferred when working with a lot of data.
 
     Methods:
     All of the methods that are available to the Dictionary object
@@ -167,7 +167,7 @@ class shelfStorage(DbfilenameShelf):
 
     Same parameters as shelve.open(filename, flag='c', protocol=None, writeback=False)
 
-    Preferred over dictStorage when dealing with a large amounts
+    Preferred over dict_storage when dealing with a large amounts
     of data. sense only the required data is read in from disk instead
     of the whole file and only the data thats added to object is written to file
 

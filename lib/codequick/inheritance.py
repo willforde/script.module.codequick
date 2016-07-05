@@ -408,7 +408,7 @@ class ListItem(_listItem):
 
         # Create listitem instance
         listitem = _cls()
-        listitem.setLabel(u"[B]%s %i[/B]" % (Base.getLocalizedString("Next_Page"), base_url["nextpagecount"]))
+        listitem.setLabel(u"[B]%s %i[/B]" % (Base.get_local_string("Next_Page"), base_url["nextpagecount"]))
         listitem.setThumb(u"next.png", 2)
         listitem.update(base_url)
 
@@ -429,7 +429,7 @@ class ListItem(_listItem):
         if label:
             listitem.setLabel("[B]%s[/B]" % label)
         else:
-            listitem.setLabel("[B]%s[/B]" % Base.getLocalizedString("Search"))
+            listitem.setLabel("[B]%s[/B]" % Base.get_local_string("Search"))
         listitem.setThumb(u"search.png", 2)
         url["route"] = cls._route
         listitem.update(url)
@@ -449,7 +449,7 @@ class ListItem(_listItem):
         if label:
             listitem.setLabel(u"[B]%s[/B]" % label)
         else:
-            listitem.setLabel(u"[B]%s[/B]" % Base.getLocalizedString("Most_Recent"))
+            listitem.setLabel(u"[B]%s[/B]" % Base.get_local_string("Most_Recent"))
         listitem.setThumb(u"recent.png", 2)
         return listitem.get(cls)
 
@@ -467,7 +467,7 @@ class ListItem(_listItem):
         if label:
             listitem.setLabel(u"[B]%s[/B]" % label)
         else:
-            listitem.setLabel(u"[B]%s[/B]" % Base.getLocalizedString("Youtube_Channel"))
+            listitem.setLabel(u"[B]%s[/B]" % Base.get_local_string("Youtube_Channel"))
         if wideThumb:
             listitem.setThumb("youtubewide.png", 2)
         else:
@@ -527,7 +527,7 @@ class VirtualFS(Base):
             return self.__listitem
         else:
             ListItem._fanart = self.fanart
-            ListItem._strRelated = self.getLocalizedString("Related_Videos")
+            ListItem._strRelated = self.get_local_string("Related_Videos")
             ListItem._imageLocal = os.path.join(self.path, u"resources", u"media", u"%s")
             ListItem._imageGlobal = os.path.join(self._path_global, u"resources", u"media", u"%s")
             ListItem._refreshContext = (
@@ -542,10 +542,10 @@ class VirtualFS(Base):
             listitems = list(listitems)
 
             # Add listitems to
-            xbmcplugin.addDirectoryItems(self._handle, listitems, len(listitems))
+            xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
 
             # Set Kodi Sort Methods
-            _handle = self._handle
+            _handle = self.handle
             logger.info(repr(_handle))
             logger.info(repr(_sortMethods))
             _addSortMethod = xbmcplugin.addSortMethod
@@ -554,18 +554,18 @@ class VirtualFS(Base):
 
             # Guess Content Type and set View Mode
             is_folder = self._vidCounter < (len(listitems) / 2)
-            # xbmcplugin.setContent(_handle, "files" if isFolder else "episodes")
+            # xbmcplugin.setContent(handle, "files" if isFolder else "episodes")
             self._setViewMode("folder" if is_folder else "video")
 
         # End Directory Listings
         updateListing = u"updatelisting" in self and self[u"updatelisting"] == u"true"
         cacheToDisc = "cachetodisc" in self
-        xbmcplugin.endOfDirectory(self._handle, bool(listitems), updateListing, cacheToDisc)
+        xbmcplugin.endOfDirectory(self.handle, bool(listitems), updateListing, cacheToDisc)
 
     def _setViewMode(self, mode):
         """ Returns selected View Mode setting if available """
         setting_key = "%s.%s.view" % (xbmc.getSkinDir(), mode)
-        view_mode = self.getSetting(setting_key, True)
+        view_mode = self.get_setting(setting_key, True)
         if view_mode: xbmc.executebuiltin("Container.SetViewMode(%s)" % view_mode.encode("utf8"))
 
 
@@ -706,7 +706,7 @@ class PlayMedia(Base):
         displayList = ["%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"]) for stream in
                        videoInfo.streams()]
         dialog = xbmcgui.Dialog()
-        ret = dialog.select(self.getLocalizedString("Select_playback_item"), displayList)
+        ret = dialog.select(self.get_local_string("Select_playback_item"), displayList)
         if ret >= 0:
             videoInfo.selectStream(ret)
             return videoInfo.streamURL()
@@ -738,7 +738,7 @@ class PlayMedia(Base):
             raise ValueError("Url resolver returned invalid Url: %r" % resolved)
 
         # Send playable listitem to kodi
-        xbmcplugin.setResolvedUrl(self._handle, True, listitem)
+        xbmcplugin.setResolvedUrl(self.handle, True, listitem)
 
     @staticmethod
     def youtube_video_url(videoid):

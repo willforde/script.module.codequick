@@ -85,11 +85,11 @@ class YoutubeBase(YTPlaylists):
     def start(self):
         if self.channel_id is not None:
             results = self._initiate(channelID=self.channel_id)
-            results.append(self.listitem.add_youtube(self.channel_id, label=self.getLocalizedString("All_videos"),
+            results.append(self.listitem.add_youtube(self.channel_id, label=self.get_local_string("All_videos"),
                                                      enable_playlists=False, wideThumb=True))
         elif self.content_id is not None:
             results = self._initiate(contentID=self.content_id)
-            results.append(self.listitem.add_youtube(self.content_id, label=self.getLocalizedString("All_videos"),
+            results.append(self.listitem.add_youtube(self.content_id, label=self.get_local_string("All_videos"),
                                                      enable_playlists=False, wideThumb=True))
         else:
             raise ValueError("No Content ID was set for addon to work")
@@ -150,7 +150,7 @@ class APIControl(object):
             return self.__category_data
         else:
             dir_path = os.path.join(self.base._profile_global, "youtube")
-            category_data = self.base.dictStorage("category_data.json", custom_dir=dir_path)
+            category_data = self.base.dict_storage("category_data.json", custom_dir=dir_path)
             self.__category_data = category_data
             return category_data
 
@@ -161,7 +161,7 @@ class APIControl(object):
             return self.__channel_data
         else:
             dir_path = os.path.join(self.base.profile, "youtube")
-            channel_data = self.base.dictStorage("channel_data.json", custom_dir=dir_path)
+            channel_data = self.base.dict_storage("channel_data.json", custom_dir=dir_path)
             self.__channel_data = channel_data
             return channel_data
 
@@ -172,7 +172,7 @@ class APIControl(object):
             return self.__video_data
         else:
             dir_path = os.path.join(self.base.profile, "youtube")
-            video_data = self.base.shelfStorage("video_data.shelf", custom_dir=dir_path)
+            video_data = self.base.shelf_storage("video_data.shelf", custom_dir=dir_path)
             self.__video_data = video_data
             return video_data
 
@@ -204,10 +204,10 @@ class APIControl(object):
 
         # ContentID must be a channel name so fetch the channelID and uploadsID
         else:
-            channel_id = self.base.getSetting(contentID)
+            channel_id = self.base.get_setting(contentID)
             if not channel_id or (returnPlaylistID and not channel_id in channel_data):
                 channel_id = self.update_channel_cache(forUsername=contentID)
-                if not channel_id: self.base.setSetting(contentID, channel_id)
+                if not channel_id: self.base.set_setting(contentID, channel_id)
 
             if returnPlaylistID:
                 return channel_data[channel_id]["playlistID"]
@@ -481,7 +481,7 @@ class APIControl(object):
         if len(channelIDs) == 1 and not u"pagetoken" in self.base and self.base.get(u"enable_playlists",
                                                                                     u"false") == u"true":
             item = listitem()
-            item.setLabel(u"[B]%s[/B]" % self.base.getLocalizedString("Playlists"))
+            item.setLabel(u"[B]%s[/B]" % self.base.get_local_string("Playlists"))
             item.setIcon("DefaultVideoPlaylists.png")
             item.setThumb(u"youtube.png", 2)
             item["channelid"] = list(channelIDs)[0]
