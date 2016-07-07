@@ -599,9 +599,9 @@ class Base(collections.MutableMapping):
         Returns:
             dict: A persistence shelf storage object
         """
-        from .storage import shelfStorage
+        from .storage import ShelfStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return shelfStorage(data_path, protocol=protocol, writeback=writeback)
+        return ShelfStorage(data_path, protocol=protocol, writeback=writeback)
 
     def dict_storage(self, filename=u"metadata_dict.json", custom_dir=None):
         """
@@ -614,9 +614,9 @@ class Base(collections.MutableMapping):
         Returns:
             dict: A persistence dict storage object
         """
-        from .storage import dictStorage
+        from .storage import DictStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return dictStorage(data_path)
+        return DictStorage(data_path)
 
     def list_storage(self, filename=u"metadata_list.json", custom_dir=None):
         """
@@ -629,9 +629,9 @@ class Base(collections.MutableMapping):
         Returns:
             list: A persistence list strage object
         """
-        from .storage import listStorage
+        from .storage import ListStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return listStorage(data_path)
+        return ListStorage(data_path)
 
     def set_storage(self, filename=u"metadata_set.json", custom_dir=None):
         """
@@ -644,9 +644,9 @@ class Base(collections.MutableMapping):
         Returns:
             set: A persistence set storage object
         """
-        from .storage import setStorage
+        from .storage import SetStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return setStorage(data_path)
+        return SetStorage(data_path)
 
     @classmethod
     def copy(cls):

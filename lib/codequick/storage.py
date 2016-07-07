@@ -3,7 +3,7 @@ from shelve import DbfilenameShelf
 import os
 import json
 
-__all__ = ["dictStorage", "listStorage", "setStorage"]
+__all__ = ["DictStorage", "ListStorage", "SetStorage"]
 
 
 def _unicode_handler(func):
@@ -91,9 +91,7 @@ class _BaseStorage(object):
         self.close()
 
 
-
-
-class dictStorage(_BaseStorage, dict):
+class DictStorage(_BaseStorage, dict):
     """
     Persistence storage Dict that stores data on disk
 
@@ -114,7 +112,7 @@ class dictStorage(_BaseStorage, dict):
     pass
 
 
-class listStorage(_BaseStorage, list):
+class ListStorage(_BaseStorage, list):
     """
     Persistence storage List that stores data on disk
 
@@ -136,7 +134,7 @@ class listStorage(_BaseStorage, list):
         self.extend(args)
 
 
-class setStorage(_BaseStorage, set):
+class SetStorage(_BaseStorage, set):
     """
     Persistence storage Set that stores data on disk
 
@@ -161,7 +159,7 @@ class setStorage(_BaseStorage, set):
         return list(self)
 
 
-class shelfStorage(DbfilenameShelf):
+class ShelfStorage(DbfilenameShelf):
     """
     Persistence storage Shelf that stores data on disk
 
