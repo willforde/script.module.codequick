@@ -15,7 +15,7 @@ from .api import Base, route, localized, cls_for_route, logger
 # Prerequisites
 localized({"Select_playback_item": 25006, "Related_Videos": 32904, "Next_Page": 33078,
            "Search": 137, "Most_Recent": 32903, "Youtube_Channel": 32901})
-_sortMethods = {(xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE,)}
+_sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
 _sortAdd = _sortMethods.add
 _listItem = xbmcgui.ListItem
 _strptime = time.strptime
@@ -158,7 +158,8 @@ class ListItem(_listItem):
         """
         Sets duration Info
 
-        duration : string or unicode or integer,
+        Args:
+            duration (str|unicode|int): string or unicode or integer
 
         Duration can be an integer or an integer represented as string or unicode.
         It can also be a hour:minute:second (52:45) value represented as a string or unicode
@@ -167,22 +168,22 @@ class ListItem(_listItem):
         >>> setDuration(3165)
         3165
 
-        >>> setDuration(u"3165")
+        >>> ListItem.setDuration(u"3165")
         3165
 
-        >>> setDuration(u"52:45")
+        >>> ListItem.setDuration(u"52:45")
         3165
         """
         if isinstance(duration, basestring):
             if u":" in duration:
                 # Split Time By Marker and Convert to Integer
-                timeParts = duration.split(":")
-                timeParts.reverse()
+                time_parts = duration.split(":")
+                time_parts.reverse()
                 duration = 0
                 counter = 1
 
                 # Multiply Each Time Delta Segment by it's Seconds Equivalent
-                for part in timeParts:
+                for part in time_parts:
                     duration += int(part) * counter
                     counter *= 60
             else:
@@ -393,7 +394,7 @@ class ListItem(_listItem):
         return listitem.get(cls)
 
     @classmethod
-    def add_next(_cls, url=None):
+    def add_next(cls, url=None):
         """
         A Listitem constructor for Next Page Item
 
@@ -407,7 +408,7 @@ class ListItem(_listItem):
         base_url["nextpagecount"] = int(base_url.get("nextpagecount", 1)) + 1
 
         # Create listitem instance
-        listitem = _cls()
+        listitem = cls()
         listitem.setLabel(u"[B]%s %i[/B]" % (Base.get_local_string("Next_Page"), base_url["nextpagecount"]))
         listitem.setThumb(u"next.png", 2)
         listitem.update(base_url)
@@ -496,7 +497,8 @@ class VirtualFS(Base):
         """
         pass
 
-    def finalize(self):
+    @staticmethod
+    def finalize():
         """
         Method used to execute commands after the endOfDirectory function as been called
 
@@ -546,8 +548,6 @@ class VirtualFS(Base):
 
             # Set Kodi Sort Methods
             _handle = self.handle
-            logger.info(repr(_handle))
-            logger.info(repr(_sortMethods))
             _addSortMethod = xbmcplugin.addSortMethod
             for sortMethod in sorted(_sortMethods):
                 _addSortMethod(_handle, sortMethod)

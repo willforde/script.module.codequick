@@ -652,7 +652,8 @@ class API(object):
         Return any search results
 
         pagetoken : string or unicode --- The token for the next page of results
-        [search_params] : dict --- Youtube Data API Search Parameters, refer to "https://developers.google.com/youtube/v3/docs/search/"
+        [search_params] : dict --- Youtube Data API Search Parameters, refer to
+                                   "https://developers.google.com/youtube/v3/docs/search/"
         """
 
         # Set Default parameters
@@ -665,7 +666,8 @@ class API(object):
         params.update(search_params)
 
         # Add pageToken if needed
-        if pagetoken: params["pageToken"] = pagetoken
+        if pagetoken:
+            params["pageToken"] = pagetoken
 
         # Connect to server and return json response
         return self._connect_v3("search", params)
