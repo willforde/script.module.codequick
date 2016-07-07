@@ -87,7 +87,7 @@ class _BaseStorage(object):
     def __enter__(self):
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *_):
         self.close()
 
 
