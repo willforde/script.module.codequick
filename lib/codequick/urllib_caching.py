@@ -142,7 +142,7 @@ class Session(object):
     def mount(self, adapter):
         self.handleList.append(adapter)
 
-    def request(self, method, url, params=None, data=None, _=None, timeout=None):
+    def request(self, method, url, params=None, data=None, headers=None, timeout=None):
         if params:
             params = urllib.urlencode(params)
             url_parts = urlparse.urlsplit(url)
