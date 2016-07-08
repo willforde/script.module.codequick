@@ -14,7 +14,9 @@ from .api import Base, route, localized, cls_for_route, logger
 
 # Prerequisites
 localized({"Select_playback_item": 25006, "Related_Videos": 32904, "Next_Page": 33078,
-           "Search": 137, "Most_Recent": 32903, "Youtube_Channel": 32901})
+           "search": 137, "Most_Recent": 32903, "Youtube_Channel": 32901, "Default": 571, "Enter_number": 611,
+           "Custom": 636, "Remove": 1210, "Enter_search_string": 16017})
+
 _sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
 _sortAdd = _sortMethods.add
 _listItem = xbmcgui.ListItem
@@ -27,6 +29,18 @@ class ListItem(_listItem):
     A wrapper for the xbmcgui.ListItem class witch adds extra methods
     to automate specific tasks to make using the ListItem API easier.
     """
+
+    _refreshContext = None
+    _imageLocal = None
+    _fanart = None
+    _strRelated = None
+    _imageGlobal = None
+    _sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
+                 "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
+                 "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, int),
+                 "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, None),
+                 "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
+                 "episode": (xbmcplugin.SORT_METHOD_EPISODE, int)}
 
     def __init__(self):
         # Call Overridden init Method
@@ -45,65 +59,42 @@ class ListItem(_listItem):
         self._infoLabels["title"] = lable
         self._urlQuerys["title"] = lable.encode("ascii", "ignore")
 
-    def setPlot(self, value):
-        """ Set plot info : string or unicode """
-        self._infoLabels["plot"] = value
+    def info(self, key, value):
+        try:
+            sort_type, type_obj = self._sort_map[key]
+        except KeyError:
+            self._infoLabels[key] = value
+        else:
+            if type_obj:
+                value = type_obj(value)
+            self._infoLabels[key] = value
+            _sortAdd(sort_type)
 
-    def setSize(self, value):
-        """ Set size info : string digit or long integer """
-        self._infoLabels["size"] = long(value)
-        _sortAdd(xbmcplugin.SORT_METHOD_SIZE)
-
-    def setGenre(self, value):
-        """ Set genre info : string or unicode """
-        self._infoLabels["genre"] = value
-        _sortAdd(xbmcplugin.SORT_METHOD_GENRE)
-
-    def setStudio(self, value):
-        """ Set studio info : string or unicode """
-        self._infoLabels["studio"] = value
-        _sortAdd(xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)
-
-    def setCount(self, value):
-        """ Set count info : integer as string or integer """
-        self._infoLabels["count"] = int(value)
-        _sortAdd(xbmcplugin.SORT_METHOD_PROGRAM_COUNT)
-
-    def setRating(self, value):
-        """ Set rating info : Float as string or Float """
-        self._infoLabels["rating"] = float(value)
-        _sortAdd(xbmcplugin.SORT_METHOD_VIDEO_RATING)
-
-    def setEpisode(self, value):
-        """ Set episode info : integer as string or integer """
-        self._infoLabels["episode"] = int(value)
-        _sortAdd(xbmcplugin.SORT_METHOD_EPISODE)
-
-    def setIcon(self, image):
+    def set_icon(self, image):
         """ Set icon filename : string or unicode """
         self._imagePaths["icon"] = image
 
-    def setFanart(self, image):
+    def set_fanart(self, image):
         """ Set fanart path : string or unicode """
         self._imagePaths["fanart"] = image
 
-    def setPoster(self, image):
+    def set_poster(self, image):
         """ Set poster path : string or unicode """
         self._imagePaths["poster"] = image
 
-    def setBanner(self, image):
+    def set_banner(self, image):
         """ Set banner path: string or unicode """
         self._imagePaths["banner"] = image
 
-    def setClearArt(self, image):
+    def set_clear_art(self, image):
         """ Set clearart path: string or unicode  """
         self._imagePaths["clearart"] = image
 
-    def setClearLogo(self, image):
+    def set_clear_logo(self, image):
         """ Set clearlogo path: string or unicode """
         self._imagePaths["clearlogo"] = image
 
-    def setLandscape(self, image):
+    def set_landscape(self, image):
         """ Set landscape image path: string or unicode """
         self._imagePaths["landscape"] = image
 
@@ -115,20 +106,21 @@ class ListItem(_listItem):
         """
         self._imagePaths.update(values)
 
-    def setThumb(self, image, local=0):
+    def set_thumb(self, image, local=0):
         """
         Set thumbnail image path
 
         image : string or unicode --- Path to thumbnail image
         local : integer - (0/1/2) --- Changes image path to point to (Remote/Local/Global) paths
 
-        >>> setThumb("http://youtube.com/youtube.png", 0)
+        >>> item = ListItem()
+        >>> item.set_thumb("http://youtube.com/youtube.png", 0)
         "http://youtube.com/youtube.png"
 
-        >>> setThumb("youtube.png", 1)
+        >>> item.set_thumb("youtube.png", 1)
         "special://home/addons/<addon_id>/resources/media/youtube.png"
 
-        >>> setThumb("youtube.png", 2)
+        >>> item.set_thumb("youtube.png", 2)
         "special://home/addons/script.module.xbmcutil/resources/media/youtube.png"
         """
         if local is 0:
@@ -138,23 +130,24 @@ class ListItem(_listItem):
         elif local is 2:
             self._imagePaths["thumb"] = self._imageGlobal % image
 
-    def setDate(self, date, dateFormat):
+    def set_date(self, date, date_format):
         """
         Sets Date Info Label
 
         date : string --- Date of list item
-        dateFormat : string --- Format of date string for strptime conversion
+        date_format : string --- Format of date string for strptime conversion
 
-        >>> setDate("17/02/16", "%d/%m/%y")
+        >>> item = ListItem()
+        >>> item.set_date("17/02/16", "%d/%m/%y")
         17.02.2016
         """
-        convertedDate = _strptime(date, dateFormat)
-        self._infoLabels["date"] = _strftime("%d.%m.%Y", convertedDate)  # 01.01.2009
-        self._infoLabels["aired"] = _strftime("%Y-%m-%d", convertedDate)  # 2009-01-01
-        self._infoLabels["year"] = _strftime("%Y", convertedDate)
+        converted_date = _strptime(date, date_format)
+        self._infoLabels["date"] = _strftime("%d.%m.%Y", converted_date)  # 01.01.2009
+        self._infoLabels["aired"] = _strftime("%Y-%m-%d", converted_date)  # 2009-01-01
+        self._infoLabels["year"] = _strftime("%Y", converted_date)
         _sortAdd(xbmcplugin.SORT_METHOD_DATE)
 
-    def setDuration(self, duration):
+    def set_duration(self, duration):
         """
         Sets duration Info
 
@@ -165,13 +158,14 @@ class ListItem(_listItem):
         It can also be a hour:minute:second (52:45) value represented as a string or unicode
         that will be converted to a numeric value.
 
-        >>> setDuration(3165)
+        >>> item = ListItem()
+        >>> item.set_duration(3165)
         3165
 
-        >>> ListItem.setDuration(u"3165")
+        >>> item.set_duration(u"3165")
         3165
 
-        >>> ListItem.setDuration(u"52:45")
+        >>> item.set_duration(u"52:45")
         3165
         """
         if isinstance(duration, basestring):
@@ -194,28 +188,39 @@ class ListItem(_listItem):
         self._infoLabels["duration"] = duration
         _sortAdd(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
 
-    def setResumePoint(self, startPoint, totalTime=None):
+    def set_resume_point(self, start_point, total_time=None):
         """
         Set Resume Point for Kodi to start playing video
 
-        startPoint : string or unicode --- The starting point of the video as a numeric value
-        [totalTime] : string or unicode --- The total time of the video, if not giving, totalTime will be the duration set in the infoLabels
-
+        Args:
+            start_point (str|unicode): The starting point of the video as a numeric value
+            total_time (str|unicode, optional): The total time of the video, if not given, total_time will be the
+                                               duration set in the infoLabels
         """
-        self.setProperty("totaltime", totalTime or str(self._streamInfo["video"].get("duration", "1")))
-        self.setProperty("resumetime", startPoint)
+        data = total_time or str(self._streamInfo["video"].get("duration")) or None
+        self.setProperty("totaltime", data)
+        self.setProperty("resumetime", start_point)
 
-    def addStreamInfo(self, isHD=None, video_codec="h264", audio_codec="aac", audio_channels=2, language="en",
+    def addStreamInfo(self, ishd=None, video_codec="h264", audio_codec="aac", audio_channels=2, language="en",
                       aspect=0):
         """
         Set Stream details like codec & resolutions
 
-        [isHD]           : integer - Sets the HD/4K overlay flag, None = Unknown, 0 = SD, 1 = 720p, 2 = 1080p, 3 = 4k. (default None)
-        [video_codec]    : string - codec that was used for the video. (default h264)
-        [audio_codec]    : string - codec that was used for the audio. (default aac)
-        [audio_channels] : integer - number of audio channels. (default 2)
-        [language]       : string - language that the audio is in. (default en) (English)
-        [aspect]         : float - the aspect ratio of the video as a float, eg 2.33 (21:9), 1.78 (16:9), 1.33 (4:3), (default 0)
+        Args:
+            ishd (int, optional): Sets the HD/4K overlay flag, (default None)
+                                  None = Unknown,
+                                  0 = SD,
+                                  1 = 720p,
+                                  2 = 1080p,
+                                  3 = 4k.
+            video_codec (str, optional): Codec that was used for the video. (default h264)
+            audio_codec (str, optional): Codec that was used for the audio. (default aac)
+            audio_channels (int, optional): Number of audio channels. (default 2)
+            language (str, optional): Language that the audio is in. (default en) (English)
+            aspect (float, optional): The aspect ratio of the video as a float, (default 0)
+                                      2.33 (21:9),
+                                      1.78 (16:9),
+                                      1.33 (4:3),
         """
 
         # Add audio details
@@ -226,28 +231,29 @@ class ListItem(_listItem):
 
         # Add video details
         video_info = self._streamInfo["video"]
-        if aspect: video_info["aspect"] = aspect
         video_info["codec"] = video_codec
+        if aspect:
+            video_info["aspect"] = aspect
 
         # Standard Definition
-        if isHD == 0:
+        if ishd == 0:
             video_info["width"] = 768
             video_info["height"] = 576
 
         # HD Ready
-        elif isHD == 1:
+        elif ishd == 1:
             video_info["width"] = 1280
             video_info["height"] = 720
             video_info["aspect"] = 1.78
 
         # Full HD
-        elif isHD == 2:
+        elif ishd == 2:
             video_info["width"] = 1920
             video_info["height"] = 1080
             video_info["aspect"] = 1.78
 
         # 4K
-        elif isHD == 3:
+        elif ishd == 3:
             video_info["width"] = 3840
             video_info["height"] = 2160
             video_info["aspect"] = 1.78
@@ -261,9 +267,9 @@ class ListItem(_listItem):
         """
         if query:
             query.setdefault("updatelisting", "true")
-            command = "XBMC.Container.Update(%s)" % cls.url_for_route(cls._route, query)
+            command = "XBMC.Container.Update(%s)" % cls.url_for_route(cls.route, query)
         else:
-            command = "XBMC.Container.Update(%s?updatelisting=true)" % cls.url_for_route(cls._route)
+            command = "XBMC.Container.Update(%s?updatelisting=true)" % cls.url_for_route(cls.route)
 
         # Append Command to context menu
         self._contextMenu.append((self._strRelated, command))
@@ -278,9 +284,9 @@ class ListItem(_listItem):
         """
         if query:
             query.setdefault("updatelisting", "true")
-            command = "XBMC.Container.Update(%s)" % cls.url_for_route(cls._route, query)
+            command = "XBMC.Container.Update(%s)" % cls.url_for_route(cls.route, query)
         else:
-            command = "XBMC.Container.Update(%s?updatelisting=true)" % cls.url_for_route(cls._route)
+            command = "XBMC.Container.Update(%s?updatelisting=true)" % cls.url_for_route(cls.route)
 
         # Append Command to context menu
         self._contextMenu.append((label, command))
@@ -294,29 +300,37 @@ class ListItem(_listItem):
     def __contains__(self, key):
         return key in self._urlQuerys
 
-    def _get(self, path, type, isFolder, isplayable):
+    def _get(self, path, list_type, is_folder, isplayable):
         """
-        Returns a tuple of listitem properties, (path, listitem, isFolder)
+        Returns a tuple of listitem properties, (path, listitem, is_folder)
 
-        path : string --- url of video or addon to send to kodi
-        type : string --- Type of listitem content that will be send to kodi. Option are (video:audio)
-        isFolder : boolean --- True if listing folder items else False for video items
+        Args:
+            path (str): url of video or addon to send to kodi
+            list_type (str): Type of listitem content that will be send to kodi. Option are (video:audio)
+            is_folder (bool): True if listing folder items else False for video items
+            isplayable (bool): Whether the listitem is playable or not
+
+        Returns:
+            tuple:
         """
 
         # Set Kodi InfoLabels
-        self.setInfo(type, self._infoLabels)
+        self.setInfo(list_type, self._infoLabels)
 
         # Set streamInfo if found
-        if self._streamInfo["video"]: _listItem.addStreamInfo(self, "video", self._streamInfo["video"])
-        if self._streamInfo["audio"]: _listItem.addStreamInfo(self, "audio", self._streamInfo["audio"])
+        if self._streamInfo["video"]:
+            _listItem.addStreamInfo(self, "video", self._streamInfo["video"])
+        if self._streamInfo["audio"]:
+            _listItem.addStreamInfo(self, "audio", self._streamInfo["audio"])
 
-        if isFolder:
+        if is_folder:
             # Change Kodi Propertys to mark as Folder
             self.setProperty("isplayable", "false")
             self.setProperty("folder", "true")
 
             # Set Kodi icon image if not already set
-            if not "icon" in self._imagePaths: self._imagePaths["icon"] = "DefaultFolder.png"
+            if "icon" not in self._imagePaths:
+                self._imagePaths["icon"] = "DefaultFolder.png"
 
         else:
             # Change Kodi Propertys to mark as Folder
@@ -324,14 +338,15 @@ class ListItem(_listItem):
             self.setProperty("folder", "false")
 
             # Set Kodi icon image if not already set
-            if not "icon" in self._imagePaths: self._imagePaths["icon"] = "DefaultVideo.png"
+            if "icon" not in self._imagePaths:
+                self._imagePaths["icon"] = "DefaultVideo.png"
 
             # Add Video Specific Context menu items
             self._contextMenu.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
             self._contextMenu.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
 
-            # Increment vid counter for later guessing of content type
-            VirtualFS._vidCounter += 1
+            # Increment vid counter for later guessing of content list_type
+            VirtualFS.vidCounter += 1
 
         # Add Context menu items
         self.addContextMenuItems(self._contextMenu)
@@ -339,59 +354,70 @@ class ListItem(_listItem):
         # Set listitem art
         _listItem.setArt(self, self._imagePaths)
 
-        # Return Tuple of url, listitem, isFolder
-        return (path, self, isFolder)
+        # Return Tuple of url, listitem, is_folder
+        return path, self, is_folder
 
-    def get(self, cls, type="video"):
+    def get(self, cls, list_type="video"):
         """
         Takes a class to route to and returns a tuple of listitem properties, (path, listitem, isFolder)
 
-        cls : Class --- Class that will be called by the related video context menu item
-        [type] : string --- Type of listitem content that will be send to kodi. Option are (video:audio) (default video)
+        Args:
+            cls (obj): Class that will be called by the related video context menu item
+            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
+                                       (default video)
         """
 
         # Create path to send to Kodi
-        path = cls.url_for_route(cls._route, self._urlQuerys)
+        path = cls.url_for_route(cls.route, self._urlQuerys)
 
         # Return Tuple of url, listitem, isFolder
-        return self._get(path, type, cls._isFolder, cls._isplayable)
+        return self._get(path, list_type, cls.isFolder, cls.isplayable)
 
-    def get_route(self, route, type="video"):
+    def get_route(self, route_path, list_type="video"):
         """
-        Takes a route to a class and Returns a tuple of listitem properties, (path, listitem, isFolder)
+        Takes a route_path to a class and Returns a tuple of listitem properties, (path, listitem, isFolder)
 
-        route : string --- Route that will be called by the related video context menu item
-        [type] : string --- Type of listitem content that will be send to kodi. Option are (video:audio) (default video)
+        Args:
+            route_path (str): Route that will be called by the related video context menu item
+            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
+                                       (default video)
         """
-        cls = cls_for_route(route, raise_on_error=True)
-        return self.get(cls, type)
+        cls = cls_for_route(route_path, raise_on_error=True)
+        return self.get(cls, list_type)
 
-    def get_direct(self, path, type="video"):
+    def get_direct(self, path, list_type="video"):
         """
         Take a direct url for kodi to use and Returns a tuple of listitem properties, (path, listitem, isFolder)
 
-        path : string --- url of video or addon to send to kodi
-        [type] : string --- Type of listitem content that will be send to kodi. Option are (video:audio) (default video)
+        path : string ---
+        [list_type] : string ---
+
+        Args:
+            path (str): url of video or addon to send to kodi
+            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
+                                       (default video)
         """
 
         # Return Tuple of url, listitem, isFolder
-        return self._get(path, type, False, True)
+        return self._get(path, list_type, False, True)
 
     @classmethod
-    def add_item(_cls, cls, label, url=None, thumbnail=None):
+    def add_item(cls, action_cls, label, url=None, thumbnail=None):
         """
         Basic constructor to add a simple listitem
 
-        cls : class --- Class that will be call to show recent results
+        action_cls : class --- Class that will be call to show recent results
         label : string or unicode --- Lable of Listitem
         [url] : dict --- Url params to pass to listitem
         [thumbnail] : string or unicode --- Thumbnail image of listitem
         """
-        listitem = _cls()
+        listitem = cls()
         listitem.setLabel(label)
-        if thumbnail: listitem.setThumb(thumbnail)
-        if url: listitem.update(url)
-        return listitem.get(cls)
+        if thumbnail:
+            listitem.set_thumb(thumbnail)
+        if url:
+            listitem.update(url)
+        return listitem.get(action_cls)
 
     @classmethod
     def add_next(cls, url=None):
@@ -403,77 +429,79 @@ class ListItem(_listItem):
 
         # Fetch current url query
         base_url = Base.copy()
-        if url: base_url.update(url)
+        if url:
+            base_url.update(url)
         base_url["updatelisting"] = "true"
         base_url["nextpagecount"] = int(base_url.get("nextpagecount", 1)) + 1
 
         # Create listitem instance
         listitem = cls()
         listitem.setLabel(u"[B]%s %i[/B]" % (Base.get_local_string("Next_Page"), base_url["nextpagecount"]))
-        listitem.setThumb(u"next.png", 2)
+        listitem.set_thumb(u"next.png", 2)
         listitem.update(base_url)
 
         # Fetch current route and return
-        route = Base._urlObject.path.lower() if Base._urlObject.path else "/"
-        return listitem.get_route(route)
+        route_path = Base.urlObject.path.lower() if Base.urlObject.path else "/"
+        return listitem.get_route(route_path)
 
     @classmethod
-    def add_search(_cls, cls, url, label=None):
+    def add_search(cls, action_cls, url, label=None):
         """
-        A Listitem constructor to add Saved Search Support to addon
+        A Listitem constructor to add Saved search Support to addon
 
-        cls : class --- Class that will be farwarded to search dialog
+        action_cls : class --- Class that will be farwarded to search dialog
         url : dict --- Dictionary containing url querys combine with search term
         label : string --- Lable of Listitem
         """
-        listitem = _cls()
+        listitem = cls()
         if label:
             listitem.setLabel("[B]%s[/B]" % label)
         else:
-            listitem.setLabel("[B]%s[/B]" % Base.get_local_string("Search"))
-        listitem.setThumb(u"search.png", 2)
-        url["route"] = cls._route
+            listitem.setLabel("[B]%s[/B]" % Base.get_local_string("search"))
+        listitem.set_thumb(u"search.png", 2)
+        url["route"] = action_cls.route
         listitem.update(url)
         return listitem.get_route("/internal/SavedSearches")
 
     @classmethod
-    def add_recent(_cls, cls, url=None, label=None):
+    def add_recent(cls, action_cls, url=None, label=None):
         """
         A Listitem constructor to add Recent Folder to addon
 
-        cls : class --- Class that will be call to show recent results
+        action_cls : class --- Class that will be call to show recent results
         url : dict --- Dictionary containing url querys to pass to Most Recent Class
         label : string --- Lable of Listitem
         """
-        listitem = _cls()
-        if url: listitem.update(url)
+        listitem = cls()
+        if url:
+            listitem.update(url)
         if label:
             listitem.setLabel(u"[B]%s[/B]" % label)
         else:
             listitem.setLabel(u"[B]%s[/B]" % Base.get_local_string("Most_Recent"))
-        listitem.setThumb(u"recent.png", 2)
-        return listitem.get(cls)
+        listitem.set_thumb(u"recent.png", 2)
+        return listitem.get(action_cls)
 
     @classmethod
-    def add_youtube(_cls, contentID, label=None, enable_playlists=True, wideThumb=False):
+    def add_youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
         """
         A Listitem constructor to add a youtube channel to addon
 
-        contentID : string --- ID of Youtube channel or playlist to list videos for
+        content_id : string --- ID of Youtube channel or playlist to list videos for
         label : string --- Title of listitem - default (-Youtube Channel)
         enable_playlists : boolean --- Set to True to enable listing of channel playlists, (defaults True)
-        wideThumb : boolean --- Set to True to use a wide thumbnail or False for normal thumbnail image (default False)
+        wide_thumb : boolean --- Set to True to use a wide thumbnail or False for normal thumbnail image (default False)
         """
-        listitem = _cls()
+        listitem = cls()
         if label:
             listitem.setLabel(u"[B]%s[/B]" % label)
         else:
             listitem.setLabel(u"[B]%s[/B]" % Base.get_local_string("Youtube_Channel"))
-        if wideThumb:
-            listitem.setThumb("youtubewide.png", 2)
+        if wide_thumb:
+            listitem.set_thumb("youtubewide.png", 2)
         else:
-            listitem.setThumb("youtube.png", 2)
-        listitem["contentid"] = contentID
+            listitem.set_thumb("youtube.png", 2)
+        listitem["contentid"] = content_id
         listitem["enable_playlists"] = str(enable_playlists).lower()
         return listitem.get_route("/internal/youtube/playlist")
 
@@ -484,10 +512,10 @@ class Executer(Base):
 
 
 class VirtualFS(Base):
-    _isFolder = True
-    _isplayable = False
+    isFolder = True
+    isplayable = False
     __listitem = None
-    _vidCounter = 0
+    vidCounter = 0
 
     @abc.abstractmethod
     def start(self):
@@ -513,6 +541,7 @@ class VirtualFS(Base):
 
     def __init__(self):
         """ Initialize Virtual File System """
+        super(VirtualFS, self).__init__()
         listitems = self.start()
         self._send_to_kodi(listitems)
 
@@ -520,7 +549,8 @@ class VirtualFS(Base):
         try:
             self.finalize()
         except Exception as e:
-            self.error("Failed to execute finalize method, Reason: %s", e)
+            logger.error("Failed to execute finalized function")
+            logger.error(e)
 
     @property
     def listitem(self):
@@ -553,20 +583,21 @@ class VirtualFS(Base):
                 _addSortMethod(_handle, sortMethod)
 
             # Guess Content Type and set View Mode
-            is_folder = self._vidCounter < (len(listitems) / 2)
+            is_folder = self.vidCounter < (len(listitems) / 2)
             # xbmcplugin.setContent(handle, "files" if isFolder else "episodes")
-            self._setViewMode("folder" if is_folder else "video")
+            self._set_view_mode("folder" if is_folder else "video")
 
         # End Directory Listings
-        updateListing = u"updatelisting" in self and self[u"updatelisting"] == u"true"
-        cacheToDisc = "cachetodisc" in self
-        xbmcplugin.endOfDirectory(self.handle, bool(listitems), updateListing, cacheToDisc)
+        update_listing = u"updatelisting" in self and self[u"updatelisting"] == u"true"
+        cache_to_disc = "cachetodisc" in self
+        xbmcplugin.endOfDirectory(self.handle, bool(listitems), update_listing, cache_to_disc)
 
-    def _setViewMode(self, mode):
+    def _set_view_mode(self, mode):
         """ Returns selected View Mode setting if available """
         setting_key = "%s.%s.view" % (xbmc.getSkinDir(), mode)
         view_mode = self.get_setting(setting_key, True)
-        if view_mode: xbmc.executebuiltin("Container.SetViewMode(%s)" % view_mode.encode("utf8"))
+        if view_mode:
+            xbmc.executebuiltin("Container.SetViewMode(%s)" % view_mode.encode("utf8"))
 
 
 class PlayMedia(Base):
@@ -582,7 +613,8 @@ class PlayMedia(Base):
         """
         pass
 
-    def finalize(self):
+    @staticmethod
+    def finalize():
         """
         Method used to execute commands after the endOfDirectory function as been called
 
@@ -597,6 +629,7 @@ class PlayMedia(Base):
 
     def __init__(self):
         # Instance Vars
+        super(PlayMedia, self).__init__()
         self.__headers = []
         self.__mimeType = self.get("mimetype")
 
@@ -608,21 +641,25 @@ class PlayMedia(Base):
         try:
             self.finalize()
         except Exception as e:
-            self.error("Failed to execute finalize method, Reason: %s", e)
+            logger.error("Failed to execute finalize method")
+            logger.error("Reason: %s", e)
 
-    def setMimeType(self, value):
+    def set_mime_type(self, value):
         """ Set the mimeType of the video """
-        if isinstance(value, unicode): value = value.encode("ascii")
+        if isinstance(value, unicode):
+            value = value.encode("ascii")
         self.__mimeType = value
 
-    def setUserAgent(self, useragent):
+    def set_user_agent(self, useragent):
         """ Add a User Agent header to kodi request """
-        if isinstance(useragent, unicode): useragent = useragent.encode("ascii")
+        if isinstance(useragent, unicode):
+            useragent = useragent.encode("ascii")
         self.__headers.append("User-Agent=%s" % urllib.quote_plus(useragent))
 
-    def setReferer(self, referer):
+    def set_referer(self, referer):
         """ Add a Referer header to kodi request """
-        if isinstance(referer, unicode): referer = referer.encode("ascii")
+        if isinstance(referer, unicode):
+            referer = referer.encode("ascii")
         self.__headers.append("Referer=%s" % urllib.quote_plus(referer))
 
     def create_playlist(self, urls):
@@ -633,24 +670,26 @@ class PlayMedia(Base):
         """
 
         # Create Playlist
-        playlist = xbmc.PlayList()
-        firstItem = None
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        first_item = None
 
         # Loop each item to create playlist
         for count, url in enumerate(urls, 1):
             # Create Listitem
             listitem = _listItem()
             listitem.setLabel(u"%s Part %i" % (self[u"title"], count))
-            if self.__mimeType: listitem.setMimeType(self.__mimeType)
+            if self.__mimeType:
+                listitem.setMimeType(self.__mimeType)
             url = self._check_url(url)
             listitem.setPath(url)
 
             # Populate Playlis
             playlist.add(url, listitem)
-            if firstItem is None: firstItem = listitem
+            if first_item is None:
+                first_item = listitem
 
         # Return first playlist item to send to kodi
-        return firstItem
+        return first_item
 
     def creat_loopback(self, url, **extra_params):
         """
@@ -662,7 +701,7 @@ class PlayMedia(Base):
         """
 
         # Create Playlist
-        playlist = xbmc.PlayList()
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
         # Create Main listitem
         main_item = _listItem()
@@ -693,30 +732,35 @@ class PlayMedia(Base):
         quality is 0=SD, 1=720p, 2=1080p, 3=4K
         """
         import YDStreamExtractor
-        videoInfo = YDStreamExtractor.getVideoInfo(url, quality)
+        video_info = YDStreamExtractor.getVideoInfo(url, quality)
 
         # If there is more than one stream found then ask for selection
-        if videoInfo.hasMultipleStreams():
-            return self.source_selection(videoInfo)
+        if video_info.hasMultipleStreams():
+            return self.source_selection(video_info)
         else:
-            return videoInfo.streamURL()
+            return video_info.streamURL()
 
-    def source_selection(self, videoInfo):
+    def source_selection(self, video_info):
         """ Ask user with video stream to play """
-        displayList = ["%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"]) for stream in
-                       videoInfo.streams()]
+        display_list = []
+        for stream in video_info.streams():
+            data = "%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"])
+            display_list.append(data)
+
         dialog = xbmcgui.Dialog()
-        ret = dialog.select(self.get_local_string("Select_playback_item"), displayList)
+        ret = dialog.select(self.get_local_string("Select_playback_item"), display_list)
         if ret >= 0:
-            videoInfo.selectStream(ret)
-            return videoInfo.streamURL()
+            video_info.selectStream(ret)
+            return video_info.streamURL()
         else:
             return None
 
     def _check_url(self, url):
         """ Check if there are any headers to add to url and return url and a string """
-        if isinstance(url, unicode): url = url.encode("ascii")
-        if self.__headers: url = "%s|%s" % (url, "&".join(self.__headers))
+        if isinstance(url, unicode):
+            url = url.encode("ascii")
+        if self.__headers:
+            url = "%s|%s" % (url, "&".join(self.__headers))
         return url
 
     def _send_to_kodi(self, resolved):
@@ -729,7 +773,8 @@ class PlayMedia(Base):
         # Create listitem object if resolved object is a basestring (string/unicode)
         elif isinstance(resolved, basestring):
             listitem = _listItem()
-            if self.__mimeType: listitem.setMimeType(self.__mimeType)
+            if self.__mimeType:
+                listitem.setMimeType(self.__mimeType)
             resolved = self._check_url(resolved)
             listitem.setPath(resolved)
 
@@ -769,5 +814,180 @@ class PlaySource(PlayMedia):
         return self.extract_source(self[u"url"])
 
 
-# Import the extra module to register the routes
-from . import extras
+@route("/internal/setViewMode")
+class ViewModeSelecter(Base):
+    """
+    Class for displaying list of available skin view modes.
+    Allowing for the selection of a view mode that will be force when
+    displaying listitem content. Works with both video & folder views separately
+
+    NOTE
+    Must be called as a script only
+    """
+
+    def __init__(self):
+        # Instance variables
+        super(ViewModeSelecter, self).__init__()
+        self.skinID = xbmc.getSkinDir()
+        self.mode = self[u"arg1"]
+
+        # Fetch databse of skin codes
+        skincode_path = os.path.join(self._path_global, u"resources", u"data", u"skincodes.json")
+        try:
+            database = self.dict_storage(skincode_path)
+        except (IOError, OSError) as e:
+            self.debug("Was unable to load skincodes databse: %s", repr(e))
+            skin_codes = {}
+        else:
+            # Fetch codes for current skin and mode
+            if self.skinID in database:
+                skin_codes = self.filter_codes(database)
+            else:
+                self.debug("No skin codes found for skin: %s", self.skinID)
+                skin_codes = {}
+
+        # Display list of view modes available
+        new_mode = self.display(skin_codes)
+
+        # Save new mode to setting
+        if new_mode is not None:
+            self.set_setting("%s.%s.view" % (self.skinID, self.mode), new_mode)
+
+    def filter_codes(self, database):
+        """ Filter codes down to current sky and mode """
+        filterd = {}
+        for mode, views in database[self.skinID].iteritems():
+            if mode == self.mode or mode == u"both":
+                for view in views:
+                    key = self.get_local_string(view[u"id"]) if view[u"id"] is not None else u""
+                    if u"combine" in view:
+                        key = u"%s %s" % (key, view[u"combine"])
+                    filterd[key.strip()] = view[u"mode"]
+
+        return filterd
+
+    def display(self, skin_codes):
+        """ Display list of viewmodes that are available and return user selection """
+
+        # Fetch currently saved setting if it exists
+        try:
+            current_mode = self.get_setting("%s.%s.view" % (self.skinID, self.mode))
+        except ValueError:
+            current_mode = ""
+
+        # Create list of item to show to user
+        reference = [None]
+        show_list = [self.get_local_string("Default")]
+        for name, mode in skin_codes.iteritems():
+            reference.append(mode)
+            if current_mode and current_mode == mode:
+                show_list.append(u"[B]-%s[/B]" % name)
+            else:
+                show_list.append(name)
+
+        # Append custom option to showlist including current mode if its custom
+        if current_mode and current_mode not in skin_codes.values():
+            custom = u"[B]-%s (%i)[/B]" % (self.get_local_string("Custom"), current_mode)
+        else:
+            custom = self.get_local_string("Custom")
+        show_list.append(custom)
+
+        # Display List to User
+        dialog = xbmcgui.Dialog()
+        ret = dialog.select(self.utils.get_skin_name(self.skinID), show_list)
+        if ret == 0:
+            self.debug("Reseting viewmode setting to default")
+            return ""
+        elif ret == len(show_list) - 1:
+            new_mode = self.ask_for_view_id(current_mode)
+            if new_mode:
+                self.debug("Saving new custom viewmode setting: %s", new_mode)
+            return new_mode
+        elif ret > 0:
+            new_mode = str(reference[ret])
+            self.debug("Saving new viewmode setting: %s", new_mode)
+            return new_mode
+
+    def ask_for_view_id(self, current_mode):
+        """ Ask the user what custom view mode to use """
+        dialog = xbmcgui.Dialog()
+        ret = dialog.numeric(0, self.get_local_string("Enter_number"), str(current_mode))
+        if ret:
+            return str(ret)
+        else:
+            return None
+
+
+@route("/internal/SavedSearches")
+class SavedSearches(VirtualFS):
+    """
+    Class used to list all saved searches for the addon that called it.
+    Usefull to add search support to addon that will also keep track of previous searches
+    Also contains option via context menu to remove old search terms.
+    """
+    searches = None
+
+    def start(self):
+        # Fetch list of current saved searches
+        self.searches = searches = self.set_storage(u"searchterms.json")
+
+        # Remove term from saved searches if remove argument was passed
+        if self.get("remove") in searches:
+            searches.remove(self.pop("remove"))
+            searches.sync()
+
+        # Show search dialog if search argument was passed or there is not search term saved
+        elif not searches or self.pop("search", None) is not None:
+            self.search_dialog()
+
+        # List all saved search terms
+        try:
+            return self.list_terms()
+        finally:
+            searches.close()
+
+    def search_dialog(self):
+        """ Show dialog for user to enter a new search term """
+        ret = self.utils.Keyboard("", self.get_local_string("Enter_search_string"), False)
+        if ret:
+            # Add searchTerm to database
+            self.searches.add(ret)
+            self.searches.sync()
+
+    def list_terms(self):
+        """ List all saved search terms """
+
+        # Create Speed vars
+        base_url = self["url"]
+        listitem = self.listitem
+        farwarding_route = self[u"route"]
+
+        # Add search listitem entry
+        item = listitem()
+        item.setLabel(u"[B]%s[/B]" % self.get_local_string("search"))
+        query = self.copy()
+        query["search"] = "true"
+        query["updatelisting"] = "true"
+        query["cachetodisc"] = "true"
+        item.update(query)
+        yield item.get(self)
+
+        # Create Context Menu item Params
+        str_remove = self.get_local_string("Remove")
+        query_cx = self.copy()
+        query_li = self.copy()
+
+        # Loop earch search item
+        for searchTerm in self.searches:
+            # Create listitem of Data
+            item = listitem()
+            item.setLabel(searchTerm.title())
+            query_li["url"] = base_url % searchTerm
+            item.update(query_li)
+
+            # Creatre Context Menu item to remove search item
+            query_cx["remove"] = searchTerm
+            item.menu_update(self, str_remove, **query_cx)
+
+            # Return Listitem data
+            yield item.get_route(farwarding_route)

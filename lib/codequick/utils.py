@@ -21,7 +21,7 @@ def get_addon_setting(addon_id, key):
 
     Raises:
         RuntimeError: If given addon id was not found.
-        UnicodeDecodeError: If unable to convert property from utf8 to unicode.
+        UnicodeError: If unable to convert property from utf8 to unicode.
     """
     return unicode(xbmcaddon.Addon(addon_id).getSetting(key), "utf8")
 
@@ -39,7 +39,7 @@ def get_addon_data(addon_id, key):
 
     Raises:
         RuntimeError: If given addon id was not found.
-        UnicodeDecodeError: If unable to convert property from utf8 to unicode.
+        UnicodeError: If unable to convert property from utf8 to unicode.
     """
     return unicode(xbmcaddon.Addon(addon_id).getAddonInfo(key), "utf8")
 
@@ -114,7 +114,7 @@ def keyboard(default="", heading="", hidden=False):
         unicode: The text that the user entered into text entry box.
 
     Raises:
-        UnicodeDecodeError: If unable to convert keyboard entry from utf8 to unicode.
+        UnicodeError: If unable to convert keyboard entry from utf8 to unicode.
     """
     kb = xbmc.Keyboard(default, heading, hidden)
     kb.doModal()
@@ -137,7 +137,7 @@ def get_skin_name(skin_id):
     """
     try:
         return get_addon_data(skin_id, "name")
-    except (RuntimeError, UnicodeDecodeError) as e:
+    except (RuntimeError, UnicodeError) as e:
         logger.debug("Unable to fetch skin name")
         logger.debug(e)
         return u"Unknown"

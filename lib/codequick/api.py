@@ -1,6 +1,5 @@
 # Standard Library Imports
 import collections
-import traceback
 import urlparse
 import logging
 import urllib
@@ -105,7 +104,7 @@ def route(route_pattern):
 
     def decorator(cls):
         _routes[cls] = route_pattern
-        cls._route = route_pattern
+        cls.route = route_pattern
         return cls
 
     return decorator
@@ -133,7 +132,7 @@ def run():
                 url = "plugin://%s/%s?%s" % (str(addonID), sys.argv[1], query)
 
         # Parse the passed arguments into a urlobject
-        Base._urlObject = urlObject = urlparse.urlsplit(url)
+        Base.urlObject = urlObject = urlparse.urlsplit(url)
         Base.handle = int(argv[1]) if argv[1].isdigit() else -1
 
         # Fetch class that matches route and call
@@ -159,17 +158,16 @@ def run():
     except Exception as e:
         xbmcplugin.endOfDirectory(Base.handle, succeeded=False)
         Base.notification(e.__class__.__name__, str(e), "error")
-
-        traceback.print_exc()
-        raise
-
+        logger.exception("Logging an uncaught exception")
+        KodiLogHandler.show_debug()
     else:
         logger.debug("# Total time to execute: %s", time.time() - before)
 
 
 class Base(collections.MutableMapping):
+    """ Base class for all working classes to inherit """
     __fanart = __icon = __path = __path_global = __profile = _type = _version = _devmode = __session = None
-    _route = __utils = __profile_global = _args = _urlObject = handle = None
+    _route = __utils = __profile_global = _args = urlObject = handle = None
 
     def __init__(self):
         pass
@@ -196,7 +194,7 @@ class Base(collections.MutableMapping):
             query = cls.urlencode(query)
 
         # Create addon url for kodi
-        _urlObject = cls._urlObject
+        _urlObject = cls.urlObject
         return urlparse.urlunsplit((_urlObject.scheme, _urlObject.netloc, str(route_pattern), query, ""))
 
     @classmethod
@@ -218,7 +216,7 @@ class Base(collections.MutableMapping):
         Returns:
             str: Plugin url that is used for kodi
         """
-        _urlObject = cls._urlObject
+        _urlObject = cls.urlObject
         querys_as_string = list(querys_as_string)
         if params:
             cls._args.update(params)
@@ -487,7 +485,7 @@ class Base(collections.MutableMapping):
             return _path
 
     @property
-    def _profile_global(self):
+    def profile_global(self):
         """
         Return path to script profile data directory as unicode
 
@@ -508,7 +506,7 @@ class Base(collections.MutableMapping):
         Return utils module object
 
         Returns:
-            object: utils modual object
+            utils: utils modual object
         """
         if self.__utils:
             return self.__utils
@@ -564,7 +562,7 @@ class Base(collections.MutableMapping):
             self.__session = session
             return session
 
-    def request_basic(self, max_age=60, max_retries=0):
+    def request_basic(self, max_age=60):
         """
         Return a basic emulated requests session object.
 
@@ -574,13 +572,12 @@ class Base(collections.MutableMapping):
 
         Args:
             max_age (int): The max age in minutes that the cache can be before it becomes stale (default 60)
-            max_retries (int): The maximum number of retries each connection should attempt (default 0)
 
         Returns:
             requests.session: emulated request session object
         """
         from . import urllib_caching
-        session = urllib_caching.cache_session(self.profile, 0 if u"refresh" in self else max_age, max_retries)
+        session = urllib_caching.cache_session(self.profile, 0 if u"refresh" in self else max_age)
 
         # Add user agent to session headers and return session
         session.headers["user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:43.0) Gecko/20100101 Firefox/43.0"
@@ -597,7 +594,7 @@ class Base(collections.MutableMapping):
             writeback (boolean, optional): Sync data back to disk on close. (default False)
 
         Returns:
-            dict: A persistence shelf storage object
+            ShelfStorage: A persistence shelf storage object
         """
         from .storage import ShelfStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -612,7 +609,7 @@ class Base(collections.MutableMapping):
             custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
 
         Returns:
-            dict: A persistence dict storage object
+            DictStorage: A persistence dict storage object
         """
         from .storage import DictStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -627,7 +624,7 @@ class Base(collections.MutableMapping):
             custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
 
         Returns:
-            list: A persistence list strage object
+            ListStorage: A persistence list strage object
         """
         from .storage import ListStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -642,7 +639,7 @@ class Base(collections.MutableMapping):
             custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
 
         Returns:
-            set: A persistence set storage object
+            SetStorage: A persistence set storage object
         """
         from .storage import SetStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -670,6 +667,7 @@ class Base(collections.MutableMapping):
 
 class KodiLogHandler(logging.Handler):
     """ Custom Logger Handler to forward logs to kodi """
+    _debug_msgs = []
     log_level_map = {0: 0,
                      10: xbmc.LOGDEBUG,
                      20: xbmc.LOGINFO,
@@ -681,6 +679,21 @@ class KodiLogHandler(logging.Handler):
         """ Forward the log record to kodi to let kodi handle the logging """
         formated_msg = self.format(record)
         xbmc.log(formated_msg, self.log_level_map[record.levelno])
+        if record.levelno == 10:
+            self._debug_msgs.append(record.getMessage())
+
+    @classmethod
+    def show_debug(cls):
+        """
+        Log all debug messages as error messages.
+
+        Useful to show debug messages in normal mode if any severe error occurred.
+        """
+        if cls._debug_msgs:
+            xbmc.log("###### debug ######", xbmc.LOGINFO)
+            for msg in cls._debug_msgs:
+                xbmc.log(msg, xbmc.LOGERROR)
+            xbmc.log("###### debug ######", xbmc.LOGINFO)
 
 # Logging
 formatter = logging.Formatter("[%(name)s]: %(message)s")

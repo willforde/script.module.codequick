@@ -23,7 +23,7 @@ def _full_cache_dir(cache_dir):
     return os.path.join(cache_dir, u"cache-basic")
 
 
-def cache_session(cache_dir, max_age=0, max_retries=0):
+def cache_session(cache_dir, max_age=0):
     """
     Create request session with support for http caching
 
@@ -40,7 +40,7 @@ def cache_session(cache_dir, max_age=0, max_retries=0):
 
     # Create a HTTPAdapter Object to be used in requests
     cache_dir = _full_cache_dir(cache_dir)
-    adapter = CacheAdapter(cache_dir, max_age, max_retries=max_retries)
+    adapter = CacheAdapter(cache_dir, max_age)
 
     # Mount The new adapter to the current request session
     session.mount(adapter)
@@ -60,16 +60,17 @@ class RequestRes(object):
 
         # Check if Response need to be decoded, else return raw response
         charset = headers.getparam("charset") or headers.getparam("encoding")
-        if charset: self.encoding = charset
-        contentEncoding = headers.get(u"content-encoding")
+        if charset:
+            self.encoding = charset
+        content_encoding = headers.get(u"content-encoding")
 
         # If content is compressed then decompress and decode into unicode
         try:
             print
             "# len compressed", len(content)
-            if contentEncoding and "gzip" in contentEncoding:
+            if content_encoding and "gzip" in content_encoding:
                 content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
-            elif contentEncoding and "deflate" in contentEncoding:
+            elif content_encoding and "deflate" in content_encoding:
                 content = zlib.decompress(content)
 
         except zlib.error as e:
@@ -88,34 +89,35 @@ class RequestRes(object):
         else:
             # Convert html to unicode
             try:
-                unicodeData = unicode(self.content, self.encoding if self.encoding else "utf8")
-            except:
-                unicodeData = unicode(self.content, "iso-8859-1")
+                unicode_data = unicode(self.content, self.encoding if self.encoding else "utf8")
+            except UnicodeError:
+                unicode_data = unicode(self.content, "iso-8859-1")
 
             # Unescape the content if requested
-            return self._unescape(unicodeData)
+            return self._unescape(unicode_data)
 
-    def _unescape(self, text):
+    @staticmethod
+    def _unescape(text):
         # Add None Valid HTML Entities
         htmlentitydefs.name2codepoint["apos"] = 0x0027
 
         def fixup(m):
             # Fetch Text from Group
-            text = m.group(0)
+            escaped_text = m.group(0)
             # Check if Character is A Character Reference or Named Entity
-            if text[:2] == "&#":  # Character Reference
+            if escaped_text[:2] == "&#":  # Character Reference
                 try:
-                    if text[:3] == "&#x":
-                        return unichr(int(text[3:-1], 16))
+                    if escaped_text[:3] == "&#x":
+                        return unichr(int(escaped_text[3:-1], 16))
                     else:
-                        return unichr(int(text[2:-1]))
+                        return unichr(int(escaped_text[2:-1]))
                 except ValueError:
-                    return text
+                    return escaped_text
             else:  # Named Entity
                 try:
-                    return unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                    return unichr(htmlentitydefs.name2codepoint[escaped_text[1:-1]])
                 except KeyError:
-                    return text
+                    return escaped_text
 
         # Return Clean string using accepted encoding
         return re.sub("&#?\w+;", fixup, text)
@@ -140,14 +142,15 @@ class Session(object):
     def mount(self, adapter):
         self.handleList.append(adapter)
 
-    def request(self, method, url, params=None, data=None, headers=None, timeout=None):
+    def request(self, method, url, params=None, data=None, _=None, timeout=None):
         if params:
             params = urllib.urlencode(params)
-            urlParts = urlparse.urlsplit(url)
-            url = urlparse.urlunsplit((urlParts.scheme, urlParts.netloc, urlParts.path, params, urlParts.fragment))
+            url_parts = urlparse.urlsplit(url)
+            url = urlparse.urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, params, url_parts.fragment))
 
         headers = self.headers.copy()
-        if headers: headers.update(headers)
+        if headers:
+            headers.update(headers)
 
         if self.__opener:
             opener = self.__opener
@@ -171,15 +174,16 @@ class Session(object):
 
 
 class CacheAdapter(urllib2.BaseHandler):
-    def __init__(self, cache_dir, max_age, *args, **kwargs):
+    def __init__(self, cache_dir, max_age):
         self._cache_dir = cache_dir
         self._max_age = max_age
         self.from_cache = False
         self._cache = None
         self._before = None
 
-    def http_request(self, request):
-        ''' Add Accept-Encoding & User-Agent Headers '''
+    @staticmethod
+    def http_request(request):
+        """ Add Accept-Encoding & User-Agent Headers """
         request.add_header("Accept-encoding", "gzip, deflate")
         request.add_header("Accept-language", "en-gb,en-us,en")
         return request
@@ -191,8 +195,8 @@ class CacheAdapter(urllib2.BaseHandler):
         if request.get_method() == "GET":
             # Initialize Cache Handler
             url = request.get_full_url()
-            hash = self._encode_url(url)
-            self._cache = cache = CacheHandler(self._cache_dir, hash, preload_content=True)
+            hash_file = self._encode_url(url)
+            self._cache = cache = CacheHandler(self._cache_dir, hash_file, preload_content=True)
             if cache.exists():
                 if cache.fresh(max_age):
                     # Build the request response and return
@@ -209,9 +213,9 @@ class CacheAdapter(urllib2.BaseHandler):
     @staticmethod
     def _encode_url(url):
         """ Return url as a sha1 encoded hash """
-        if "#" in url: url = url[:url.find("#")]
-        hash = hashlib.sha1(url).hexdigest()
-        return hash
+        if "#" in url:
+            url = url[:url.find("#")]
+        return hashlib.sha1(url).hexdigest()
 
     def http_response(self, request, response):
         if self.from_cache:
@@ -220,8 +224,8 @@ class CacheAdapter(urllib2.BaseHandler):
             logger.debug("HTTP Request took %s seconds to complete", time.time() - self._before)
             # Create cache object if for some reason it was not already created
             if self._cache is None:
-                hash = self._encode_url(request.get_full_url())
-                self._cache = CacheHandler(self._cache_dir, hash, preload_content=False)
+                hash_file = self._encode_url(request.get_full_url())
+                self._cache = CacheHandler(self._cache_dir, hash_file, preload_content=False)
 
             # Check for a 304 Not Modified Response and use cache if true
             if response.code == 304:
@@ -258,9 +262,9 @@ class CacheHandler(object):
     hash : string or unicode --- sha256 hash of the url of the request to be cached
     """
 
-    def __init__(self, cache_dir, hash, preload_content=False):
+    def __init__(self, cache_dir, hash_file, preload_content=False):
         # Construct the full path to cache
-        self._cache_path = os.path.join(cache_dir, hash)
+        self._cache_path = os.path.join(cache_dir, hash_file)
         self._response = None
 
         # Check if there is a cache for giving url
@@ -276,11 +280,10 @@ class CacheHandler(object):
         """ Load the content of cache into memory """
         self._response = self.deserialize()
 
-    @staticmethod
-    def delete(path):
+    def delete(self):
         """ Delete cache on disk"""
         try:
-            os.remove(path)
+            os.remove(self._cache_path)
         except OSError:
             logger.debug("Cache Error: Unable to delete cache from disk")
         self.close()
@@ -288,7 +291,8 @@ class CacheHandler(object):
     @property
     def response(self):
         """ Return the cache response as a urllib3 HTTPResponse """
-        if "timestamp" in self._response: del self._response["timestamp"]
+        if "timestamp" in self._response:
+            del self._response["timestamp"]
         return functools.partial(HTTPResponse, self._response["body"], self._response["headers"],
                                  self._response["status"], self._response["reason"])
 
@@ -301,8 +305,10 @@ class CacheHandler(object):
         new_headers = {}
 
         # Check for conditional headers
-        if "etag" in headers: new_headers["If-None-Match"] = headers["etag"]
-        if "last-modified" in headers: new_headers["If-Modified-Since"] = headers["last-modified"]
+        if "etag" in headers:
+            new_headers["If-None-Match"] = headers["etag"]
+        if "last-modified" in headers:
+            new_headers["If-Modified-Since"] = headers["last-modified"]
         return new_headers
 
     def deserialize(self):
@@ -312,12 +318,12 @@ class CacheHandler(object):
             # Fetch raw cache data
             with open(self._cache_path, "rb") as stream:
                 raw_data = stream.read()
-        except IOError, OSError:
-            self.delete(self._cache_path)
+        except (IOError, OSError):
+            self.delete()
             return None
         else:
             if not raw_data:
-                self.delete(self._cache_path)
+                self.delete()
                 return None
 
         try:
@@ -326,11 +332,11 @@ class CacheHandler(object):
             cached = json.loads(uncompressed)
             cached["body"] = base64.b64decode(str(cached["body"]))
             cached["headers"] = httplib.HTTPMessage(StringIO.StringIO(base64.b64decode(str(cached["headers"]))))
-        except ValueError, TypeError:
-            self.delete(self._cache_path)
+        except (ValueError, TypeError):
+            self.delete()
             return None
         except zlib.error:
-            self.delete(self._cache_path)
+            self.delete()
             return None
         else:
             return cached
@@ -343,9 +349,14 @@ class CacheHandler(object):
         """ Return True if cache is fresh else False """
         if max_age == 0:
             return False
+        elif max_age < 0:
+            return True
+        elif self._response["status"] == 301:
+            return True
+        elif (time.time() - self._response.get("timestamp", 0)) < max_age * 60:
+            return True
         else:
-            return max_age < 0 or self._response["status"] == 301 or (time.time() - self._response.get("timestamp",
-                                                                                                       0)) < max_age * 60
+            return False
 
     def update_cache(self, response=None):
         """
@@ -358,7 +369,8 @@ class CacheHandler(object):
         """
 
         # Fetch response if not giving one
-        if response is None: response = self._response.copy()
+        if response is None:
+            response = self._response.copy()
 
         # Set the timestamp of the response
         response["timestamp"] = time.time()
@@ -369,14 +381,14 @@ class CacheHandler(object):
 
         # Serialize the whole response
         try:
-            jsonSerial = json.dumps(response, ensure_ascii=True, indent=4, separators=(",", ":"))
+            json_serial = json.dumps(response, ensure_ascii=True, indent=4, separators=(",", ":"))
         except TypeError:
             logger.debug("Cache Error: Failed to serialize the response using json")
             return None
 
         # Compress the json Serialized response
         try:
-            compressed = zlib.compress(jsonSerial, 1)
+            compressed = zlib.compress(json_serial, 1)
         except zlib.error:
             logger.debug("Cache Error: Failed to compress serialized response")
             return None
@@ -385,9 +397,9 @@ class CacheHandler(object):
         try:
             with open(self._cache_path, "wb") as stream:
                 stream.write(compressed)
-        except IOError, OSError:
+        except (IOError, OSError):
             logger.debug("Cache Error: Failed to Save serialized response to disk")
-            self.delete(self._cache_path)
+            self.delete()
             return None
 
     def cache_response(self, response, body=None):
@@ -397,11 +409,13 @@ class CacheHandler(object):
         response : urllib3 response object --- A urllib3 response that was returned from the server
         [body] : string --- Separated response body to use, uses body from response if body is not giving (default None)
         """
-        if body is None: body = response.read()
+        if body is None:
+            body = response.read()
         headers = response.info()
 
         # Remove Transfer-Encoding from header if response was a chunked response
-        if "transfer-encoding" in headers: del headers["transfer-encoding"]
+        if "transfer-encoding" in headers:
+            del headers["transfer-encoding"]
 
         # Create response data structure
         data = {"body": body,

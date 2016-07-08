@@ -65,27 +65,27 @@ class CacheAdapter(HTTPAdapter):
         """
 
         # Fetch time of last cleanup operation
-        lastTime = addonData.get_setting("_lastcleanup")
+        last_time = addonData.get_setting("_lastcleanup")
         try:
-            lastTime = float(lastTime) + 1209600  # Every 14 Days
+            last_time = float(last_time) + 1209600  # Every 14 Days
         except ValueError:
-            lastTime = 0
+            last_time = 0
 
         # Cleanup if lasttime + 28 days is still less than current time
-        currentTime = time.time()
-        if lastTime < currentTime:
+        current_time = time.time()
+        if last_time < current_time:
             logger.debug("Initiating Cache Cleanup...")
 
             # Loop each file within urlcache folder
-            for hash in os.listdir(self._cache_dir):
+            for hash_file in os.listdir(self._cache_dir):
                 # Load Cache and check if stale
-                cache = CacheHandler(self._cache_dir, hash, preload_content=True)
+                cache = CacheHandler(self._cache_dir, hash_file, preload_content=True)
                 if cache.exists() and cache.fresh(60 * 24 * 14) is False:
-                    logger.debug("Removing cache: %s", hash)
+                    logger.debug("Removing cache: %s", hash_file)
                     cache.delete()
 
-            # Save currentTime of cleanup for later use
-            addonData.set_setting(u"_lastcleanup", str(currentTime))
+            # Save current_time of cleanup for later use
+            addonData.set_setting(u"_lastcleanup", str(current_time))
 
     def __init__(self, cache_dir, max_age, *args, **kwargs):
         # Call Parent init method
@@ -108,8 +108,8 @@ class CacheAdapter(HTTPAdapter):
         # Cache only handle's get requests
         if request.method == "GET":
             # Initialize Cache Handler
-            hash = self._encode_url(request.url)
-            self._cache = cache = CacheHandler(self._cache_dir, hash, preload_content=True)
+            hash_file = self._encode_url(request.url)
+            self._cache = cache = CacheHandler(self._cache_dir, hash_file, preload_content=True)
             if cache.exists():
                 if cache.fresh(max_age):
                     # Build the request response and return
@@ -134,8 +134,8 @@ class CacheAdapter(HTTPAdapter):
         if from_cache is False and request.method == "GET":
             # Create cache object if for some reason it was not already created
             if self._cache is None:
-                hash = self._encode_url(request.url)
-                self._cache = CacheHandler(self._cache_dir, hash, preload_content=False)
+                hash_file = self._encode_url(request.url)
+                self._cache = CacheHandler(self._cache_dir, hash_file, preload_content=False)
 
             # Check for a 304 Not Modified Response and use cache if true
             if response.status == 304:
@@ -173,9 +173,9 @@ class CacheAdapter(HTTPAdapter):
     @staticmethod
     def _encode_url(url):
         """ Return url as a sha1 encoded hash """
-        if "#" in url: url = url[:url.find("#")]
-        hash = hashlib.sha1(url).hexdigest()
-        return hash
+        if "#" in url:
+            url = url[:url.find("#")]
+        return hashlib.sha1(url).hexdigest()
 
     def close(self):
         """ Reset instance variables """
@@ -193,10 +193,10 @@ class CacheHandler(object):
     hash : string or unicode --- sha256 hash of the url of the request to be cached
     """
 
-    def __init__(self, cache_dir, hash, preload_content=True):
+    def __init__(self, cache_dir, hash_file, preload_content=True):
         # Construct the full path to cache
-        logger.debug("Hash => %s", hash)
-        self._cache_path = os.path.join(cache_dir, hash)
+        logger.debug("Hash => %s", hash_file)
+        self._cache_path = os.path.join(cache_dir, hash_file)
         self._response = None
 
         # Check if there is a cache for giving url
@@ -214,11 +214,10 @@ class CacheHandler(object):
         """ Load the content of cache into memory """
         self._response = self.deserialize()
 
-    @staticmethod
-    def delete(path):
+    def delete(self):
         """ Delete cache on disk"""
         try:
-            os.remove(path)
+            os.remove(self._cache_path)
         except OSError:
             logger.debug("Cache Error: Unable to delete cache from disk")
         self.close()
@@ -226,7 +225,8 @@ class CacheHandler(object):
     @property
     def response(self):
         """ Return the cache response as a urllib3 HTTPResponse """
-        if "timestamp" in self._response: del self._response["timestamp"]
+        if "timestamp" in self._response:
+            del self._response["timestamp"]
         body = io.BytesIO(self._response.pop("body"))
         return HTTPResponse(body=body, preload_content=False, **self._response)
 
@@ -239,8 +239,10 @@ class CacheHandler(object):
         new_headers = {}
 
         # Check for conditional headers
-        if "etag" in headers: new_headers["If-None-Match"] = headers["etag"]
-        if "last-modified" in headers: new_headers["If-Modified-Since"] = headers["last-modified"]
+        if "etag" in headers:
+            new_headers["If-None-Match"] = headers["etag"]
+        if "last-modified" in headers:
+            new_headers["If-Modified-Since"] = headers["last-modified"]
         return new_headers
 
     def deserialize(self):
@@ -250,14 +252,14 @@ class CacheHandler(object):
             # Fetch raw cache data
             with open(self._cache_path, "rb") as stream:
                 raw_data = stream.read()
-        except IOError, OSError:
+        except (IOError, OSError):
             logger.debug("Cache Error: Failed to read cache from disk")
-            self.delete(self._cache_path)
+            self.delete()
             return None
         else:
             if not raw_data:
                 logger.debug("Cache Error: Cache was empty")
-                self.delete(self._cache_path)
+                self.delete()
                 return None
 
         try:
@@ -267,13 +269,13 @@ class CacheHandler(object):
             cached["body"] = base64.b64decode(str(cached["body"]))
             cached["headers"] = {key: unicode(base64.b64decode(str(value))) for key, value in
                                  cached["headers"].iteritems()}
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             logger.debug("Cache Error: Failed to deserialize the contents of the cache")
-            self.delete(self._cache_path)
+            self.delete()
             return None
         except zlib.error:
             logger.debug("Cache Error: Failed to Decompress Stored Cache")
-            self.delete(self._cache_path)
+            self.delete()
             return None
         else:
             return cached
@@ -286,9 +288,14 @@ class CacheHandler(object):
         """ Return True if cache is fresh else False """
         if max_age == 0:
             return False
+        elif max_age < 0:
+            return True
+        elif self._response["status"] == 301:
+            return True
+        elif (time.time() - self._response.get("timestamp", 0)) < max_age * 60:
+            return True
         else:
-            return max_age < 0 or self._response["status"] == 301 or (time.time() - self._response.get("timestamp",
-                                                                                                       0)) < max_age * 60
+            return False
 
     def update_cache(self, response=None):
         """
@@ -301,7 +308,8 @@ class CacheHandler(object):
         """
 
         # Fetch response if not giving one
-        if response is None: response = self._response.copy()
+        if response is None:
+            response = self._response.copy()
 
         # Set the timestamp of the response
         response["timestamp"] = time.time()
@@ -312,14 +320,14 @@ class CacheHandler(object):
 
         # Serialize the whole response
         try:
-            jsonSerial = json.dumps(response, ensure_ascii=True, indent=4, separators=(",", ":"))
+            json_serial = json.dumps(response, ensure_ascii=True, indent=4, separators=(",", ":"))
         except TypeError:
             logger.debug("Cache Error: Failed to serialize the response using json")
             return None
 
         # Compress the json Serialized response
         try:
-            compressed = zlib.compress(jsonSerial, 1)
+            compressed = zlib.compress(json_serial, 1)
         except zlib.error:
             logger.debug("Cache Error: Failed to compress serialized response")
             return None
@@ -330,7 +338,7 @@ class CacheHandler(object):
                 stream.write(compressed)
         except (IOError, OSError):
             logger.debug("Cache Error: Failed to Save serialized response to disk")
-            self.delete(self._cache_path)
+            self.delete()
             return None
 
     def cache_response(self, response, body=None):
@@ -340,11 +348,13 @@ class CacheHandler(object):
         response : urllib3 response object --- A urllib3 response that was returned from the server
         [body] : string --- Separated response body to use, uses body from response if body is not giving (default None)
         """
-        if body is None: body = response.read(decode_content=False)
+        if body is None:
+            body = response.read(decode_content=False)
         headers = response.headers
 
         # Remove Transfer-Encoding from header if response was a chunked response
-        if "transfer-encoding" in headers: del headers["transfer-encoding"]
+        if "transfer-encoding" in headers:
+            del headers["transfer-encoding"]
 
         # Create response data structure
         data = {"body": body,
