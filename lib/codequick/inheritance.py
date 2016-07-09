@@ -37,8 +37,8 @@ class ListItem(_listItem):
     _imageGlobal = None
     _sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
                  "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
-                 "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, int),
-                 "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, None),
+                 "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),
+                 "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, int),
                  "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
                  "episode": (xbmcplugin.SORT_METHOD_EPISODE, int)}
 

@@ -148,9 +148,9 @@ class Session(object):
             url_parts = urlparse.urlsplit(url)
             url = urlparse.urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, params, url_parts.fragment))
 
-        headers = self.headers.copy()
+        req_headers = self.headers.copy()
         if headers:
-            headers.update(headers)
+            req_headers.update(headers)
 
         if self.__opener:
             opener = self.__opener
@@ -162,7 +162,7 @@ class Session(object):
             response = opener.open(request, timeout=timeout)
             return RequestRes(response)
         elif method.lower() == "post":
-            request = urllib2.Request(url, data, headers if headers else None)
+            request = urllib2.Request(url, data, req_headers if req_headers else None)
             response = opener.open(request, timeout=timeout)
             return RequestRes(response)
 
@@ -192,9 +192,10 @@ class CacheAdapter(urllib2.BaseHandler):
         max_age = 0 if refresh is True else int(request.headers.pop("X-Max-Age", self._max_age))
         self.from_cache = False
 
-        if request.get_method() == "GET":
+        url = request.get_full_url()
+        method = request.get_method()
+        if method == "GET":
             # Initialize Cache Handler
-            url = request.get_full_url()
             hash_file = self._encode_url(url)
             self._cache = cache = CacheHandler(self._cache_dir, hash_file, preload_content=True)
             if cache.exists():
@@ -208,6 +209,7 @@ class CacheAdapter(urllib2.BaseHandler):
                         request.add_header(key, value)
 
         if self.from_cache is False:
+            logger.debug("%s Requesting Url: %s", method, url)
             self._before = time.time()
 
     @staticmethod

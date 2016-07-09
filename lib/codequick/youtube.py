@@ -182,7 +182,8 @@ class APIControl(object):
         Check the type of content_id we have and return the required ID for wanted type
 
         Args:
-            content_id (str): ID of Youtube content to add, Channel Name, Channel ID, Channel Uploads ID or Playlist ID
+            content_id (basestring): ID of Youtube content to add, Channel Name, Channel ID, Channel Uploads ID or
+                                     Playlist ID
             return_playlist_id (bool): True to return a playlistID/uploadID or False for channelID (default True)
         """
 
@@ -242,14 +243,14 @@ class APIControl(object):
             else:
                 fanart = None
             data = {"title": title, "description": description, "playlistID": playlist_id, "fanart": fanart}
-            channel_data[item[u"channel_id"]] = data
+            channel_data[item[u"id"]] = data
 
         # Sync cache to disk
         channel_data.sync()
 
         # Return the Channel ID of the first item, needed when using for_username
         if for_username:
-            return feed[u"items"][0][u"channel_id"]
+            return feed[u"items"][0][u"id"]
         else:
             return None
 
@@ -269,22 +270,22 @@ class APIControl(object):
             category_data[item[u"cat_id"]] = item[u"snippet"][u"title"]
         category_data.sync()
 
-    def update_video_cache(self, video_ids):
+    def update_video_cache(self, ids):
         """
         Update on disk cache of video information
 
-        video_ids : list or string or unicode --- ID(s) of videos to fetch information for
+        ids : list or string or unicode --- ID(s) of videos to fetch information for
         """
 
         # Fetch video information
         video_database = self._video_data
         category_data = self._category_data
-        feed = self.api.videos(video_ids)
+        feed = self.api.videos(ids)
 
         # Add data to cache
         check_categories = True
         for video in feed[u"items"]:
-            video_database[video["video_ids"]] = video
+            video_database[video["ids"]] = video
             if check_categories and not video["snippet"]["categoryId"] in category_data:
                 self.update_category_cache()
                 check_categories = False
@@ -296,11 +297,8 @@ class APIControl(object):
         Can pass in any one of the 2 arguments, but if both are giving then channel_id has priority
 
         Args:
-            content_id (str): Channel ID or Channel Name to list playlists for, usefull when unsure of the type
-            channel_id (str): ID of the channel to list playlists for when the channel ID is known
-
-        Yield:
-            tuple:
+            content_id (basestring): Channel ID or Channel Name to list playlists for, usefull when unsure of the type
+            channel_id (basestring): ID of the channel to list playlists for when the channel ID is known
         """
 
         # Fetch channel ID
@@ -429,7 +427,7 @@ class APIControl(object):
 
             # Fetch video snippet & content_details
             snippet = video_data[u"snippet"]
-            content_details = video_data[u"content_details"]
+            content_details = video_data[u"contentDetails"]
 
             # Create listitem object
             item = listitem()
@@ -521,7 +519,7 @@ class API(object):
         # Setup Instance vars
         self.language = lang
         self.req_session = req_session
-        self.default_params = {"max_results": max_results, "pretty_print": pretty_print, "key": key}
+        self.default_params = {"maxResults": max_results, "prettyPrint": pretty_print, "key": key}
 
     def _connect_v3(self, api_type, params, max_age=None):
         """
@@ -563,42 +561,42 @@ class API(object):
         # Set parameters
         params = self.default_params.copy()
         params["fields"] = \
-            u"items(channel_id,brandingSettings/image/bannerTvMediumImageUrl,\
+            u"items(id,brandingSettings/image/bannerTvMediumImageUrl,\
             contentDetails/relatedPlaylists/uploads,snippet/localized)"
         params["part"] = u"contentDetails,brandingSettings,snippet"
         params["hl"] = self.language
 
         # Add the channel_id or channel name of the channel to params
         if channel_id:
-            params["channel_id"] = channel_id
+            params["id"] = channel_id
         elif for_username:
-            params["for_username"] = for_username
+            params["forUsername"] = for_username
         else:
             raise ValueError("No valid Argument was giving for channels")
 
         # Connect to server and return json response
         return self._connect_v3("channels", params)
 
-    def video_categories(self, cat_ids=None, region_code="us"):
+    def video_categories(self, cat_id=None, region_code="us"):
         """
-        Return the categorie names for giving cat_ids(s)
+        Return the categorie names for giving id(s)
 
-        [cat_ids] : list or string or unicode --- ID(s) of the categories to fetch category names for. (default None)
-        [region_code] : string or unicode --- the region code for the categories ids (default us)
+        [id] : list or string or unicode --- ID(s) of the categories to fetch category names for. (default None)
+        [regionCode] : string or unicode --- the region code for the categories ids (default us)
 
-        If no cat_ids(s) are giving then all category ids are fetched for giving region that will default to US
+        If no id(s) are giving then all category ids are fetched for giving region that will default to US
         """
 
         # Set parameters
         params = self.default_params.copy()
-        params["fields"] = u"items(cat_ids,snippet/title)"
+        params["fields"] = u"items(id,snippet/title)"
         params["part"] = u"snippet"
         params["hl"] = self.language
-        params["region_code"] = region_code
+        params["regionCode"] = region_code
 
-        # Set mode of fetching, by cat_ids or region
-        if cat_ids:
-            params["cat_ids"] = cat_ids
+        # Set mode of fetching, by id or region
+        if cat_id:
+            params["id"] = cat_id
 
         # Fetch video Information
         return self._connect_v3("videoCategories", params)
@@ -615,7 +613,7 @@ class API(object):
         params = self.default_params.copy()
         params["fields"] = u"nextPageToken,items(snippet(channelId,resourceId/videoId),status/privacyStatus)"
         params["part"] = u"snippet,status"
-        params["playlist_id"] = playlist_id
+        params["playlistId"] = playlist_id
 
         # Add pageToken if exists
         if pagetoken:
@@ -637,7 +635,7 @@ class API(object):
                             categoryId,localized),contentDetails(duration,definition),statistics/viewCount)"
         params["part"] = u"contentDetails,statistics,snippet"
         params["hl"] = self.language
-        params["video_id"] = video_id
+        params["id"] = video_id
 
         # Connect to server and return json response
         return self._connect_v3("videos", params)

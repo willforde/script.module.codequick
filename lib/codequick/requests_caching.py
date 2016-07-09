@@ -102,7 +102,7 @@ class CacheAdapter(HTTPAdapter):
         and return cached response if so. Else forward on the said request
         """
 
-        logger.debug("%s Requesting Url %s", request.method, request.url)
+        logger.debug("%s Requesting Url: %s", request.method, request.url)
         max_age = 0 if refresh is True else int(request.headers.pop("X-Max-Age", self._max_age))
 
         # Cache only handle's get requests

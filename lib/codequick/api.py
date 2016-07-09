@@ -33,7 +33,7 @@ def translate_path(path):
         "/home/user/.kodi/user/.kodi/userdata/addon_data/"
 
     Args:
-        path (str|unicode): Path to translate to absolute path.
+        path (basestring): Path to translate to absolute path.
 
     Returns:
         unicode: The translated path.
@@ -49,7 +49,7 @@ def cls_for_route(route_pattern, raise_on_error=False):
     Return class thats associated with specified route.
 
     Args:
-        route_pattern (str|unicode): Route thats associated with a class.
+        route_pattern (bytestring): Route thats associated with a class.
         raise_on_error (bool, optional): True if a KeyError will be raised if no class was found for specified route.
                                          (default False)
     Returns:
@@ -670,7 +670,7 @@ class KodiLogHandler(logging.Handler):
     _debug_msgs = []
     log_level_map = {0: 0,
                      10: xbmc.LOGDEBUG,
-                     20: xbmc.LOGINFO,
+                     20: xbmc.LOGNOTICE,
                      30: xbmc.LOGWARNING,
                      40: xbmc.LOGERROR,
                      50: xbmc.LOGSEVERE}
@@ -690,10 +690,10 @@ class KodiLogHandler(logging.Handler):
         Useful to show debug messages in normal mode if any severe error occurred.
         """
         if cls._debug_msgs:
-            xbmc.log("###### debug ######", xbmc.LOGINFO)
+            xbmc.log("###### debug ######", xbmc.LOGNOTICE)
             for msg in cls._debug_msgs:
-                xbmc.log(msg, xbmc.LOGERROR)
-            xbmc.log("###### debug ######", xbmc.LOGINFO)
+                xbmc.log(msg, xbmc.LOGNOTICE)
+            xbmc.log("###### debug ######", xbmc.LOGNOTICE)
 
 # Logging
 formatter = logging.Formatter("[%(name)s]: %(message)s")
