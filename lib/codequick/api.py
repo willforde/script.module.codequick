@@ -28,15 +28,24 @@ def translate_path(path):
     """
     Translate a kodi special path into an absolute path.
 
-    Example:
-        >>> translate_path('special://profile/')
-        "/home/user/.kodi/user/.kodi/userdata/addon_data/"
+    Notes
+    -----
+    Only useful if you are coding for both Linux and Windows.
 
-    Args:
-        path (basestring): Path to translate to absolute path.
+    Parameters
+    ----------
+    path : bytestring
+        Returns the translated path.
 
-    Returns:
-        unicode: The translated path.
+    Returns
+    -------
+    unicode
+        The translated path.
+
+    Example
+    -------
+    >>> translate_path('special://profile/')
+    '/home/user/.kodi/user/.kodi/userdata/addon_data/'
     """
     if path[:10] == "special://":
         return unicode(xbmc.translatePath(path), "utf8")
@@ -48,15 +57,23 @@ def cls_for_route(route_pattern, raise_on_error=False):
     """
     Return class thats associated with specified route.
 
-    Args:
-        route_pattern (bytestring): Route thats associated with a class.
-        raise_on_error (bool, optional): True if a KeyError will be raised if no class was found for specified route.
-                                         (default False)
-    Returns:
-        class: Return the class that matchs the given route pattern.
+    Parameters
+    ----------
+    route_pattern : bytestring
+        Route thats associated with a class.
+    raise_on_error : bool, optional(default=False)
+        True if a KeyError will be raised if no class was found for specified route.
 
-    Raises:
-        KeyError: When no class if found that matchs route pattern.
+    Returns
+    -------
+    :class:`Base`, optional
+        Return the class that matchs the given route pattern.
+        Will return 'None' if no class was found for route pattern and raise_on_error was set to False.
+
+    Raises
+    ------
+    KeyError
+        When no class if found that matchs route pattern.
     """
     route_pattern = str(route_pattern)
     for cls, pattern in _routes.iteritems():
@@ -76,16 +93,23 @@ def localized(strings):
 
     String:id pairs are used to allow accessing localized strings using string value instead of string id.
 
-    Example:
-        >>> Base.get_local_string(31010)
-        "essai" # testing localized to french
+    Parameters
+    ----------
+    strings : dict
+        string:id pairs to add to the local string database.
 
-        >>> localized({"testing":31010})
-        >>> Base.get_local_string("testing")
-        "essai" # testing localized to french
+    Example
+    -------
+    Here we want to print a french localized string for the string 'testing'. This
+    can be requested using the string id '31010' or by using the string reference 'testing'.
+    But to use the reference you first have to asign the reference to a string id.
 
-    Args:
-        strings (dict): string:id pairs to add to the local string database.
+    >>> Base.get_local_string(31010)
+    "essai"
+
+    >>> localized({"testing":31010})
+    >>> Base.get_local_string("testing")
+    "essai"
     """
     _strings.update(strings)
 
@@ -94,11 +118,15 @@ def route(route_pattern):
     """
     Decorator to bind a class to a route that can be called via route dispatcher.
 
-    Args:
-        route_pattern (str|unicode): The route that will point to the bind class.
+    Parameters
+    ----------
+    route_pattern : bytestring
+        The route pattern that will point to the bind class.
 
-    Returns:
-        class: Decorated class
+    Returns
+    -------
+    class
+        Decorated class.
     """
     route_pattern = str(route_pattern.lower())
 
@@ -152,6 +180,7 @@ def run():
             Base._args = {}
 
         # Execute Main Program
+        # noinspection PyCallingNonCallable
         cls()
 
     # Handle any exception with the buggalo module
@@ -165,7 +194,26 @@ def run():
 
 
 class Base(collections.MutableMapping):
-    """ Base class for all working classes to inherit """
+    """
+    Base class for all working classes to inherit.
+
+    Attributes
+    ----------
+    id : unicode
+        ID of addon.
+    name : unicode
+        Name of addon.
+    fanart : unicode
+        Path to addon fanart.
+    icon : unicode
+        Path to addon icon.
+    path : unicode
+        Path to addon source directory.
+    profile : unicode
+        Path to addon profile data directory.
+    profile_global : unicode
+        Path to script profile data directory.
+    """
     __fanart = __icon = __path = __path_global = __profile = _type = _version = _devmode = __session = None
     _route = __utils = __profile_global = _args = urlObject = handle = None
 
@@ -177,16 +225,22 @@ class Base(collections.MutableMapping):
         """
         Return addon url for callback by kodi as string
 
-        Example:
-            >>> Base.url_for_route("/videos", {"url":"http://www.google.ie}")
-            "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie"
+        Parameters
+        ----------
+        route_pattern : unicode
+            Route of class that will be called when addon is called from kodi
+        query : dict, optional
+            Query dict that will be urlencode and appended to url
 
-        Args:
-            route_pattern (str): Route of class that will be called when addon is called from kodi
-            query (dict, optional): Query dict that will be urlencode and appended to url
+        Returns
+        -------
+        str
+            Plugin url that is used for kodi
 
-        Returns:
-            str: Plugin url that is used for kodi
+        Example
+        -------
+        >>> Base.url_for_route(u"/videos", {"url":"http://www.google.ie}")
+        "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie"
         """
 
         # UrlEncode query dict if required
@@ -200,21 +254,27 @@ class Base(collections.MutableMapping):
     @classmethod
     def url_for_current(cls, params=None, *querys_as_string):
         """
-        Return addon url for callback to current path by kodi as string
+        Return addon url for callback to current path by kodi as string.
 
-        Examples:
-            >>> Base.url_for_current(None, "refresh=true")
-            "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie&refresh=true"
+        Parameters
+        ----------
+        params : dict, optional
+            Dictionary of params to update the current params with.
+        querys_as_string : args, optional
+            Keyword args of query entries that will be appended to url.
 
-            >>> Base.url_for_current({"url":"http://youtube.com/", "id":"5359"}, "refresh=true", "updatelisting=true")
-            "plugin://<addon.id>/videos?url=http%3A%2F%2Fyoutube.com/&id=5359&refresh=true&updatelisting=true"
+        Returns
+        -------
+        str
+            Plugin url that is used for kodi
 
-        Args:
-            params (dict, optional): Dictionary of params to update the current params with that will be added to url
-            querys_as_string (list args, optional): Keyword args of query entries that will be appended to url
+        Examples
+        --------
+        >>> Base.url_for_current(None, "refresh=true")
+        "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie&refresh=true"
 
-        Returns:
-            str: Plugin url that is used for kodi
+        >>> Base.url_for_current({"url":"http://youtube.com/", "id":"5359"}, "refresh=true", "updatelisting=true")
+        "plugin://<addon.id>/videos?url=http%3A%2F%2Fyoutube.com/&id=5359&refresh=true&updatelisting=true"
         """
         _urlObject = cls.urlObject
         querys_as_string = list(querys_as_string)
@@ -233,23 +293,35 @@ class Base(collections.MutableMapping):
         """
         Parse query string and return a dict unicode values split by a separator.
 
-        Examples:
-            >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&refresh=true")
-            {u"url":u"http://www.google.ie, u"refresh":u"true"}
+        Parameters
+        ----------
+        query : bytestring
+            Url query to parse as unicode.
+        separator : unicode, optional(default=u'')
+            Unicode charactor to be used to compine a list of values.
+        keep_blank_values : bool, optional(default=True)
+            Flag to indicating whether blank values in queries should be treated as blank strings.
+        strict_parsing : bool, optional(default=True)
+            Flag to indicate what to do with parsing errors. If false, errors are silently ignored,
+            if true ValueError is raised.
 
-            >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&code=5&code=10")
-            {u"url":u"http://www.google.ie, u"code":u"5,10"}
+        Returns
+        -------
+        dict
+            key:value pairs populated from query.
 
-        Args:
-            query (str|unicode): Url query to parse as unicode.
-            separator (unicode, optional): Unicode charactor to be used to compine a list of values. (default u",")
-            keep_blank_values (bool, optional): Flag to indicating whether blank values in queries should be treated
-                                                as blank strings. (default True)
-            strict_parsing (bool, optional): Flag to indicating what to do with parsing errors. If false, errors are
-                                             silently ignored, if true ValueError is raised. (default True)
+        Raises
+        ------
+        ValueError
+            If strict_parsing is True, then ValueError will be raised if there is any error in the parsing.
 
-        Returns:
-            dict: key:value pairs populated from query.
+        Examples
+        --------
+        >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&refresh=true")
+        {u"url":u"http://www.google.ie, u"refresh":u"true"}
+
+        >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&code=5&code=10")
+        {u"url":u"http://www.google.ie, u"code":u"5,10"}
         """
         query_dict = urlparse.parse_qs(query, keep_blank_values, strict_parsing)
         return {key: separator.join(values) for key, values in query_dict.iteritems()}
@@ -257,17 +329,22 @@ class Base(collections.MutableMapping):
     @staticmethod
     def urlencode(query):
         """
-        Parse dict and return urlEncoded string of key and values separated by '&'
+        Parse dict and return urlEncoded string of key and values separated by '&'.
 
-        Example:
-            >>> Base.urlencode({"url":u"http://www.google.ie", u"refresh":"true"})
-            "url=http%3A%2F%2Fwww.google.ie&refresh=true"
+        Parameters
+        ----------
+        query : dict
+            query dict to parse.
 
-        Args:
-            query (dict): query dict to parse
+        Returns
+        -------
+        str
+            Url encoded string of key and values separated by '&'.
 
-        Returns:
-            str: Url encoded string of key and values separated by '&'
+        Example
+        -------
+        >>> Base.urlencode({"url":u"http://www.google.ie", u"refresh":"true"})
+        "url=http%3A%2F%2Fwww.google.ie&refresh=true"
         """
 
         # Create local variable of globals for better performance
@@ -295,12 +372,18 @@ class Base(collections.MutableMapping):
         """
         Send a notification for kodi to display
 
-        Args:
-            heading (str|unicode): dialog heading.
-            message (str|unicode): dialog message.
-            icon (string, optional): icon to use. (default info) option : (error, info, warning)
-            display_time (integer, optional): display_time in milliseconds to show dialog (default 5000)
-            sound (bool, optional): play notification sound (default True)
+        Parameters
+        ----------
+        heading : bytestring
+            Dialog heading.
+        message : bytestring
+            Dialog message.
+        icon : bytestring, optional(default="info")
+            Icon to use. option are 'error', 'info', 'warning'.
+        display_time : bytestring, optional(default=5000)
+            Display_time in milliseconds to show dialog.
+        sound : bytestring, optional(default=True)
+            Whether or not to play notification sound.
         """
 
         # Convert heading and messegs to UTF8 strings if needed
@@ -316,23 +399,26 @@ class Base(collections.MutableMapping):
     @staticmethod
     def get_local_string(string_id):
         """
-        Returns an addon's localized "unicode string"
+        Returns an addon's localized
 
-        string_id : integer or string -
+        Parameters
+        ----------
+        string_id : int, str
+            The id or reference of the string to localize.
 
-        Examples:
-            >>> Base.get_local_string(31010)
-            "essai" # testing localized to french
+        Returns
+        -------
+        unicode
+            localized string
 
-            >>> localized({"testing":31010})
-            >>> Base.get_local_string("testing")
-            "essai" # testing localized to french
+        Examples
+        --------
+        >>> Base.get_local_string(31010)
+        "essai" # testing localized to french
 
-        Args:
-            string_id (int|str): id of string you want to localize
-
-        Returns:
-            unicode: localized string
+        >>> localized({"testing":31010})
+        >>> Base.get_local_string("testing")
+        "essai" # testing localized to french
         """
         if string_id in _strings:
             string_id = _strings[string_id]
@@ -346,16 +432,26 @@ class Base(collections.MutableMapping):
     @staticmethod
     def get_setting(setting_id, raw_setting=False):
         """
-        Returns the value of a setting as a unicode/int/boolean type
+        Returns the value of a setting as a unicode/int/boolean type.
 
-        Args:
-            setting_id (str): id of the requested setting
-            raw_setting (bool, optional): Return the raw setting as unicode without converting the data type
+        Parameters
+        ----------
+        setting_id : str
+            Id of the requested setting.
+        raw_setting : bool, optional(default=False)
+            Return the raw setting as unicode without converting the data type.
 
-        Returns:
-            unicode/int/bool: value as unicode if raw_setting is True or if value is just a string
-                              value as interger if value is a digit
-                              value as a boolean if value is 'true' or 'false'
+        Returns
+        -------
+        unicode, int, bool
+            The requested addon setting.
+
+            If raw_setting is True then return value will always be of type unicode. Else the value will be
+            converted to is relevent type. e.g.
+
+            return as unicode if raw_setting is True or if value is just a simple string.
+            return as interger if value is a digit.
+            return as a boolean if value is a 'true' or 'false' string.
         """
         setting = addonData.getSetting(setting_id)
         if raw_setting:
@@ -374,39 +470,48 @@ class Base(collections.MutableMapping):
         """
         Sets Addon setting
 
-        Args:
-            setting_id (str): id of the setting to be changed
-            value (str|unicode):  new value of the setting
+        Parameters
+        ----------
+        setting_id : str
+            Id of the setting to be changed.
+        value : bytestring
+            New value of the setting.
         """
         addonData.setSetting(setting_id, value)
 
     @property
     def id(self):
         """
-        Return ID of addon as unicode
+        Return ID of addon as unicode.
 
-        Returns:
-            unicode: current addon id
+        Returns
+        -------
+        unicode
+            Current addon id.
         """
         return unicode(addonID)
 
     @property
     def name(self):
         """
-        Return name of addon as unicode
+        Return name of addon as unicode.
 
-        Returns:
-            unicode: Name of current addon
+        Returns
+        -------
+        unicode
+            Name of current addon.
         """
         return unicode(addonData.getAddonInfo("name"))
 
     @property
     def fanart(self):
         """
-        Return path to addon fanart as unicode
+        Return path to addon fanart as unicode.
 
-        Returns:
-            unicode: path to addon fanart image
+        Returns
+        -------
+        unicode
+            Path to addon fanart image.
         """
         if self.__fanart is not None:
             return self.__fanart
@@ -423,8 +528,10 @@ class Base(collections.MutableMapping):
         """
         Return Path to addon icon as unicode
 
-        Returns:
-            unicode: path to addon icon image
+        Returns
+        -------
+        unicode
+            Path to addon icon image.
         """
         if self.__icon is not None:
             return self.__icon
@@ -439,10 +546,12 @@ class Base(collections.MutableMapping):
     @property
     def path(self):
         """
-        Return path to addon source directory as unicode
+        Return path to addon source directory as unicode.
 
-        Returns:
-            unicode: path to addon source directory
+        Returns
+        -------
+        unicode
+            Path to addon source directory.
         """
         if self.__path is not None:
             return self.__path
@@ -455,10 +564,12 @@ class Base(collections.MutableMapping):
     @property
     def profile(self):
         """
-        Return path to addon profile data directory as unicode
+        Return path to addon profile data directory as unicode.
 
-        Returns:
-            unicode: path to addon data directory
+        Returns
+        -------
+        unicode
+            Path to addon data directory.
         """
         if self.__profile is not None:
             return self.__profile
@@ -471,10 +582,12 @@ class Base(collections.MutableMapping):
     @property
     def _path_global(self):
         """
-        Return path to script source directory as unicode
+        Return path to script source directory as unicode.
 
-        Returns:
-            unicode: path to script source directory
+        Returns
+        -------
+        unicode
+            Path to script source directory.
         """
         if self.__path_global is not None:
             return self.__path_global
@@ -487,10 +600,12 @@ class Base(collections.MutableMapping):
     @property
     def profile_global(self):
         """
-        Return path to script profile data directory as unicode
+        Return path to script profile data directory as unicode.
 
-        Returns:
-            unicode: path to script data directory
+        Returns
+        -------
+        unicode
+            Path to script data directory.
         """
         if self.__profile_global is not None:
             return self.__profile_global
@@ -503,10 +618,12 @@ class Base(collections.MutableMapping):
     @property
     def utils(self):
         """
-        Return utils module object
+        Return utils module object.
 
-        Returns:
-            utils: utils modual object
+        Returns
+        -------
+        :class:`utils`
+            modual object.
         """
         if self.__utils:
             return self.__utils
@@ -517,10 +634,13 @@ class Base(collections.MutableMapping):
 
     def requests(self, max_age=60, max_retries=0):
         """
-        Return requests session object with builtin caching support
+        Return requests session object with builtin caching support.
 
-        Note:
-            Valid max_age values.
+        Parameters
+        ----------
+        max_age : int, optional(default=60)
+            The max age in minutes that the cache can be before it becomes stale. Valid max_age values are.
+
             -1, to allways return a cached response regardless of the age.
 
             0, allow use of the cache but will always make a request to server to check the Not Modified Sence header,
@@ -529,17 +649,17 @@ class Base(collections.MutableMapping):
             0, will return cached response untill the cached response is older than giving age.
             None, to block use of the cache, will always return server response as is.
 
-        Note:
-            max_retries applies only to failed DNS lookups, socket connections and connection timeouts,
-            never to requests where data has made it to the server.
-            By default, requests does not retry failed connections.
+        max_retries : int, optional(default=0)
+            The maximum number of retries each connection should attempt
 
-        Args:
-            max_age (int): The max age in minutes that the cache can be before it becomes stale (default 60)
-            max_retries (int): The maximum number of retries each connection should attempt (default 0)
+            max_retries applies only to failed DNS lookups, socket connections and connection timeouts, never to
+            requests where data has made it to the server. By default, requests does not retry failed connections.
 
-        Returns:
-            requests.session: request session object
+        Returns
+        -------
+        :class:`requests.session`
+            Request session object.
+
         """
         if self.__session is not None:
             return self.__session
@@ -570,11 +690,15 @@ class Base(collections.MutableMapping):
         but does not actually have any session support to keep connections alive, just caching support.
         Just faster to load in comparison to the requests module sence it is greatly simplified.
 
-        Args:
-            max_age (int): The max age in minutes that the cache can be before it becomes stale (default 60)
+        Parameters
+        ----------
+        max_age : int, optional(default=60)
+            The max age in minutes that the cache can be before it becomes stale.
 
-        Returns:
-            requests.session: emulated request session object
+        Returns
+        -------
+        :class:`urllib_caching.cache_session`
+            Emulated request session object.
         """
         from . import urllib_caching
         session = urllib_caching.cache_session(self.profile, 0 if u"refresh" in self else max_age)
@@ -587,14 +711,21 @@ class Base(collections.MutableMapping):
         """
         Return persistence dictionary storage object that is stored on disk.
 
-        Args:
-            filename (unicode, optional): Filename for shelf_storage object to use. (default metadata_dict.shelf)
-            custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
-            protocol (integer, optional): Protocol version to use when pickling the data to disk. (default 2)
-            writeback (boolean, optional): Sync data back to disk on close. (default False)
+        Parameters
+        ----------
+        filename : basestring, optional(default='metadata_dict.shelf')
+            Filename for shelf_storage object to use. default 
+        custom_dir : basestring, optional
+            Directory to store the storage file, defaults to addon profile directory.
+        protocol : int, optional(default=2)
+            Protocol version to use when pickling the data to disk. default 2
+        writeback : bool, optional(default=False)
+            Sync data back to disk on close. default False
 
-        Returns:
-            ShelfStorage: A persistence shelf storage object
+        Returns
+        -------
+        :class:`ShelfStorage`
+            A persistence shelf storage object
         """
         from .storage import ShelfStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -604,12 +735,17 @@ class Base(collections.MutableMapping):
         """
         Return persistence dictionary storage object that is stored on disk.
 
-        Args:
-            filename (unicode, optional): Filename for dict_storage object to use. (default metadata_dict.json)
-            custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
+        Parameters
+        ----------
+        filename : unicode, optional(default='metadata_dict.json')
+            Filename for dict_storage object to use.
+        custom_dir : unicode, optional
+            Directory to store the storage file, defaults to addon profile directory.
 
-        Returns:
-            DictStorage: A persistence dict storage object
+        Returns
+        -------
+        :class:`DictStorage`
+            A persistence dict storage object.
         """
         from .storage import DictStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -619,12 +755,17 @@ class Base(collections.MutableMapping):
         """
         Return persistence list storage object that is stored on disk.
 
-        Kwargs:
-            filename (unicode, optional): Filename for list_storage object to use. (default metadata_list.json)
-            custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
+        Parameters
+        ----------
+        filename : unicode, optional(default=u'metadata_list.json')
+            Filename for list_storage object to use.
+        custom_dir : unicode
+            Directory to store the storage file, defaults to addon profile directory.
 
-        Returns:
-            ListStorage: A persistence list strage object
+        Returns
+        -------
+        :class:`ListStorage`
+            A persistence list strage object.
         """
         from .storage import ListStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -634,12 +775,17 @@ class Base(collections.MutableMapping):
         """
         Return persistence set storage object that is stored on disk.
 
-        Kwargs:
-            filename (unicode, optional): Filename for set_storage object to use. (default metadata_set.json)
-            custom_dir (unicode, optional): Directory to store the storage file, defaults to addon profile directory
+        Parameters
+        ----------
+        filename : unicode, optional(default=u'metadata_set.json')
+            Filename for set_storage object to use.
+        custom_dir : unicode, optional
+            Directory to store the storage file, defaults to addon profile directory
 
-        Returns:
-            SetStorage: A persistence set storage object
+        Returns
+        -------
+        :class:`SetStorage`
+            A persistence set storage object
         """
         from .storage import SetStorage
         data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
@@ -696,7 +842,7 @@ class KodiLogHandler(logging.Handler):
             xbmc.log("###### debug ######", xbmc.LOGNOTICE)
 
 # Logging
-formatter = logging.Formatter("[%(name)s]: %(message)s")
+formatter = logging.Formatter("[%(name)s] %(message)s")
 logger = logging.getLogger(addonID)
 logger.setLevel(logging.DEBUG)
 kodi_handler = KodiLogHandler()

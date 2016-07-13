@@ -497,7 +497,7 @@ class APIControl(object):
             yield self.base.listitem.add_next(params)
 
         # Add playlists item to results
-        if len(channel_ids) == 1 and u"pagetoken" not in self.base and self.base.get(u"enable_playlists", u"false")\
+        if len(channel_ids) == 1 and u"pagetoken" not in self.base and self.base.get(u"enable_playlists", u"false") \
                 == u"true":
             item = listitem()
             item.setLabel(u"[B]%s[/B]" % self.base.get_local_string("playlists"))

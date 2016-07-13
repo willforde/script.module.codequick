@@ -17,7 +17,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 # Package imports
-from .api import localized, route, run
+from .api import localized, route, run, logger
 from .inheritance import VirtualFS, Executer, PlayMedia, PlaySource
 from .youtube import YoutubeBase
 

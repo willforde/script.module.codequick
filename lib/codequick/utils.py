@@ -12,16 +12,24 @@ def get_addon_setting(addon_id, key):
     """
     Return setting for selected addon.
 
-    Args:
-        addon_id (str): id of the addon that contains the required setting.
-        key (str): id of the required setting.
+    Parameters
+    ----------
+    addon_id: str
+        Id of the addon that contains the required setting.
+    key : str
+        Id of the required setting.
 
-    Returns:
-        unicode: setting from specified addon.
+    Returns
+    -------
+    unicode
+        setting from specified addon.
 
-    Raises:
-        RuntimeError: If given addon id was not found.
-        UnicodeError: If unable to convert property from utf8 to unicode.
+    Raises
+    ------
+    RuntimeError
+        If given addon id was not found.
+    UnicodeError
+        If unable to convert property from utf8 to unicode.
     """
     return unicode(xbmcaddon.Addon(addon_id).getSetting(key), "utf8")
 
@@ -30,16 +38,24 @@ def get_addon_data(addon_id, key):
     """
     Returns the value of an addon property as unicode.
 
-    Args:
-        addon_id (str): Id of the addon that contains the required value.
-        key (str): Id of the required property.
+    Parameters
+    ----------
+    addon_id : str
+        Id of the addon that contains the required value.
+    key : str
+        Id of the required property.
 
-    Returns:
-        unicode: The required property of requested addon.
+    Returns
+    -------
+    unicode
+        The required property of requested addon.
 
-    Raises:
-        RuntimeError: If given addon id was not found.
-        UnicodeError: If unable to convert property from utf8 to unicode.
+    Raises
+    ------
+    RuntimeError
+        If given addon id was not found.
+    UnicodeError
+        If unable to convert property from utf8 to unicode.
     """
     return unicode(xbmcaddon.Addon(addon_id).getAddonInfo(key), "utf8")
 
@@ -48,12 +64,18 @@ def youtube_hd(default=0, limit=1):
     """
     Return youtube quality setting as integer.
 
-    Args:
-        default (int, optional): default value to return if unable to fetch quality setting. (default 0)
-        limit (int, optional): limit setting value to any one of the quality settings. (default 1)
+    Parameters
+    ----------
+    default : int, optional(default=0)
+        default value to return if unable to fetch quality setting.
+    limit : int, optional(default=1)
+        limit setting value to any one of the quality settings.
 
-    Returns:
-        int: youtube quality setting as integer.
+    Returns
+    -------
+    int
+        youtube quality setting as integer.
+
         0 = 480p
         1 = 720p
         2 = 1080p
@@ -82,11 +104,15 @@ def youtube_lang(lang=u"en"):
     """
     Return the language set by the youtube addon.
 
-    Args:
-        lang (unicode, optional): The default language to use if no language was set. (default en)
+    Parameters
+    ----------
+    lang : unicode, optional(default=u'en')
+        The default language to use if no language was set.
 
-    Returns:
-        unicode: The language to use when fetching youtube content.
+    Returns
+    -------
+    unicode
+        The language to use when fetching youtube content.
     """
     try:
         setting = get_addon_setting("plugin.video.youtube", "youtube.language")
@@ -105,16 +131,24 @@ def keyboard(default="", heading="", hidden=False):
     """
     Return User input as a unicode string.
 
-    Args:
-        default (str, optional): default text entry. (default "")
-        heading (str, optional): keyboard heading. (default "")
-        hidden (bool, optional): True for hidden text entry. (default False)
+    Parameters
+    ----------
+    default : str, optional(default='')
+        default text entry.
+    heading : str, optional(default='')
+        keyboard heading.
+    hidden : bool, optional(default=False)
+        True for hidden text entry.
 
-    Returns:
-        unicode: The text that the user entered into text entry box.
+    Returns
+    -------
+    unicode
+        The text that the user entered into text entry box.
 
-    Raises:
-        UnicodeError: If unable to convert keyboard entry from utf8 to unicode.
+    Raises
+    ------
+    UnicodeError
+        If unable to convert keyboard entry from utf8 to unicode.
     """
     kb = xbmc.Keyboard(default, heading, hidden)
     kb.doModal()
@@ -129,11 +163,15 @@ def get_skin_name(skin_id):
     """
     Returns the name of given skin ID.
 
-    Args:
-        skin_id (str): id of the skin in witch to get the name of.
+    Parameters
+    ----------
+    skin_id : str
+        Id of the skin in witch to get the name of.
 
-    Returns:
-        unicode: the name of given skin, "Unknown" if failed to fetch proper name.
+    Returns
+    -------
+    unicode
+        The name of given skin, "Unknown" if failed to fetch proper name.
     """
     try:
         return get_addon_data(skin_id, "name")
@@ -147,11 +185,15 @@ def strip_tags(html):
     """
     Strips out html code and return plan text.
 
-    Args:
-        html (unicode): HTML code that will be striped of html tags.
+    Parameters
+    ----------
+    html : unicode
+        HTML code that will be striped of html tags.
 
-    Returns:
-        unicode: HTML text with the html tags striped out.
+    Returns
+    -------
+    unicode
+        Text with the html tags striped out.
     """
     sub_start = html.find(u"<")
     sub_end = html.find(u">")

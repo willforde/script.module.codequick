@@ -7,6 +7,18 @@ __all__ = ["DictStorage", "ListStorage", "SetStorage"]
 
 
 def _unicode_handler(func):
+    """
+    Decorate to make sure that the key is always str object and not a unicode object.
+
+    Note
+    ----
+    This is used for Shelf storage because the shelve modual cant handle unicode keys
+
+    Parameters
+    ----------
+    func
+        Fuction to decorate
+    """
     def wrapper(self, key, *args):
         if isinstance(key, unicode):
             return func(self, str(key), *args)
@@ -37,7 +49,7 @@ class _BaseStorage(object):
             if not os.path.exists(dirpath):
                 os.makedirs(dirpath)
 
-    def _serialize(self):
+    def serialize(self):
         """
         Method to return back an object that can be serialize.
         Can be overridden by sub classes to support object that cant be easily deserialize
@@ -60,7 +72,7 @@ class _BaseStorage(object):
             self._fileObj = open(self._filename, "wb+")
 
         # Dumb Data to Disk
-        json.dump(self._serialize(), self._fileObj, indent=4, separators=(",", ":"))
+        json.dump(self.serialize(), self._fileObj, indent=4, separators=(",", ":"))
 
         # Flush Data out to Disk
         self._fileObj.flush()
@@ -69,7 +81,10 @@ class _BaseStorage(object):
         """
         Close connection to file object
 
-        [sync] : boolean --- Syncrnize data to disk before closing file (default False)
+        Parameters
+        ----------
+        sync : bool, optional(default=False)
+            Syncrnize data to disk before closing file.
         """
         if sync:
             self.sync()
@@ -78,10 +93,6 @@ class _BaseStorage(object):
             self._fileObj.close()
 
         self.closed = True
-
-    def update(self, args):
-        """ Dummy method """
-        pass
 
     # Methods to add support for with statement
     def __enter__(self):
@@ -95,7 +106,10 @@ class DictStorage(_BaseStorage, dict):
     """
     Persistence storage Dict that stores data on disk
 
-    filename : unicode --- Path to Persistence storage file
+    Parameters
+    ----------
+    filename : unicode
+        Path to Persistence storage file.
 
     Works by using json to load all the contents of the file into memory.
     May be slow when working with a lot of data, also not very memory efficient.
@@ -116,7 +130,10 @@ class ListStorage(_BaseStorage, list):
     """
     Persistence storage List that stores data on disk
 
-    filename : unicode --- Path to Persistence storage file
+    Parameters
+    ----------
+    filename : unicode
+        Path to Persistence storage file.
 
     Works by using json to load all the contents of the file into memory.
     May be slow when working with a lot of data, also not very memory efficient.
@@ -138,20 +155,24 @@ class SetStorage(_BaseStorage, set):
     """
     Persistence storage Set that stores data on disk
 
-    filename : unicode --- Path to Persistence storage file
+    Parameters
+    ----------
+    filename : unicode
+        Path to Persistence storage file.
 
     Works by using json to load all the contents of the file into memory.
     May be slow when working with a lot of data, also not very memory efficient.
     Though can be quite fast when dealing with smaller amounts of data and doing more reads
     than writes sense writes are slow due to having to write all the contents of the file back to disk.
 
-    Methods:
+    Methods
+    -------
     All of the methods that are available to the Set object
     sync() : Used to synchronized the in memory object with the on disk file
     close(True) : Synchronize data if required and close connection of opened file
     """
 
-    def _serialize(self):
+    def serialize(self):
         """
         Override method to return a list version of the Set object
         that can be easily serialize
@@ -169,7 +190,8 @@ class ShelfStorage(DbfilenameShelf):
     of data. sense only the required data is read in from disk instead
     of the whole file and only the data thats added to object is written to file
 
-    Methods:
+    Methods
+    -------
     All of the methods that are available to the Shelf object
     """
 
@@ -190,6 +212,7 @@ class ShelfStorage(DbfilenameShelf):
         return key in self.dict
 
     def get(self, key, default=None):
+        """ Return the value for a given key if key is in the database, will return default if not. """
         try:
             value = self[key]
         except KeyError:
@@ -198,4 +221,10 @@ class ShelfStorage(DbfilenameShelf):
             return value
 
     def keys(self):
+        """ Return a list of all the key in the database
+
+        Returns
+        -------
+        list of str
+        """
         return [unicode(key) if isinstance(key, str) else key for key in self.dict]

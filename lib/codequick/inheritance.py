@@ -53,13 +53,30 @@ class ListItem(_listItem):
         self._imagePaths = {"fanart": self._fanart} if self._fanart else {}
         self._urlQuerys = {}
 
-    def setLabel(self, lable):
-        """ Sets label : string or unicode """
+    def setLabel(self, label):
+        """
+        Sets the listitem label.
+
+        Parameters
+        ----------
+        label : bytestring
+            Label to set.
+        """
         _listItem.setLabel(self, lable)
         self._infoLabels["title"] = lable
         self._urlQuerys["title"] = lable.encode("ascii", "ignore")
 
     def info(self, key, value):
+        """
+        Set the listitem info labels.
+
+        Parameters
+        ----------
+        key : str
+            The type of listitem info to set.
+        value : unicode
+            The value to set.
+        """
         try:
             sort_type, type_obj = self._sort_map[key]
         except KeyError:
@@ -71,38 +88,77 @@ class ListItem(_listItem):
             _sortAdd(sort_type)
 
     def set_icon(self, image):
-        """ Set icon filename : string or unicode """
+        """ Set icon filename.
+
+        Parameters
+        ----------
+        image : unicode
+            Image filename or path.
+        """
         self._imagePaths["icon"] = image
 
     def set_fanart(self, image):
-        """ Set fanart path : string or unicode """
+        """ Set fanart path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["fanart"] = image
 
     def set_poster(self, image):
-        """ Set poster path : string or unicode """
+        """ Set poster path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["poster"] = image
 
     def set_banner(self, image):
-        """ Set banner path: string or unicode """
+        """ Set banner path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["banner"] = image
 
     def set_clear_art(self, image):
-        """ Set clearart path: string or unicode  """
+        """ Set clearart path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["clearart"] = image
 
     def set_clear_logo(self, image):
-        """ Set clearlogo path: string or unicode """
+        """ Set clearlogo path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["clearlogo"] = image
 
     def set_landscape(self, image):
-        """ Set landscape image path: string or unicode """
+        """ Set landscape image path
+
+        Parameters
+        ----------
+        image : unicode
+        """
         self._imagePaths["landscape"] = image
 
     def setArt(self, values):
         """
         Sets the listitem's art
 
-        values : dictionary --- pairs of { label: value }.
+        Parameters
+        ----------
+        values : dict
+            pairs of {label: value}.
         """
         self._imagePaths.update(values)
 
@@ -110,11 +166,21 @@ class ListItem(_listItem):
         """
         Set thumbnail image path
 
-        image : string or unicode --- Path to thumbnail image
-        local : integer - (0/1/2) --- Changes image path to point to (Remote/Local/Global) paths
+        Parameters
+        ----------
+        image : unicode
+            Path to thumbnail image
+        local : int, optional(default=0)
+            Set whether the image is a remote or local image.
 
+            0 = Remote
+            1 = Local
+            2 = Global
+
+        Examples
+        --------
         >>> item = ListItem()
-        >>> item.set_thumb("http://youtube.com/youtube.png", 0)
+        >>> item.set_thumb(u"http://youtube.com/youtube.png", 0)
         "http://youtube.com/youtube.png"
 
         >>> item.set_thumb("youtube.png", 1)
@@ -132,13 +198,19 @@ class ListItem(_listItem):
 
     def set_date(self, date, date_format):
         """
-        Sets Date Info Label
+        Sets Date Info Label.
 
-        date : string --- Date of list item
-        date_format : string --- Format of date string for strptime conversion
+        Parameters
+        ----------
+        date : unicode
+            Date of list item.
+        date_format : str
+            Format of date string for strptime conversion.
 
+        Examples
+        --------
         >>> item = ListItem()
-        >>> item.set_date("17/02/16", "%d/%m/%y")
+        >>> item.set_date(u"17/02/16", "%d/%m/%y")
         17.02.2016
         """
         converted_date = _strptime(date, date_format)
@@ -149,15 +221,19 @@ class ListItem(_listItem):
 
     def set_duration(self, duration):
         """
-        Sets duration Info
-
-        Args:
-            duration (str|unicode|int): string or unicode or integer
+        Sets duration Info.
 
         Duration can be an integer or an integer represented as string or unicode.
-        It can also be a hour:minute:second (52:45) value represented as a string or unicode
+        It can also be a hour:minute:second (01:52:45) value represented as a string or unicode
         that will be converted to a numeric value.
 
+        Parameters
+        ----------
+        duration : bytestring, int
+            Duration of the video.
+
+        Examples
+        --------
         >>> item = ListItem()
         >>> item.set_duration(3165)
         3165
@@ -190,12 +266,14 @@ class ListItem(_listItem):
 
     def set_resume_point(self, start_point, total_time=None):
         """
-        Set Resume Point for Kodi to start playing video
+        Set Resume Point for Kodi to start playing video.
 
-        Args:
-            start_point (str|unicode): The starting point of the video as a numeric value
-            total_time (str|unicode, optional): The total time of the video, if not given, total_time will be the
-                                               duration set in the infoLabels
+        Parameters
+        ----------
+        start_point : bytestring
+            The starting point of the video as a numeric value.
+        total_time : bytestring, optional
+            The total time of the video, if not given, total_time will be the duration set in the infoLabels.
         """
         data = total_time or str(self._streamInfo["video"].get("duration")) or None
         self.setProperty("totaltime", data)
@@ -204,23 +282,31 @@ class ListItem(_listItem):
     def addStreamInfo(self, ishd=None, video_codec="h264", audio_codec="aac", audio_channels=2, language="en",
                       aspect=0):
         """
-        Set Stream details like codec & resolutions
+        Set Stream details like codec & resolution.
 
-        Args:
-            ishd (int, optional): Sets the HD/4K overlay flag, (default None)
-                                  None = Unknown,
-                                  0 = SD,
-                                  1 = 720p,
-                                  2 = 1080p,
-                                  3 = 4k.
-            video_codec (str, optional): Codec that was used for the video. (default h264)
-            audio_codec (str, optional): Codec that was used for the audio. (default aac)
-            audio_channels (int, optional): Number of audio channels. (default 2)
-            language (str, optional): Language that the audio is in. (default en) (English)
-            aspect (float, optional): The aspect ratio of the video as a float, (default 0)
-                                      2.33 (21:9),
-                                      1.78 (16:9),
-                                      1.33 (4:3),
+        Parameters
+        ----------
+        ishd : int, optional(default=None)
+            Sets the HD/4K overlay flag.
+            0 = SD
+            1 = 720p
+            2 = 1080p
+            3 = 4k
+
+        video_codec : str, optional(default='h264')
+            Codec that was used for the video.
+
+        audio_codec : str, optional(default='aac')
+            Codec that was used for the audio.
+
+        audio_channels : int, optional(default=2)
+            Number of audio channels.
+
+        language : str, optional(default='en')
+            Language that the audio is in.
+
+        aspect : float, optional(default=0)
+            The aspect ratio of the video as a float.
         """
 
         # Add audio details
@@ -262,8 +348,12 @@ class ListItem(_listItem):
         """
         Adds a context menu item to link to related videos
 
-        cls : Class --- Class that will be called by the related video context menu item
-        [query] : keyword args --- keywords that will be passed to related video class
+        Parameters
+        ----------
+        cls : :class:`Base`
+            Class that will be called by the related video context menu item
+        query : kwargs, optional
+            keywords that will be passed to related video class
         """
         if query:
             query.setdefault("updatelisting", "true")
@@ -276,11 +366,16 @@ class ListItem(_listItem):
 
     def menu_update(self, cls, label, **query):
         """
-        Adds a context menu item to link to related videos
+        Adds a context menu item to link to related videos.
 
-        cls : Class --- Class that will be called by the related video context menu item
-        label : string or unicode --- Title of the context menu item
-        [query] : keyword args --- keywords that will be passed to giving class
+        Parameters
+        ----------
+        cls : :class:`Base`
+            Class that will be called by the related video context menu item.
+        label : bytestring
+            Title of the context menu item.
+        query : kwargs, optional
+            keywords that will be passed to giving class.
         """
         if query:
             query.setdefault("updatelisting", "true")
@@ -294,24 +389,38 @@ class ListItem(_listItem):
     def __setitem__(self, key, value):
         self._urlQuerys[key] = value
 
-    def update(self, _dict):
-        self._urlQuerys.update(_dict)
-
     def __contains__(self, key):
         return key in self._urlQuerys
+
+    def update(self, _dict):
+        self._urlQuerys.update(_dict)
 
     def _get(self, path, list_type, is_folder, isplayable):
         """
         Returns a tuple of listitem properties, (path, listitem, is_folder)
 
-        Args:
-            path (str): url of video or addon to send to kodi
-            list_type (str): Type of listitem content that will be send to kodi. Option are (video:audio)
-            is_folder (bool): True if listing folder items else False for video items
-            isplayable (bool): Whether the listitem is playable or not
+        Parameters
+        ----------
+        path : str
+            url of video or addon to send to kodi.
 
-        Returns:
-            tuple:
+        list_type : str
+            Type of listitem content that will be send to kodi. Option are (video:audio).
+
+        is_folder : bool
+            True if listing folder items else False for video items.
+
+        isplayable : bool
+            Whether the listitem is playable or not.
+
+        Returns
+        -------
+        str
+            Path to send to kodi.
+        :class:`ListItem`
+            Listitem to send to kodi.
+        bool
+            Whether the listitem is a folder or not.
         """
 
         # Set Kodi InfoLabels
@@ -359,12 +468,24 @@ class ListItem(_listItem):
 
     def get(self, cls, list_type="video"):
         """
-        Takes a class to route to and returns a tuple of listitem properties, (path, listitem, isFolder)
+        Takes a class to route to and returns a tuple of listitem properties, (path, listitem, isFolder).
 
-        Args:
-            cls (obj): Class that will be called by the related video context menu item
-            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
-                                       (default video)
+        Parameters
+        ----------
+        cls : :class:`base`
+            Class that will be called by the related video context menu item.
+
+        list_type : str, optional(default='video')
+            Type of listitem content that will be send to kodi. Option are (video:audio).
+
+        Returns
+        -------
+        str
+            Path to send to kodi.
+        :class:`ListItem`
+            Listitem to send to kodi.
+        bool
+            Whether the listitem is a folder or not.
         """
 
         # Create path to send to Kodi
@@ -375,27 +496,46 @@ class ListItem(_listItem):
 
     def get_route(self, route_path, list_type="video"):
         """
-        Takes a route_path to a class and Returns a tuple of listitem properties, (path, listitem, isFolder)
+        Takes a route_path to a class and Returns a tuple of listitem properties, (path, listitem, isFolder).
 
-        Args:
-            route_path (str): Route that will be called by the related video context menu item
-            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
-                                       (default video)
+        Parameters
+        ----------
+        route_path : str
+            Route that will be called by the related video context menu item
+        list_type : str, optional(default='video')
+            Type of listitem content that will be send to kodi. Option are (video:audio).
+
+        Returns
+        -------
+        str
+            Path to send to kodi.
+        :class:`ListItem`
+            Listitem to send to kodi.
+        bool
+            Whether the listitem is a folder or not.
         """
         cls = cls_for_route(route_path, raise_on_error=True)
         return self.get(cls, list_type)
 
     def get_direct(self, path, list_type="video"):
         """
-        Take a direct url for kodi to use and Returns a tuple of listitem properties, (path, listitem, isFolder)
+        Take a direct url for kodi to use and Returns a tuple of listitem properties, (path, listitem, isFolder).
 
-        path : string ---
-        [list_type] : string ---
+        Parameters
+        ----------
+        path : str
+            Url of video or addon to send to kodi.
+        list_type : str, optional(default='video')
+            Type of listitem content that will be send to kodi. Option are (video:audio).
 
-        Args:
-            path (str): url of video or addon to send to kodi
-            list_type (str, optional): Type of listitem content that will be send to kodi. Option are (video:audio)
-                                       (default video)
+        Returns
+        -------
+        str
+            Path to send to kodi.
+        :class:`ListItem`
+            Listitem to send to kodi.
+        bool
+            Whether the listitem is a folder or not.
         """
 
         # Return Tuple of url, listitem, isFolder
@@ -404,12 +544,26 @@ class ListItem(_listItem):
     @classmethod
     def add_item(cls, action_cls, label, url=None, thumbnail=None):
         """
-        Basic constructor to add a simple listitem
+        Basic constructor to add a simple listitem.
 
-        action_cls : class --- Class that will be call to show recent results
-        label : string or unicode --- Lable of Listitem
-        [url] : dict --- Url params to pass to listitem
-        [thumbnail] : string or unicode --- Thumbnail image of listitem
+        Parameters
+        ----------
+        action_cls : :class:`Base`
+            Class that will be call to show recent results
+
+        label : bytestring
+            Label of Listitem
+
+        url : dict, optional
+            Url params to pass to listitem
+
+        thumbnail : bytestring, optional
+            Thumbnail image of listitem
+
+        Returns
+        -------
+        :class:`ListItem`
+
         """
         listitem = cls()
         listitem.setLabel(label)
@@ -417,14 +571,22 @@ class ListItem(_listItem):
             listitem.set_thumb(thumbnail)
         if url:
             listitem.update(url)
+
         return listitem.get(action_cls)
 
     @classmethod
     def add_next(cls, url=None):
         """
-        A Listitem constructor for Next Page Item
+        A Listitem constructor for Next Page Item.
 
-        url: dict --- Dictionary containing url querys to control addon
+        Parameters
+        ----------
+        url : dict
+            Dictionary containing url querys to control addon
+
+        Returns
+        -------
+        :class:`ListItem`
         """
 
         # Fetch current url query
@@ -449,9 +611,18 @@ class ListItem(_listItem):
         """
         A Listitem constructor to add Saved search Support to addon
 
-        action_cls : class --- Class that will be farwarded to search dialog
-        url : dict --- Dictionary containing url querys combine with search term
-        label : string --- Lable of Listitem
+        Parameters
+        ----------
+        action_cls : :class:`Base`
+            Class that will be farwarded to search dialog
+        url : dict
+            Dictionary containing url querys to combine with search term
+        label : str, optional
+            Lable of Listitem
+
+        Returns
+        -------
+        :class:`ListItem`
         """
         listitem = cls()
         if label:
@@ -466,11 +637,22 @@ class ListItem(_listItem):
     @classmethod
     def add_recent(cls, action_cls, url=None, label=None):
         """
-        A Listitem constructor to add Recent Folder to addon
+        A Listitem constructor to add Recent Folder to addon.
 
-        action_cls : class --- Class that will be call to show recent results
-        url : dict --- Dictionary containing url querys to pass to Most Recent Class
-        label : string --- Lable of Listitem
+        Parameters
+        ----------
+        action_cls : :class:`Base`
+            Class that will be call to show recent results.
+
+        url : dict
+            Dictionary containing url querys to pass to Most Recent Class.
+
+        label : str, optional
+            Lable of Listitem
+
+        Returns
+        -------
+        :class:`ListItem`
         """
         listitem = cls()
         if url:
@@ -487,10 +669,23 @@ class ListItem(_listItem):
         """
         A Listitem constructor to add a youtube channel to addon
 
-        content_id : string --- ID of Youtube channel or playlist to list videos for
-        label : string --- Title of listitem - default (-Youtube Channel)
-        enable_playlists : boolean --- Set to True to enable listing of channel playlists, (defaults True)
-        wide_thumb : boolean --- Set to True to use a wide thumbnail or False for normal thumbnail image (default False)
+        Parameters
+        ----------
+        content_id : str
+            ID of Youtube channel or playlist to list videos for
+
+        label : bytestring, optional
+            Title of listitem - default to localized '-Youtube Channel'
+
+        enable_playlists : bool, optional(default=True)
+            Set to True to enable listing of channel playlists.
+
+        wide_thumb : bool, optional(default=False)
+            Set to True to use a wide thumbnail or False for normal thumbnail image.
+
+        Returns
+        -------
+        :class:`ListItem`
         """
         listitem = cls()
         if label:
@@ -498,9 +693,9 @@ class ListItem(_listItem):
         else:
             listitem.setLabel(u"[B]%s[/B]" % Base.get_local_string("Youtube_Channel"))
         if wide_thumb:
-            listitem.set_thumb("youtubewide.png", 2)
+            listitem.set_thumb(u"youtubewide.png", 2)
         else:
-            listitem.set_thumb("youtube.png", 2)
+            listitem.set_thumb(u"youtube.png", 2)
         listitem["contentid"] = content_id
         listitem["enable_playlists"] = str(enable_playlists).lower()
         return listitem.get_route("/internal/youtube/playlist")
@@ -522,6 +717,10 @@ class VirtualFS(Base):
         """
         Abstractmethod thats required to be overridden by subclassing
         and is the starting point for the addon to load
+
+        Returns
+        -------
+        list
         """
         pass
 
@@ -554,7 +753,13 @@ class VirtualFS(Base):
 
     @property
     def listitem(self):
-        """ Return a custom kodi listitem object """
+        """ Return a custom kodi listitem object.
+
+        Returns
+        -------
+        :class:`ListItem`
+            The listitem class.
+        """
         if self.__listitem is not None:
             return self.__listitem
         else:
@@ -568,7 +773,13 @@ class VirtualFS(Base):
             return ListItem
 
     def _send_to_kodi(self, listitems):
-        """ Add Directory List Items to Kodi """
+        """ Add Directory List Items to Kodi
+
+        Parameters
+        ----------
+        listitems : list
+            A list of tuples of (Path, listitem, is_folder)
+        """
         if listitems:
             # Convert results from generator to list
             listitems = list(listitems)
@@ -592,9 +803,15 @@ class VirtualFS(Base):
         cache_to_disc = "cachetodisc" in self
         xbmcplugin.endOfDirectory(self.handle, bool(listitems), update_listing, cache_to_disc)
 
-    def _set_view_mode(self, mode):
-        """ Returns selected View Mode setting if available """
-        setting_key = "%s.%s.view" % (xbmc.getSkinDir(), mode)
+    def _set_view_mode(self, listing_type):
+        """ Sets the viewmode for kodi if a viewmode is available for given listing type.
+
+        Parameters
+        ----------
+        listing_type : str
+            The type of listing (folder or video).
+        """
+        setting_key = "%s.%s.view" % (xbmc.getSkinDir(), listing_type)
         view_mode = self.get_setting(setting_key, True)
         if view_mode:
             xbmc.executebuiltin("Container.SetViewMode(%s)" % view_mode.encode("utf8"))
@@ -610,6 +827,10 @@ class PlayMedia(Base):
         """
         Abstractmethod thats required to be overridden by subclassing
         and is the method thats called to resolve the video url
+
+        Returns
+        -------
+        unicode
         """
         pass
 
@@ -645,19 +866,40 @@ class PlayMedia(Base):
             logger.error("Reason: %s", e)
 
     def set_mime_type(self, value):
-        """ Set the mimeType of the video """
+        """
+        Set the mimeType of the video.
+
+        Parameters
+        ----------
+        value : bytestring
+            The mimetype of the video.
+        """
         if isinstance(value, unicode):
             value = value.encode("ascii")
         self.__mimeType = value
 
     def set_user_agent(self, useragent):
-        """ Add a User Agent header to kodi request """
+        """
+        Add a User Agent header to kodi request.
+
+        Parameters
+        ----------
+        useragent : bytestring
+            The user agent for kodi to use.
+        """
         if isinstance(useragent, unicode):
             useragent = useragent.encode("ascii")
         self.__headers.append("User-Agent=%s" % urllib.quote_plus(useragent))
 
     def set_referer(self, referer):
-        """ Add a Referer header to kodi request """
+        """
+        Add a Referer header to kodi request
+
+        Parameters
+        ----------
+        referer : bytestring
+            The referer for kodi to use.
+        """
         if isinstance(referer, unicode):
             referer = referer.encode("ascii")
         self.__headers.append("Referer=%s" % urllib.quote_plus(referer))
@@ -666,7 +908,15 @@ class PlayMedia(Base):
         """
         Create playlist for kodi and returns back the first item of that playlist to play
 
-        url : iterable --- set of urls that will be used in the creation of the playlist
+        Parameters
+        ----------
+        urls : :class:`list`
+            Set of urls that will be used in the creation of the playlist.
+
+        Returns
+        -------
+        :class:`ListItem`
+            The first listitem of the playlist
         """
 
         # Create Playlist
@@ -693,11 +943,20 @@ class PlayMedia(Base):
 
     def creat_loopback(self, url, **extra_params):
         """
-        Create a playlist where the second item loops back to current addon to load next video
-        e.g. Party Mode
+        Create a playlist where the second item loops back to current addon to load next video. e.g. Party Mode
 
-        url : string or unicode --- url for the first listitem in the playlist to use
-        extra_params : kwargs --- extra params to add to the loopback request to access the next video
+        Parameters
+        ----------
+        url : unicode
+            Url for the first listitem in the playlist to use.
+
+        extra_params : kwargs, optional
+            Extra params to add to the loopback request to access the next video.
+
+        Returns
+        -------
+        :class:`ListItem`
+            The Listitem that kodi will play
         """
 
         # Create Playlist
@@ -726,10 +985,23 @@ class PlayMedia(Base):
         """
         Extract video url using Youtube-DL
 
-        url : string or unicode --- Url to fetch video for
-        [quality] : integer --- Quality value to pass to StreamExtractor (default None)
+        Parameters
+        ----------
+        url : str
+            Url to fetch video for.
 
-        quality is 0=SD, 1=720p, 2=1080p, 3=4K
+        quality : int, optional(default=None)
+            Quality value to pass to StreamExtractor.
+
+            0=SD
+            1=720p
+            2=1080p
+            3=4K
+
+        Returns
+        -------
+        str:
+            The extracted video url
         """
         import YDStreamExtractor
         video_info = YDStreamExtractor.getVideoInfo(url, quality)
@@ -741,7 +1013,19 @@ class PlayMedia(Base):
             return video_info.streamURL()
 
     def source_selection(self, video_info):
-        """ Ask user with video stream to play """
+        """
+        Ask user with video stream to play
+
+        Parameters
+        ----------
+        video_info : dict
+            YDStreamExtractor video_info dict
+
+        Returns
+        -------
+        str, optional
+            Stream url of video
+        """
         display_list = []
         for stream in video_info.streams():
             data = "%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"])
@@ -756,7 +1040,19 @@ class PlayMedia(Base):
             return None
 
     def _check_url(self, url):
-        """ Check if there are any headers to add to url and return url and a string """
+        """
+        Check if there are any headers to add to url and return url and a string
+
+        Parameters
+        ----------
+        url : unicode
+            Url to add headers to.
+
+        Returns
+        -------
+        str
+            Url with the headers added
+        """
         if isinstance(url, unicode):
             url = url.encode("ascii")
         if self.__headers:
@@ -764,7 +1060,18 @@ class PlayMedia(Base):
         return url
 
     def _send_to_kodi(self, resolved):
-        """ Construct playable listitem and send to kodi """
+        """ Construct playable listitem and send to kodi
+
+        Parameters
+        ----------
+        resolved : bytestring, :class:`xbmcgui.ListItem`
+            The resolved url to send back to kodi
+
+        Raises
+        -------
+        ValueError
+            Will be raised if the resolved url is not of type listitem or bytestring
+        """
 
         # Use resoleved as is if its already a listitem
         if isinstance(resolved, _listItem):
@@ -790,7 +1097,15 @@ class PlayMedia(Base):
         """
         Return url that redirects to youtube addon to play video
 
-        videoid : string --- ID of the video to play
+        Parameters
+        ----------
+        videoid : bytestring
+            ID of the video to play.
+
+        Returns
+        -------
+        unicode
+            A plugin url to the youtube addon that will play the given video
         """
         return u"plugin://plugin.video.youtube/play/?video_id=%s" % videoid
 
@@ -799,30 +1114,56 @@ class PlayMedia(Base):
         """
         Return url that redirects to youtube addon to play playlist
 
-        playlistid : string or unicode --- Id of the playlist to play
-        [mode] : string or unicode --- Order of the playlist, (normal/reverse/shuffle) (default normal)
+        playlistid : string or unicode ---
+        [mode] : string or unicode ---
+
+        Parameters
+        ----------
+        playlistid : bytestring
+            Id of the playlist to play.
+
+        mode : bytestring, optional(default=u'normal')
+            Order of the playlist.
+
+            Available options are
+            normal
+            reverse
+            shuffle
+
+        Returns
+        -------
+        unicode
+            A plugin url to the youtube addon that will play the given playlist
         """
         return u"plugin://plugin.video.youtube/play/?playlist_id=%s&mode=%s" % (playlistid, mode)
 
 
 @route("/play/source")
 class PlaySource(PlayMedia):
-    """ Class to handle the resolving and playing of video urls using Youtube-DL to fetch video"""
+    """ Class to handle the resolving and playing of video urls using Youtube-DL to fetch video url """
 
     def resolve(self):
-        """ Resolver that resolves video using Youtube-DL video extracter """
+        """ Resolver that resolves video using Youtube-DL video extracter
+
+        Returns
+        -------
+        unicode
+            The playable url
+        """
         return self.extract_source(self[u"url"])
 
 
 @route("/internal/setViewMode")
 class ViewModeSelecter(Base):
     """
-    Class for displaying list of available skin view modes.
-    Allowing for the selection of a view mode that will be force when
-    displaying listitem content. Works with both video & folder views separately
+    Class for displaying list of available skin view modes on the addon setting screen.
 
-    NOTE
-    Must be called as a script only
+    Allowing for the selection of a view mode that will be force when
+    displaying listitem content. Works with both video & folder views separately.
+
+    Note
+    ----
+    Must be called from a script only.
     """
 
     def __init__(self):
@@ -854,7 +1195,19 @@ class ViewModeSelecter(Base):
             self.set_setting("%s.%s.view" % (self.skinID, self.mode), new_mode)
 
     def filter_codes(self, database):
-        """ Filter codes down to current sky and mode """
+        """
+        Filter codes down to current sky and mode
+
+        Parameters
+        ----------
+        database : dict
+            The database of skin ids and related view modes
+
+        Returns
+        -------
+        dict
+            The modes for the current skin
+        """
         filterd = {}
         for mode, views in database[self.skinID].iteritems():
             if mode == self.mode or mode == u"both":
@@ -867,7 +1220,19 @@ class ViewModeSelecter(Base):
         return filterd
 
     def display(self, skin_codes):
-        """ Display list of viewmodes that are available and return user selection """
+        """
+        Display list of viewmodes that are available and return user selection.
+
+        Parameters
+        ----------
+        skin_codes : dict
+            Modes for current skin.
+
+        Returns
+        -------
+        str
+            The selected skin mode to use
+        """
 
         # Fetch currently saved setting if it exists
         try:
@@ -909,7 +1274,19 @@ class ViewModeSelecter(Base):
             return new_mode
 
     def ask_for_view_id(self, current_mode):
-        """ Ask the user what custom view mode to use """
+        """
+        Ask the user what custom view mode to use.
+
+        Parameters
+        ----------
+        current_mode : int
+            The current set mode
+
+        Returns
+        -------
+        int, optional
+            The new custom viewmode.
+        """
         dialog = xbmcgui.Dialog()
         ret = dialog.numeric(0, self.get_local_string("Enter_number"), str(current_mode))
         if ret:
@@ -928,6 +1305,14 @@ class SavedSearches(VirtualFS):
     searches = None
 
     def start(self):
+        """
+        List all saved searches
+
+        Returns
+        -------
+        gen
+            A generator of (path, listitem, isFolder) tuples
+        """
         # Fetch list of current saved searches
         self.searches = searches = self.set_storage(u"searchterms.json")
 
@@ -955,7 +1340,14 @@ class SavedSearches(VirtualFS):
             self.searches.sync()
 
     def list_terms(self):
-        """ List all saved search terms """
+        """
+        List all saved search terms.
+
+        Yield
+        -------
+        tuple
+            A listitem tuple of (path, listitem, isFolder).
+        """
 
         # Create Speed vars
         base_url = self["url"]
@@ -963,6 +1355,7 @@ class SavedSearches(VirtualFS):
         farwarding_route = self[u"route"]
 
         # Add search listitem entry
+        # noinspection PyCallingNonCallable
         item = listitem()
         item.setLabel(u"[B]%s[/B]" % self.get_local_string("search"))
         query = self.copy()
@@ -980,6 +1373,7 @@ class SavedSearches(VirtualFS):
         # Loop earch search item
         for searchTerm in self.searches:
             # Create listitem of Data
+            # noinspection PyCallingNonCallable
             item = listitem()
             item.setLabel(searchTerm.title())
             query_li["url"] = base_url % searchTerm
