@@ -39,7 +39,7 @@ def session_common(session_cls):
             _session.headers["User-agent"] = USERAGENT
 
             # Create a HTTPAdapter to be used in requests
-            if disable_cache is False and get_setting("disable-__cache") is False:
+            if disable_cache is False and get_setting("disable-cache") is False:
                 # Add max age custom header
                 if u"refresh" in args:
                     _session.headers["X-max-age"] = "0"
