@@ -1,100 +1,259 @@
 # Standard Library Imports
-import os
-import re
-import zlib
-import time
-import base64
-import urllib
-import urllib2
-import httplib
-import hashlib
-import urlparse
-import StringIO
-import functools
 import htmlentitydefs
+import urlparse
+import urllib2
+import urllib
 import json
+import zlib
+import re
 
 # Package imports
-from .api import refresh, logger
+from .support import logger
+from .http_caching import CacheAdapterCommon, session_common
 
 
-def _full_cache_dir(cache_dir):
-    """ Return cache directory with sub directory added """
-    return os.path.join(cache_dir, u"cache-basic")
-
-
-def cache_session(cache_dir, max_age=0):
+class Session(object):
     """
-    Create request session with support for http caching
+    Provides cookie persistence, connection-pooling, and configuration.
 
-    cache_dir : string or unicode --- Directory where to store the cache files
-    [max_age] : integer --- Max age that the cache can be before it becomes stale (default 0)
-    [max_retries] : integer --- Max amount of retries before request gives up and raises an error (default 0)
+    Note
+    ----
+    This is a emulated session object that is a simple copy of the requests session object
+
+    Attributes
+    ----------
+    headers : dict
+        A dictionary of headers to be sent on each Request sent from this Session.
+
+    params : dict
+        Dictionary of querystring data to attach to each Request.
     """
+    def __init__(self):
+        self.__handleList = []
+        self.__opener = None
+        self.headers = {}
+        self.params = {}
 
-    # Create session object
-    session = Session()
+    def mount(self, adapter):
+        """ Registers a connection adapter """
+        self.__handleList.append(adapter)
 
-    # Add max age to header
-    session.headers["X-Max-Age"] = max_age
+    def request(self, method, url, params=None, data=None, headers=None, timeout=None):
+        """
+        Constructs a Request, prepares it and sends it. Returns Response object.
 
-    # Create a HTTPAdapter Object to be used in requests
-    cache_dir = _full_cache_dir(cache_dir)
-    adapter = CacheAdapter(cache_dir, max_age)
+        Parameters
+        ----------
+        method : str
+            The type of http request to make.
 
-    # Mount The new adapter to the current request session
-    session.mount(adapter)
-    return session
+        url : bytestring
+            The url of the requested resource.
 
+        params : dict, optional
+            A dict of key, value pairs to add to the url as a query.
 
-class RequestRes(object):
-    def __init__(self, response):
-        self.status_code = response.getcode()
-        self.headers = headers = response.info()
-        self.reason = response.msg
-        content = response.read()
-        response.close()
-        self.encoding = None
-        self.__text = None
-        self.url = response.geturl()
+        data : dict or bytestring, optional
+            Data to send to the server when using a post request.
 
-        # Check if Response need to be decoded, else return raw response
-        charset = headers.getparam("charset") or headers.getparam("encoding")
-        if charset:
-            self.encoding = charset
-        content_encoding = headers.get(u"content-encoding")
+        headers : dict, optional
+            Headers to send with the request.
 
-        # If content is compressed then decompress and decode into unicode
-        try:
-            print
-            "# len compressed", len(content)
-            if content_encoding and "gzip" in content_encoding:
-                content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
-            elif content_encoding and "deflate" in content_encoding:
-                content = zlib.decompress(content)
+        timeout : int, optional
+            Timeout in seconds to wait for a slow connection to respond.
+        """
+        # Add session and request params to http request
+        if self.params or params:
+            if self.params and params:
+                _params = self.params.copy()
+                _params.update(params)
+                params = _params
+            elif self.params:
+                params = self.params
 
-        except zlib.error as e:
-            print
-            "error: %s" % e
+            params = urllib.urlencode(params)
+            url_parts = urlparse.urlsplit(url)
+            url = urlparse.urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, params, url_parts.fragment))
 
+        # Add session and request headers to http request
+        if self.headers and headers:
+            _headers = self.headers.copy()
+            _headers.update(headers)
+            headers = _headers
+        elif self.headers:
+            headers = self.headers
+
+        # Fetch the request opener
+        if self.__opener:
+            opener = self.__opener
         else:
-            print
-            "# len uncompressed", len(content)
-            self.content = content
+            # Build and set a new urllib2 opener
+            self.__opener = opener = urllib2.build_opener(*self.__handleList)
+
+        # Make a http get request
+        if method.lower() == "get":
+            request = urllib2.Request(url, headers=headers)
+            response = opener.open(request, timeout=timeout)
+            return Response(request, response)
+
+        # Make a http post request
+        elif method.lower() == "post":
+            request = urllib2.Request(url, data=data, headers=headers)
+            response = opener.open(request, timeout=timeout)
+            return Response(request, response)
+
+    def get(self, url, **kwargs):
+        """ Sends a GET request. Returns Response object.
+
+        Parameters
+        ----------
+        url : bytestring
+            The url of the requested resource.
+
+        kwargs : optional
+            Optional arguments that request takes.
+        """
+        return self.request("get", url, **kwargs)
+
+    def post(self, url, **kwargs):
+        """ Sends a POST request. Returns Response object.
+
+        Parameters
+        ----------
+        url : bytestring
+            The url of the requested resource.
+
+        kwargs : optional
+            Optional arguments that request takes.
+        """
+        return self.request("post", url, **kwargs)
+
+
+@session_common(Session)
+def session(session_obj):
+    """ Create urllib Adapter """
+    adapter = CacheAdapter()
+    session_obj.mount(adapter)
+
+
+class Response(object):
+    """ The Response object, which contains a server's response to an HTTP request. """
+    def __init__(self, request, response):
+        self.__headers = headers = response.info()
+        self.__response = response
+        self.__content = None
+        self.__text = None
+
+        # Fetch the charset encoding method used for the content
+        charset = headers.getparam("charset") or headers.getparam("encoding")
+        self.encoding = charset
+
+        # Set some instance variables
+        self.url = response.geturl()
+        self.request = request
+
+    @property
+    def content(self):
+        """ Content of the response, in bytes. """
+        if self.__content is not None:
+            return self.__content
+        else:
+            # Check if Response need to be decoded, else return raw response
+            content_encoding = headers.get(u"content-encoding", u"")
+            content = response.read()
+
+            # If content is compressed then decompress and decode into unicode
+            try:
+                # Decompress the content if content is gzip encoded
+                if "gzip" in content_encoding:
+                    content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
+
+                # Decompress the content if content is compressed using deflate
+                elif "deflate" in content_encoding:
+                    content = zlib.decompress(content)
+
+            except zlib.error as e:
+                logger.error(str(e))
+                raise
+
+            else:
+                self.__content = content
+                return content
 
     @property
     def text(self):
+        """
+        Content of the response, in unicode.
+
+        Note
+        ----
+        If Response.encoding is None, then UTF8 encoding will be used. If that faileds
+        then iso-8859-1 (latin 1) will be used.
+
+        Note
+        ----
+        The encoding of the response content is determined based solely on HTTP headers,
+        following RFC 2616 to the letter. If you can take advantage of non-HTTP knowledge to make a
+        better guess at the encoding, you should set r.encoding appropriately before accessing this property.
+        """
         if self.__text:
             return self.__text
         else:
-            # Convert html to unicode
+            # Convert from bytes to unicode
             try:
                 unicode_data = unicode(self.content, self.encoding if self.encoding else "utf8")
             except UnicodeError:
                 unicode_data = unicode(self.content, "iso-8859-1")
 
-            # Unescape the content if requested
+            # Unescape the content
             return self._unescape(unicode_data)
+
+    def json(self, **kwargs):
+        """ Returns the json-encoded content of a response, if any. """
+        return json.loads(self.content, encoding=self.encoding, **kwargs)
+
+    @property
+    def headers(self):
+        """
+        Case-insensitive Dictionary of Response Headers.
+
+        Returns
+        -------
+        dict
+        """
+        return self.__headers
+
+    @property
+    def status_code(self):
+        """ Integer Code of responded HTTP Status, e.g. 404 or 200.
+
+        Returns
+        -------
+        int
+        """
+        return self.__response.getcode()
+
+    @property
+    def reason(self):
+        """ Textual reason of responded HTTP Status, e.g. "Not Found" or "OK".
+
+        Returns
+        -------
+        str
+        """
+        return self.__response.msg
+
+    @property
+    def raw(self):
+        """ File-like object representation of response (for advanced usage). """
+        return self.__response
+
+    def close(self):
+        """
+        Releases the connection back to the pool. Once this method has been called the underlying
+        raw object must not be accessed again.
+        """
+        self.__response.close()
 
     @staticmethod
     def _unescape(text):
@@ -104,6 +263,7 @@ class RequestRes(object):
         def fixup(m):
             # Fetch Text from Group
             escaped_text = m.group(0)
+
             # Check if Character is A Character Reference or Named Entity
             if escaped_text[:2] == "&#":  # Character Reference
                 try:
@@ -113,6 +273,7 @@ class RequestRes(object):
                         return unichr(int(escaped_text[2:-1]))
                 except ValueError:
                     return escaped_text
+
             else:  # Named Entity
                 try:
                     return unichr(htmlentitydefs.name2codepoint[escaped_text[1:-1]])
@@ -122,319 +283,80 @@ class RequestRes(object):
         # Return Clean string using accepted encoding
         return re.sub("&#?\w+;", fixup, text)
 
-    def json(self, **kwargs):
-        return json.loads(self.content, encoding=self.encoding, **kwargs)
 
-    @property
-    def elapsed(self):
-        return 0.0
+class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
+    # Class vars
+    cache_dir_name = u"cache_urllib"
+    from_cache = False
 
-    def close(self):
-        pass
+    @staticmethod
+    def get_url(request):
+        """ Return the url of the request """
+        return request.get_full_url()
 
+    @staticmethod
+    def get_method(request):
+        """ Return of method of the request """
+        return request.get_method()
 
-class Session(object):
-    def __init__(self):
-        self.handleList = []
-        self.headers = {}
-        self.__opener = None
+    @staticmethod
+    def get_status(response):
+        """ Return the status code of the response """
+        return response.code
 
-    def mount(self, adapter):
-        self.handleList.append(adapter)
+    @staticmethod
+    def update_cache(cache, response):
+        """ Update the __cache with the new server response """
 
-    def request(self, method, url, params=None, data=None, headers=None, timeout=None):
-        if params:
-            params = urllib.urlencode(params)
-            url_parts = urlparse.urlsplit(url)
-            url = urlparse.urlunsplit((url_parts.scheme, url_parts.netloc, url_parts.path, params, url_parts.fragment))
+        # Fetch response headers
+        headers = response.info()
 
-        req_headers = self.headers.copy()
-        if headers:
-            req_headers.update(headers)
+        # Check if content is encoded (compressed)
+        content_encoding = headers.get(u"content-encoding")
+        decode_content = "gzip" in content_encoding or "deflate" in content_encoding
 
-        if self.__opener:
-            opener = self.__opener
-        else:
-            self.__opener = opener = urllib2.build_opener(*self.handleList)
-
-        if method.lower() == "get":
-            request = urllib2.Request(url)  # , headers if headers else {)
-            response = opener.open(request, timeout=timeout)
-            return RequestRes(response)
-        elif method.lower() == "post":
-            request = urllib2.Request(url, data, req_headers if req_headers else None)
-            response = opener.open(request, timeout=timeout)
-            return RequestRes(response)
-
-    def get(self, url, params=None, **kwargs):
-        return self.request("get", url, params, **kwargs)
-
-    def post(self, url, data, **kwargs):
-        return self.request("post", url, data=data, **kwargs)
-
-
-class CacheAdapter(urllib2.BaseHandler):
-    def __init__(self, cache_dir, max_age):
-        self._cache_dir = cache_dir
-        self._max_age = max_age
-        self.from_cache = False
-        self._cache = None
-        self._before = None
+        # Now update the __cache with the appropriate data
+        cache.update(body=response.read(), headers=headers, status=response.code,
+                     reason=response.msg, decode_content=decode_content)
 
     @staticmethod
     def http_request(request):
-        """ Add Accept-Encoding & User-Agent Headers """
-        request.add_header("Accept-encoding", "gzip, deflate")
-        request.add_header("Accept-language", "en-gb,en-us,en")
+        """ Add some extra headers to request """
+        request.add_header("accept-encoding", "gzip,deflate")
         return request
 
     def default_open(self, request):
-        max_age = 0 if refresh is True else int(request.headers.pop("X-Max-Age", self._max_age))
+        """
+        Use the request information to check if it exists in the __cache
+        and return cached response if so. Else forward on the said request
+        """
         self.from_cache = False
-
-        url = request.get_full_url()
-        method = request.get_method()
-        if method == "GET":
-            # Initialize Cache Handler
-            hash_file = self._encode_url(url)
-            self._cache = cache = CacheHandler(self._cache_dir, hash_file, preload_content=True)
-            if cache.exists():
-                if cache.fresh(max_age):
-                    # Build the request response and return
-                    self.from_cache = True
-                    return cache.response(url)
-                else:
-                    # Set cache headers to allow for 304 Not Modified response
-                    for key, value in cache.conditional_headers.iteritems():
-                        request.add_header(key, value)
-
-        if self.from_cache is False:
-            logger.debug("%s Requesting Url: %s", method, url)
-            self._before = time.time()
-
-    @staticmethod
-    def _encode_url(url):
-        """ Return url as a sha1 encoded hash """
-        if "#" in url:
-            url = url[:url.find("#")]
-        return hashlib.sha1(url).hexdigest()
+        return self.check_cache(request)
 
     def http_response(self, request, response):
-        if self.from_cache:
-            return response
-        elif request.get_method() == "GET":
-            logger.debug("HTTP Request took %s seconds to complete", time.time() - self._before)
-            # Create cache object if for some reason it was not already created
-            if self._cache is None:
-                hash_file = self._encode_url(request.get_full_url())
-                self._cache = CacheHandler(self._cache_dir, hash_file, preload_content=False)
+        """ Cache the response and return cached response """
+        new_response = self.handle_response(request, response, from_cache=self.from_cache)
+        self.from_cache = False
+        return new_response
 
-            # Check for a 304 Not Modified Response and use cache if true
-            if response.code == 304:
-                # Refresh the cache as it's still fresh
-                self._cache.update_cache()
+    def handle_304(self, cache, request, _):
+        """ Refresh the __cache sence the __cache matches the server """
+        return self.prepare_cached_response(cache.response, request)
 
-                # Set response to cached response
-                return self._cache.response(request.get_full_url())
+    def prepare_cached_response(self, response, request, from_cache=False):
+        """ Prepare the cached response so that urllib can handle it """
+        self.from_cache = from_cache
+        url = self.get_url(request)
 
-            # Always cache a 301 Moved Permanently response
-            elif response.code == 301:
-                # Cache the response
-                self._cache.cache_response(response)
-
-            # Cache any cachable response
-            elif response.code in (200, 203, 300):
-                self._cache.cache_response(response)
-                return self._cache.response(request.get_full_url())
-
-        # Return Response
-        return response
+        # Return the prepared __cache response
+        return HTTPResponse(response["body"], response["headers"], response["status"], response["reason"], url)
 
     # Redirect HTTPS Requests and Responses to HTTP
     https_request = http_request
     https_response = http_response
 
 
-class CacheHandler(object):
-    """
-    Cache Handler to handle the cache thats stored on disk
-
-    cache_dir : string or unicode --- Directory where to store the cache files
-    max_age : integer --- Max age that the cache can be before it becomes stale (default 0)
-    hash : string or unicode --- sha256 hash of the url of the request to be cached
-    """
-
-    def __init__(self, cache_dir, hash_file, preload_content=False):
-        # Construct the full path to cache
-        self._cache_path = os.path.join(cache_dir, hash_file)
-        self._response = None
-
-        # Check if there is a cache for giving url
-        if not os.path.exists(self._cache_path):
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-
-        # Cache must exist then deserialize the cache
-        elif preload_content is True:
-            self.load()
-
-    def load(self):
-        """ Load the content of cache into memory """
-        self._response = self.deserialize()
-
-    def delete(self):
-        """ Delete cache on disk"""
-        try:
-            os.remove(self._cache_path)
-        except OSError:
-            logger.debug("Cache Error: Unable to delete cache from disk")
-        self.close()
-
-    @property
-    def response(self):
-        """ Return the cache response as a urllib3 HTTPResponse """
-        if "timestamp" in self._response:
-            del self._response["timestamp"]
-        return functools.partial(HTTPResponse, self._response["body"], self._response["headers"],
-                                 self._response["status"], self._response["reason"])
-
-    @property
-    def conditional_headers(self):
-        """ Return a dict of conditional headers from cache """
-
-        # Fetch Cached headers
-        headers = self._response["headers"]
-        new_headers = {}
-
-        # Check for conditional headers
-        if "etag" in headers:
-            new_headers["If-None-Match"] = headers["etag"]
-        if "last-modified" in headers:
-            new_headers["If-Modified-Since"] = headers["last-modified"]
-        return new_headers
-
-    def deserialize(self):
-        """ Return a deserialize version of the cache from disk """
-
-        try:
-            # Fetch raw cache data
-            with open(self._cache_path, "rb") as stream:
-                raw_data = stream.read()
-        except (IOError, OSError):
-            self.delete()
-            return None
-        else:
-            if not raw_data:
-                self.delete()
-                return None
-
-        try:
-            # Deserialize and decode the raw data
-            uncompressed = zlib.decompress(raw_data)
-            cached = json.loads(uncompressed)
-            cached["body"] = base64.b64decode(str(cached["body"]))
-            cached["headers"] = httplib.HTTPMessage(StringIO.StringIO(base64.b64decode(str(cached["headers"]))))
-        except (ValueError, TypeError):
-            self.delete()
-            return None
-        except zlib.error:
-            self.delete()
-            return None
-        else:
-            return cached
-
-    def exists(self):
-        """ Return True if cache exists else False """
-        return self._response is not None
-
-    def fresh(self, max_age):
-        """ Return True if cache is fresh else False """
-        if max_age == 0:
-            return False
-        elif max_age < 0:
-            return True
-        elif self._response["status"] == 301:
-            return True
-        elif (time.time() - self._response.get("timestamp", 0)) < max_age * 60:
-            return True
-        else:
-            return False
-
-    def update_cache(self, response=None):
-        """
-        Serialize the response and save to disk
-
-        [response] : dict --- Dict containging server response data (default None)
-
-        NOTE
-        If no response is giving then the currently stored response is used
-        """
-
-        # Fetch response if not giving one
-        if response is None:
-            response = self._response.copy()
-
-        # Set the timestamp of the response
-        response["timestamp"] = time.time()
-
-        # Serialize the response content to insure that json can do it's job
-        response["body"] = base64.b64encode(response["body"])
-        response["headers"] = base64.b64encode(str(response["headers"]))
-
-        # Serialize the whole response
-        try:
-            json_serial = json.dumps(response, ensure_ascii=True, indent=4, separators=(",", ":"))
-        except TypeError:
-            logger.debug("Cache Error: Failed to serialize the response using json")
-            return None
-
-        # Compress the json Serialized response
-        try:
-            compressed = zlib.compress(json_serial, 1)
-        except zlib.error:
-            logger.debug("Cache Error: Failed to compress serialized response")
-            return None
-
-        # Save serialized response to disk
-        try:
-            with open(self._cache_path, "wb") as stream:
-                stream.write(compressed)
-        except (IOError, OSError):
-            logger.debug("Cache Error: Failed to Save serialized response to disk")
-            self.delete()
-            return None
-
-    def cache_response(self, response, body=None):
-        """
-        Create data structure and Cache the response
-
-        response : urllib3 response object --- A urllib3 response that was returned from the server
-        [body] : string --- Separated response body to use, uses body from response if body is not giving (default None)
-        """
-        if body is None:
-            body = response.read()
-        headers = response.info()
-
-        # Remove Transfer-Encoding from header if response was a chunked response
-        if "transfer-encoding" in headers:
-            del headers["transfer-encoding"]
-
-        # Create response data structure
-        data = {"body": body,
-                "headers": headers,
-                "reason": response.msg,
-                "status": response.code}
-
-        # Update cache with response data
-        self._response = data.copy()
-        self.update_cache(data)
-
-    def close(self):
-        """ Reset instance variables and loaded response"""
-        self._response = None
-
-
 class HTTPResponse(urllib2.addinfourl):
     def __init__(self, body=None, headers=None, status=None, reason=None, url=None):
+        urllib2.addinfourl.__init__(self, body, headers, url, status)
         self.msg = reason
-        urllib2.addinfourl.__init__(self, StringIO.StringIO(body), headers, url, status)

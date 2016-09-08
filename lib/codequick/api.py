@@ -1,850 +1,841 @@
 # Standard Library Imports
-import collections
-import urlparse
-import logging
 import urllib
-import time
-import sys
 import os
+
+# Fetch date convertion tools
+from time import strptime, strftime
 
 # Kodi Imports
 import xbmcplugin
-import xbmcaddon
 import xbmcgui
 import xbmc
 
-# Dict to store all routes to classes
-_strings = {}
-_routes = {}
+# Package imports
+from .support import route_register, strings, logger, handle, args, get_info, get_setting, localize, current_path
+from .support import find_route, selected_route
 
-# Initiate xbmcaddon class to allow access to addon infomation
-scriptData = xbmcaddon.Addon("script.module.codequick")
-addonData = xbmcaddon.Addon()
-addonID = addonData.getAddonInfo("id")
-refresh = False
+# Setup sort method set
+sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
+sortAdd = sortMethods.add
+sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
+            "date": (xbmcplugin.SORT_METHOD_DATE, None),
+            "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
+            "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),
+            "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, int),
+            "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
+            "episode": (xbmcplugin.SORT_METHOD_EPISODE, int)}
+
+# Update string references
+strings.update(search=137,
+               next_page=33078,
+               most_recent=32903,
+               related_videos=32904,
+               youtube_channel=32901,
+               select_playback_item=25006)
 
 
-def translate_path(path):
+def route(route_path="/"):
     """
-    Translate a kodi special path into an absolute path.
-
-    Notes
-    -----
-    Only useful if you are coding for both Linux and Windows.
+    This is the main route decorator that is used for normal listing of listitems, video or folders.
 
     Parameters
     ----------
-    path : bytestring
-        Returns the translated path.
+    route_path : bytestring, optional(default="/")
+        The route path that will be used to map to the decorated function.
 
     Returns
     -------
-    unicode
-        The translated path.
-
-    Example
-    -------
-    >>> translate_path('special://profile/')
-    '/home/user/.kodi/user/.kodi/userdata/addon_data/'
+    func
+        The original function, unmodified.
     """
-    if path[:10] == "special://":
-        return unicode(xbmc.translatePath(path), "utf8")
-    else:
-        return unicode(path, "utf8")
+    return route_register(virtualfs, route_path, is_folder=True)
 
 
-def cls_for_route(route_pattern, raise_on_error=False):
+def resolve(route_path):
     """
-    Return class thats associated with specified route.
+    This is the route decorator that is used when resolving a video url from a site.
 
     Parameters
     ----------
-    route_pattern : bytestring
-        Route thats associated with a class.
-    raise_on_error : bool, optional(default=False)
-        True if a KeyError will be raised if no class was found for specified route.
+    route_path : bytestring
+        The route path that will be used to map to the decorated function.
 
     Returns
     -------
-    :class:`Base`, optional
-        Return the class that matchs the given route pattern.
-        Will return 'None' if no class was found for route pattern and raise_on_error was set to False.
-
-    Raises
-    ------
-    KeyError
-        When no class if found that matchs route pattern.
+    func
+        The original function, unmodified.
     """
-    route_pattern = str(route_pattern)
-    for cls, pattern in _routes.iteritems():
-        if pattern == route_pattern.lower():
-            return cls
-    else:
-        # No available class matching specified route pattern was found
-        if raise_on_error:
-            raise KeyError("No class for route: %s" % route_pattern)
+    return route_register(PlayMedia, route_path, is_playable=True)
+
+
+def execute(route_path):
+    """
+    This is the route decorator that is used when executing code as a script.
+
+    Parameters
+    ----------
+    route_path : bytestring
+        The route path that will be used to map to the decorated function.
+
+    Returns
+    -------
+    func
+        The original function, unmodified.
+    """
+    return route_register(None, route_path)
+
+
+def virtualfs(func):
+    """
+    Add Directory List Items to Kodi
+
+    Parameters
+    ----------
+    func : func
+        Call the dispatched function and send the listitems to kodi.
+    """
+
+    # Fetch the list of listitems
+    listitems = func()
+
+    if listitems:
+        # Convert results from generator to list
+        listitems = list(listitems)
+
+        # Add listitems to
+        xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
+
+        # Set Kodi Sort Methods
+        _addSortMethod = xbmcplugin.addSortMethod
+        for sortMethod in sorted(sortMethods):
+            _addSortMethod(handle, sortMethod)
+
+        # Guess Content Type and set View Mode
+        is_folder = ListItem.vidCounter < (len(listitems) / 2)
+        # xbmcplugin.setContent(handle, "files" if isFolder else "episodes")
+        listing_type = "folder" if is_folder else "video"
+        setting_key = "%s.%s.view" % (xbmc.getSkinDir(), listing_type)
+        view_mode = get_setting(setting_key, raw_setting=True)
+        if view_mode:
+            xbmc.executebuiltin("Container.SetViewMode(%s)" % str(view_mode))
+
+    # End Directory Listings
+    update_listing = u"refresh" in args or (u"updatelisting" in args and args[u"updatelisting"] == u"true")
+    cache_to_disc = u"cachetodisc" in args
+    xbmcplugin.endOfDirectory(handle, bool(listitems), update_listing, cache_to_disc)
+
+
+class PlayMedia(object):
+    def __init__(self, func):
+        # Instance Vars
+        self.__headers = []
+        self.__mimeType = args.get("mimetype")
+
+        # Resolve Video Url
+        resolved = func(self)
+        self.__send_to_kodi(resolved)
+
+        # Monkey patch in the youtube url builder functions
+        from .youtube import build_video_url, build_playist_url
+        self.youtube_playlist_url = build_playist_url
+        self.youtube_video_url = build_video_url
+
+    def set_mime_type(self, value):
+        """
+        Set the mimeType of the video.
+
+        Parameters
+        ----------
+        value : bytestring
+            The mimetype of the video.
+        """
+        self.__mimeType = str(value)
+
+    def set_user_agent(self, useragent):
+        """
+        Add a User Agent header to kodi request.
+
+        Parameters
+        ----------
+        useragent : bytestring
+            The user agent for kodi to use.
+        """
+        useragent = "User-Agent=%s" % urllib.quote_plus(str(useragent))
+        self.__headers.append(useragent)
+
+    def set_referer(self, referer):
+        """
+        Add a Referer header to kodi request
+
+        Parameters
+        ----------
+        referer : bytestring
+            The referer for kodi to use.
+        """
+        referer = "Referer=%s" % urllib.quote_plus(str(referer))
+        self.__headers.append(referer)
+
+    def create_playlist(self, urls, shuffle=False):
+        """
+        Create playlist for kodi and returns back the first item of that playlist to play
+
+        Parameters
+        ----------
+        urls : list
+            Set of urls that will be used in the creation of the playlist.
+
+        shuffle : bool, optional(default=False)
+            If set to True then the playlist will be shuffled
+
+        Returns
+        -------
+        :class:`xbmcgui.ListItem`
+            The first listitem of the playlist
+        """
+
+        # Create Playlist
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+
+        # Loop each item to create playlist
+        for count, url in enumerate(urls, 1):
+            listitem = xbmcgui.ListItem()
+            listitem.setLabel(u"%s Part %i" % (args[u"title"], count))
+            url = self.__check_url(url)
+            listitem.setPath(url)
+
+            # Set mimetype if any
+            if self.__mimeType:
+                listitem.setMimeType(self.__mimeType)
+
+            # Populate Playlis
+            playlist.add(url, listitem)
+
+        # Shuffle playlist if required
+        if shuffle is True:
+            playlist.shuffle()
+
+        # Return first playlist item to send to kodi
+        return playlist[0]
+
+    def creat_loopback(self, url, **next_params):
+        """
+        Create a playlist where the second item loops back to current addon to load next video. e.g. Party Mode
+
+        Parameters
+        ----------
+        url : unicode
+            Url for the first playable listitem to use.
+
+        next_params : kwargs, optional
+            Extra params to add to the loopback request to access the next video.
+
+        Returns
+        -------
+        :class:`xbmcgui.ListItem`
+            The Listitem that kodi will play
+        """
+
+        # Create Playlist
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        playlist.clear()
+
+        # Create Main listitem
+        main_listitem = xbmcgui.ListItem()
+        main_listitem.setLabel(args[u"title"])
+        if self.__mimeType:
+            main_listitem.setMimeType(self.__mimeType)
+
+        url = self.__check_url(url)
+        main_listitem.setPath(url)
+        playlist.add(url, main_listitem)
+
+        # Create Loopback listitem
+        loop_listitem = xbmcgui.ListItem()
+        loop_listitem.setLabel("Loopback")
+        loopback_url = current_path(**next_params)
+        loop_listitem.setPath(loopback_url)
+        playlist.add(loopback_url, loop_listitem)
+
+        # Return main listitem
+        return main_listitem
+
+    def extract_source(self, url, quality=None):
+        """
+        Extract video url using YoutubeDL
+
+        Parameters
+        ----------
+        url : str
+            Url to fetch video for.
+
+        quality : int, optional(default=None)
+            Quality value to pass to StreamExtractor.
+
+            0=SD
+            1=720p
+            2=1080p
+            3=4K
+
+        Returns
+        -------
+        str:
+            The extracted video url
+        """
+        import YDStreamExtractor
+        video_info = YDStreamExtractor.getVideoInfo(url, quality)
+
+        # If there is more than one stream found then ask for selection
+        if video_info.hasMultipleStreams():
+            return self.__source_selection(video_info)
+        else:
+            return video_info.streamURL()
+
+    def __check_url(self, url):
+        """
+        Check if there are any headers to add to url and return url as a string
+
+        Parameters
+        ----------
+        url : unicode
+            Url to add headers to.
+
+        Returns
+        -------
+        str
+            Url with the headers added
+        """
+        if self.__headers:
+            url = "%s|%s" % (str(url), "&".join(self.__headers))
+        return url
+
+    def __send_to_kodi(self, resolved):
+        """ Construct playable listitem and send to kodi
+
+        Parameters
+        ----------
+        resolved : bytestring, :class:`xbmcgui.ListItem`
+            The resolved url to send back to kodi
+
+        Raises
+        -------
+        ValueError
+            Will be raised if the resolved url is not of type listitem or bytestring
+        """
+
+        # Use resoleved as is if its already a listitem
+        if isinstance(resolved, xbmcgui.ListItem):
+            listitem = resolved
+
+        # Create listitem object if resolved object is a basestring (string/unicode)
+        elif isinstance(resolved, basestring):
+            listitem = xbmcgui.ListItem()
+            if self.__mimeType:
+                listitem.setMimeType(self.__mimeType)
+
+            resolved = self.__check_url(resolved)
+            listitem.setPath(resolved)
+
+        # No valid resolved value was found
+        else:
+            raise ValueError("Url resolver returned invalid Url: %r" % resolved)
+
+        # Send playable listitem to kodi
+        xbmcplugin.setResolvedUrl(handle, True, listitem)
+
+    @staticmethod
+    def __source_selection(video_info):
+        """
+        Ask user with video stream to play
+
+        Parameters
+        ----------
+        video_info : dict
+            YDStreamExtractor video_info dict
+
+        Returns
+        -------
+        str, optional
+            Stream url of video
+        """
+        display_list = []
+        for stream in video_info.streams():
+            data = "%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"])
+            display_list.append(data)
+
+        dialog = xbmcgui.Dialog()
+        ret = dialog.select(localize("select_playback_item"), display_list)
+        if ret >= 0:
+            video_info.selectStream(ret)
+            return video_info.streamURL()
         else:
             return None
 
 
-def localized(strings):
-    """
-    Add dict of localized string:id pairs to get_local_string.
-
-    String:id pairs are used to allow accessing localized strings using string value instead of string id.
-
-    Parameters
-    ----------
-    strings : dict
-        string:id pairs to add to the local string database.
-
-    Example
-    -------
-    Here we want to print a french localized string for the string 'testing'. This
-    can be requested using the string id '31010' or by using the string reference 'testing'.
-    But to use the reference you first have to asign the reference to a string id.
-
-    >>> Base.get_local_string(31010)
-    "essai"
-
-    >>> localized({"testing":31010})
-    >>> Base.get_local_string("testing")
-    "essai"
-    """
-    _strings.update(strings)
-
-
-def route(route_pattern):
-    """
-    Decorator to bind a class to a route that can be called via route dispatcher.
-
-    Parameters
-    ----------
-    route_pattern : bytestring
-        The route pattern that will point to the bind class.
-
-    Returns
-    -------
-    class
-        Decorated class.
-    """
-    route_pattern = str(route_pattern.lower())
-
-    def decorator(cls):
-        _routes[cls] = route_pattern
-        cls.route = route_pattern
-        return cls
-
-    return decorator
-
-
-def run():
-    """ Call Class instance thats associated with route passed in from kodi sys args. """
-
-    # Set logger debug mode
-    before = time.time()
-
-    try:
-        # Check if running as plugin or script
-        argv = sys.argv
-        if argv[0][:9] == "plugin://":
-            url = argv[0] + argv[2]
-        else:
-            arg_len = len(argv)
-            if arg_len == 1:
-                raise ValueError("No action value was giving from script call")
-            elif arg_len == 2:
-                url = "plugin://%s/%s" % (str(addonID), argv[1])
-            else:
-                query = "&".join(["arg%i=%s" % (count, arg) for count, arg in enumerate(argv[2:], start=1)])
-                url = "plugin://%s/%s?%s" % (str(addonID), sys.argv[1], query)
-
-        # Parse the passed arguments into a urlobject
-        Base.urlObject = urlObject = urlparse.urlsplit(url)
-        Base.handle = int(argv[1]) if argv[1].isdigit() else -1
-
-        # Fetch class that matches route and call
-        route_path = urlObject.path.lower() if urlObject.path else "/"
-        cls = cls_for_route(route_path, raise_on_error=True)
-        logger.debug('Dispatching to route "%s": class "%s"', route_path, cls.__name__)
-
-        # Parse arguments
-        if urlObject.query:
-            Base._args = _args = Base.parse_qs(unicode(urlObject.query))
-            if u"refresh" in _args:
-                global refresh
-                refresh = True
-                _args[u"updatelisting"] = u"true"
-            logger.debug("Called with args: %r", _args)
-        else:
-            Base._args = {}
-
-        # Execute Main Program
-        # noinspection PyCallingNonCallable
-        cls()
-
-    # Handle any exception with the buggalo module
-    except Exception as e:
-        xbmcplugin.endOfDirectory(Base.handle, succeeded=False)
-        Base.notification(e.__class__.__name__, str(e), "error")
-        logger.exception("Logging an uncaught exception")
-        KodiLogHandler.show_debug()
-    else:
-        logger.debug("# Total time to execute: %s", time.time() - before)
-
-
-class Base(collections.MutableMapping):
-    """
-    Base class for all working classes to inherit.
-
-    Attributes
-    ----------
-    id : unicode
-        ID of addon.
-    name : unicode
-        Name of addon.
-    fanart : unicode
-        Path to addon fanart.
-    icon : unicode
-        Path to addon icon.
-    path : unicode
-        Path to addon source directory.
-    profile : unicode
-        Path to addon profile data directory.
-    profile_global : unicode
-        Path to script profile data directory.
-    """
-    __fanart = __icon = __path = __path_global = __profile = _type = _version = _devmode = __session = None
-    _route = __utils = __profile_global = _args = urlObject = handle = None
+class Art(dict):
+    _image_local = os.path.join(get_info("path"), u"resources", u"media", u"%s")
+    _image_global = os.path.join(get_info("path_global"), u"resources", u"media", u"%s")
+    _fanart = get_info("fanart")
 
     def __init__(self):
-        pass
+        super(Art, self).__init__()
+        if self._fanart:
+            self["fanart"] = self._fanart
 
-    @classmethod
-    def url_for_route(cls, route_pattern, query=None):
-        """
-        Return addon url for callback by kodi as string
+    def local_thumb(self, image):
+        # noinspection PyTypeChecker
+        self["thumb"] = self._image_local % image
 
-        Parameters
-        ----------
-        route_pattern : unicode
-            Route of class that will be called when addon is called from kodi
-        query : dict, optional
-            Query dict that will be urlencode and appended to url
+    def global_thumb(self, image):
+        # noinspection PyTypeChecker
+        self["thumb"] = self._image_global % image
 
-        Returns
-        -------
-        str
-            Plugin url that is used for kodi
 
-        Example
-        -------
-        >>> Base.url_for_route(u"/videos", {"url":"http://www.google.ie}")
-        "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie"
-        """
-
-        # UrlEncode query dict if required
-        if query:
-            query = cls.urlencode(query)
-
-        # Create addon url for kodi
-        _urlObject = cls.urlObject
-        return urlparse.urlunsplit((_urlObject.scheme, _urlObject.netloc, str(route_pattern), query, ""))
-
-    @classmethod
-    def url_for_current(cls, params=None, *querys_as_string):
-        """
-        Return addon url for callback to current path by kodi as string.
-
-        Parameters
-        ----------
-        params : dict, optional
-            Dictionary of params to update the current params with.
-        querys_as_string : args, optional
-            Keyword args of query entries that will be appended to url.
-
-        Returns
-        -------
-        str
-            Plugin url that is used for kodi
-
-        Examples
-        --------
-        >>> Base.url_for_current(None, "refresh=true")
-        "plugin://<addon.id>/videos?url=http%3A%2F%2Fwww.google.ie&refresh=true"
-
-        >>> Base.url_for_current({"url":"http://youtube.com/", "id":"5359"}, "refresh=true", "updatelisting=true")
-        "plugin://<addon.id>/videos?url=http%3A%2F%2Fyoutube.com/&id=5359&refresh=true&updatelisting=true"
-        """
-        _urlObject = cls.urlObject
-        querys_as_string = list(querys_as_string)
-        if params:
-            cls._args.update(params)
-            query = cls.urlencode(cls._args)
-            querys_as_string.append(query)
-        elif _urlObject.query:
-            querys_as_string.append(_urlObject.query)
-
-        return urlparse.urlunsplit(
-            (_urlObject.scheme, _urlObject.netloc, _urlObject.path, "&".join(querys_as_string), ""))
-
-    @staticmethod
-    def parse_qs(query, separator=u",", keep_blank_values=True, strict_parsing=True):
-        """
-        Parse query string and return a dict unicode values split by a separator.
-
-        Parameters
-        ----------
-        query : bytestring
-            Url query to parse as unicode.
-        separator : unicode, optional(default=u'')
-            Unicode charactor to be used to compine a list of values.
-        keep_blank_values : bool, optional(default=True)
-            Flag to indicating whether blank values in queries should be treated as blank strings.
-        strict_parsing : bool, optional(default=True)
-            Flag to indicate what to do with parsing errors. If false, errors are silently ignored,
-            if true ValueError is raised.
-
-        Returns
-        -------
-        dict
-            key:value pairs populated from query.
-
-        Raises
-        ------
-        ValueError
-            If strict_parsing is True, then ValueError will be raised if there is any error in the parsing.
-
-        Examples
-        --------
-        >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&refresh=true")
-        {u"url":u"http://www.google.ie, u"refresh":u"true"}
-
-        >>> Base.parse_qs(u"url=http%3A%2F%2Fwww.google.ie&code=5&code=10")
-        {u"url":u"http://www.google.ie, u"code":u"5,10"}
-        """
-        query_dict = urlparse.parse_qs(query, keep_blank_values, strict_parsing)
-        return {key: separator.join(values) for key, values in query_dict.iteritems()}
-
-    @staticmethod
-    def urlencode(query):
-        """
-        Parse dict and return urlEncoded string of key and values separated by '&'.
-
-        Parameters
-        ----------
-        query : dict
-            query dict to parse.
-
-        Returns
-        -------
-        str
-            Url encoded string of key and values separated by '&'.
-
-        Example
-        -------
-        >>> Base.urlencode({"url":u"http://www.google.ie", u"refresh":"true"})
-        "url=http%3A%2F%2Fwww.google.ie&refresh=true"
-        """
-
-        # Create local variable of globals for better performance
-        _quote_plus = urllib.quote_plus
-        _isinstance = isinstance
-        _unicode = unicode
-        _str = str
-
-        # Parse dict and encode into url compatible string
-        segments = []
-        for key, value in query.iteritems():
-            if _isinstance(value, _unicode):
-                value = _quote_plus(value.encode("utf8"))
-            else:
-                value = _quote_plus(str(value))
-
-            # Combine key and value
-            segments.append(_str(key) + "=" + value)
-
-        # Return urlencoded string
-        return "&".join(segments)
-
-    @staticmethod
-    def notification(heading, message, icon="info", display_time=5000, sound=True):
-        """
-        Send a notification for kodi to display
-
-        Parameters
-        ----------
-        heading : bytestring
-            Dialog heading.
-        message : bytestring
-            Dialog message.
-        icon : bytestring, optional(default="info")
-            Icon to use. option are 'error', 'info', 'warning'.
-        display_time : bytestring, optional(default=5000)
-            Display_time in milliseconds to show dialog.
-        sound : bytestring, optional(default=True)
-            Whether or not to play notification sound.
-        """
-
-        # Convert heading and messegs to UTF8 strings if needed
-        if isinstance(heading, unicode):
-            heading = heading.encode("utf8")
-        if isinstance(message, unicode):
-            message = message.encode("utf8")
-
-        # Send Error Message to Display
-        dialog = xbmcgui.Dialog()
-        dialog.notification(heading, message, icon, display_time, sound)
-
-    @staticmethod
-    def get_local_string(string_id):
-        """
-        Returns an addon's localized
-
-        Parameters
-        ----------
-        string_id : int, str
-            The id or reference of the string to localize.
-
-        Returns
-        -------
-        unicode
-            localized string
-
-        Examples
-        --------
-        >>> Base.get_local_string(31010)
-        "essai" # testing localized to french
-
-        >>> localized({"testing":31010})
-        >>> Base.get_local_string("testing")
-        "essai" # testing localized to french
-        """
-        if string_id in _strings:
-            string_id = _strings[string_id]
-        if 30000 <= string_id <= 30999:
-            return addonData.getLocalizedString(string_id)
-        elif 32000 <= string_id <= 32999:
-            return scriptData.getLocalizedString(string_id)
-        else:
-            return xbmc.getLocalizedString(string_id)
-
-    @staticmethod
-    def get_setting(setting_id, raw_setting=False):
-        """
-        Returns the value of a setting as a unicode/int/boolean type.
-
-        Parameters
-        ----------
-        setting_id : str
-            Id of the requested setting.
-        raw_setting : bool, optional(default=False)
-            Return the raw setting as unicode without converting the data type.
-
-        Returns
-        -------
-        unicode, int, bool
-            The requested addon setting.
-
-            If raw_setting is True then return value will always be of type unicode. Else the value will be
-            converted to is relevent type. e.g.
-
-            return as unicode if raw_setting is True or if value is just a simple string.
-            return as interger if value is a digit.
-            return as a boolean if value is a 'true' or 'false' string.
-        """
-        setting = addonData.getSetting(setting_id)
-        if raw_setting:
-            return unicode(setting, "utf8")
-        elif setting.isdigit():
-            return int(setting)
-        elif setting == "true":
-            return True
-        elif setting == "false":
-            return False
-        else:
-            return unicode(setting, "utf8")
-
-    @staticmethod
-    def set_setting(setting_id, value):
-        """
-        Sets Addon setting
-
-        Parameters
-        ----------
-        setting_id : str
-            Id of the setting to be changed.
-        value : bytestring
-            New value of the setting.
-        """
-        addonData.setSetting(setting_id, value)
-
-    @property
-    def id(self):
-        """
-        Return ID of addon as unicode.
-
-        Returns
-        -------
-        unicode
-            Current addon id.
-        """
-        return unicode(addonID)
-
-    @property
-    def name(self):
-        """
-        Return name of addon as unicode.
-
-        Returns
-        -------
-        unicode
-            Name of current addon.
-        """
-        return unicode(addonData.getAddonInfo("name"))
-
-    @property
-    def fanart(self):
-        """
-        Return path to addon fanart as unicode.
-
-        Returns
-        -------
-        unicode
-            Path to addon fanart image.
-        """
-        if self.__fanart is not None:
-            return self.__fanart
-        else:
-            _fanart = addonData.getAddonInfo("fanart")
-            _fanart = translate_path(_fanart)
-            if not os.path.exists(_fanart):
-                _fanart = ""
-            self.__fanart = _fanart
-            return _fanart
-
-    @property
-    def icon(self):
-        """
-        Return Path to addon icon as unicode
-
-        Returns
-        -------
-        unicode
-            Path to addon icon image.
-        """
-        if self.__icon is not None:
-            return self.__icon
-        else:
-            _icon = addonData.getAddonInfo("icon")
-            _icon = translate_path(_icon)
-            if not os.path.exists(_icon):
-                _icon = ""
-            self.__icon = _icon
-            return _icon
-
-    @property
-    def path(self):
-        """
-        Return path to addon source directory as unicode.
-
-        Returns
-        -------
-        unicode
-            Path to addon source directory.
-        """
-        if self.__path is not None:
-            return self.__path
-        else:
-            _path = addonData.getAddonInfo("path")
-            _path = translate_path(_path)
-            self.__path = _path
-            return _path
-
-    @property
-    def profile(self):
-        """
-        Return path to addon profile data directory as unicode.
-
-        Returns
-        -------
-        unicode
-            Path to addon data directory.
-        """
-        if self.__profile is not None:
-            return self.__profile
-        else:
-            _profile = addonData.getAddonInfo("profile")
-            _profile = translate_path(_profile)
-            self.__profile = _profile
-            return _profile
-
-    @property
-    def _path_global(self):
-        """
-        Return path to script source directory as unicode.
-
-        Returns
-        -------
-        unicode
-            Path to script source directory.
-        """
-        if self.__path_global is not None:
-            return self.__path_global
-        else:
-            _path = scriptData.getAddonInfo("path")
-            _path = translate_path(_path)
-            self.__path_global = _path
-            return _path
-
-    @property
-    def profile_global(self):
-        """
-        Return path to script profile data directory as unicode.
-
-        Returns
-        -------
-        unicode
-            Path to script data directory.
-        """
-        if self.__profile_global is not None:
-            return self.__profile_global
-        else:
-            _profile = scriptData.getAddonInfo("profile")
-            _profile = translate_path(_profile)
-            self.__profile_global = _profile
-            return _profile
-
-    @property
-    def utils(self):
-        """
-        Return utils module object.
-
-        Returns
-        -------
-        :class:`utils`
-            modual object.
-        """
-        if self.__utils:
-            return self.__utils
-        else:
-            from . import utils
-            self.__utils = utils
-            return utils
-
-    def requests(self, max_age=60, max_retries=0):
-        """
-        Return requests session object with builtin caching support.
-
-        Parameters
-        ----------
-        max_age : int, optional(default=60)
-            The max age in minutes that the cache can be before it becomes stale. Valid max_age values are.
-
-            -1, to allways return a cached response regardless of the age.
-
-            0, allow use of the cache but will always make a request to server to check the Not Modified Sence header,
-            witch always return the latest content when using the cache, when content has not changed sense last cached.
-
-            0, will return cached response untill the cached response is older than giving age.
-            None, to block use of the cache, will always return server response as is.
-
-        max_retries : int, optional(default=0)
-            The maximum number of retries each connection should attempt
-
-            max_retries applies only to failed DNS lookups, socket connections and connection timeouts, never to
-            requests where data has made it to the server. By default, requests does not retry failed connections.
-
-        Returns
-        -------
-        :class:`requests.session`
-            Request session object.
-
-        """
-        if self.__session is not None:
-            return self.__session
-        else:
-            # Create a non caching requests session
-            if max_age is None or self.get_setting("disable-cache") is True:
-                import requests
-                requests.packages.urllib3.disable_warnings()
-                session = requests.session()
-
-            # Create a caching request session
-            else:
-                from . import requests_caching
-                age = 0 if u"refresh" in self else max_age
-                session = requests_caching.cache_session(self.profile, age, max_retries)
-
-            # Add user agent to session headers and return session
-            session.headers[
-                "user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:43.0) Gecko/20100101 Firefox/43.0"
-            self.__session = session
-            return session
-
-    def request_basic(self, max_age=60):
-        """
-        Return a basic emulated requests session object.
-
-        This request object is custom made to be faster than the real request session object by using basic urllib2
-        but does not actually have any session support to keep connections alive, just caching support.
-        Just faster to load in comparison to the requests module sence it is greatly simplified.
-
-        Parameters
-        ----------
-        max_age : int, optional(default=60)
-            The max age in minutes that the cache can be before it becomes stale.
-
-        Returns
-        -------
-        :class:`urllib_caching.cache_session`
-            Emulated request session object.
-        """
-        from . import urllib_caching
-        session = urllib_caching.cache_session(self.profile, 0 if u"refresh" in self else max_age)
-
-        # Add user agent to session headers and return session
-        session.headers["user-agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:43.0) Gecko/20100101 Firefox/43.0"
-        return session
-
-    def shelf_storage(self, filename=u"metadata_dict.shelf", custom_dir=None, protocol=2, writeback=False):
-        """
-        Return persistence dictionary storage object that is stored on disk.
-
-        Parameters
-        ----------
-        filename : basestring, optional(default='metadata_dict.shelf')
-            Filename for shelf_storage object to use. default 
-        custom_dir : basestring, optional
-            Directory to store the storage file, defaults to addon profile directory.
-        protocol : int, optional(default=2)
-            Protocol version to use when pickling the data to disk. default 2
-        writeback : bool, optional(default=False)
-            Sync data back to disk on close. default False
-
-        Returns
-        -------
-        :class:`ShelfStorage`
-            A persistence shelf storage object
-        """
-        from .storage import ShelfStorage
-        data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return ShelfStorage(data_path, protocol=protocol, writeback=writeback)
-
-    def dict_storage(self, filename=u"metadata_dict.json", custom_dir=None):
-        """
-        Return persistence dictionary storage object that is stored on disk.
-
-        Parameters
-        ----------
-        filename : unicode, optional(default='metadata_dict.json')
-            Filename for dict_storage object to use.
-        custom_dir : unicode, optional
-            Directory to store the storage file, defaults to addon profile directory.
-
-        Returns
-        -------
-        :class:`DictStorage`
-            A persistence dict storage object.
-        """
-        from .storage import DictStorage
-        data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return DictStorage(data_path)
-
-    def list_storage(self, filename=u"metadata_list.json", custom_dir=None):
-        """
-        Return persistence list storage object that is stored on disk.
-
-        Parameters
-        ----------
-        filename : unicode, optional(default=u'metadata_list.json')
-            Filename for list_storage object to use.
-        custom_dir : unicode
-            Directory to store the storage file, defaults to addon profile directory.
-
-        Returns
-        -------
-        :class:`ListStorage`
-            A persistence list strage object.
-        """
-        from .storage import ListStorage
-        data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return ListStorage(data_path)
-
-    def set_storage(self, filename=u"metadata_set.json", custom_dir=None):
-        """
-        Return persistence set storage object that is stored on disk.
-
-        Parameters
-        ----------
-        filename : unicode, optional(default=u'metadata_set.json')
-            Filename for set_storage object to use.
-        custom_dir : unicode, optional
-            Directory to store the storage file, defaults to addon profile directory
-
-        Returns
-        -------
-        :class:`SetStorage`
-            A persistence set storage object
-        """
-        from .storage import SetStorage
-        data_path = os.path.join(custom_dir if custom_dir else self.profile, filename)
-        return SetStorage(data_path)
-
-    @classmethod
-    def copy(cls):
-        return cls._args.copy()
-
-    def __getitem__(self, key):
-        return self._args[key]
-
+class Info(dict):
     def __setitem__(self, key, value):
-        self._args[key] = value
+        # Convert duration into an integer if required
+        if key == "duration":
+            value = self._duration(value)
+            sortAdd(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+        else:
+            try:
+                sort_type, type_converter = sort_map[key]
+            except KeyError:
+                pass
+            else:
+                sortAdd(sort_type)
+                if type_converter:
+                    value = type_converter(value)
 
-    def __delitem__(self, key):
-        del self._args[key]
+        # Set the updated value
+        super(Info, self).__setitem__(key, value)
 
-    def __iter__(self):
-        return iter(self._args)
+    def date(self, date, date_format):
+        converted_date = strptime(date, date_format)
+        self["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2009
+        self["aired"] = strftime("%Y-%m-%d", converted_date)  # 2009-01-01
+        self["year"] = int(strftime("%Y", converted_date))  # 2009
 
-    def __len__(self):
-        return len(self._args)
+    @staticmethod
+    def _duration(duration):
+        if isinstance(duration, basestring):
+            if u":" in duration:
+                # Split Time By Marker and Convert to Integer
+                time_parts = duration.split(u":")
+                time_parts.reverse()
+                duration = 0
+                counter = 1
+
+                # Multiply Each Time Delta Segment by it's Seconds Equivalent
+                for part in time_parts:
+                    duration += int(part) * counter
+                    counter *= 60
+            else:
+                # Convert to Interger
+                duration = int(duration)
+
+        return duration
 
 
-class KodiLogHandler(logging.Handler):
-    """ Custom Logger Handler to forward logs to kodi """
-    _debug_msgs = []
-    log_level_map = {0: 0,
-                     10: xbmc.LOGDEBUG,
-                     20: xbmc.LOGNOTICE,
-                     30: xbmc.LOGWARNING,
-                     40: xbmc.LOGERROR,
-                     50: xbmc.LOGSEVERE}
+class Stream(object):
+    def __init__(self):
+        self.video = {}
+        self.audio = {"channels": 2}
+        self.subtitle = {}
 
-    def emit(self, record):
-        """ Forward the log record to kodi to let kodi handle the logging """
-        formated_msg = self.format(record)
-        xbmc.log(formated_msg, self.log_level_map[record.levelno])
-        if record.levelno == 10:
-            self._debug_msgs.append(record.getMessage())
+    def add(self, stream_type, values):
+        """
+        Add a stream with details.
+
+        Parameters
+        ----------
+        stream_type : str
+            Type of stream(video/audio/subtitle).
+
+        values : dict
+            pairs of { label: value }.
+        """
+        if stream_type == "video":
+            self.video.update(values)
+        elif stream_type == "audio":
+            self.audio.update(values)
+        elif stream_type == "subtitle":
+            self.subtitle.update(values)
+
+    def hd(self, value):
+        """
+        Set the required stream info to show HD/4K logos.
+
+        Parameters
+        ----------
+        value : int
+            0 = SD
+            1 = 720p
+            2 = 1080p
+            3 = 4K
+        """
+        video_info = self.video
+        aspect = None
+
+        # Standard Definition
+        if value == 0:
+            video_info["width"] = 768
+            video_info["height"] = 576
+
+        # HD Ready
+        elif value == 1:
+            video_info["width"] = 1280
+            video_info["height"] = 720
+            aspect = 1.78
+
+        # Full HD
+        elif value == 2:
+            video_info["width"] = 1920
+            video_info["height"] = 1080
+            aspect = 1.78
+
+        # 4K
+        elif value == 3:
+            video_info["width"] = 3840
+            video_info["height"] = 2160
+            aspect = 1.78
+
+        # Set aspect if not already set, won't override
+        if aspect and "aspect" not in video_info:
+            video_info["aspect"] = aspect
+
+
+class Context(list):
+    _strRelated = localize("related_videos")
+    _refreshContext = ("$LOCALIZE[184]", "XBMC.Container.Update(%s)" % current_path(refresh="true"))
+
+    def __init__(self):
+        super(Context, self).__init__()
+        self.append(self._refreshContext)
+
+    def related(self, func, **query):
+        self.add(func, self._strRelated, **query)
+
+    def add(self, func, label, **query):
+        data = find_route(func)
+        if query:
+            if "updatelisting" not in query:
+                query["updatelisting"] = "true"
+            command = "XBMC.Container.Update(%s)" % data.path(query)
+        else:
+            command = "XBMC.Container.Update(%s?updatelisting=true)" % data.path()
+
+        # Append Command to context menu
+        # noinspection PyTypeChecker
+        self.append((label, command))
+
+
+class ListItem(object):
+    vidCounter = 0
+
+    def __init__(self):
+        self.art = Art()
+        self.url = dict()
+        self.info = Info()
+        self.stream = Stream()
+        self.property = dict()
+        self.context = Context()
+        self.listitem = xbmcgui.ListItem()
+        self.label = None
+
+    def set_mimetype(self, value):
+        """ Sets the listitem's mimetype if known. """
+        self.listitem.setMimeType(value)
+
+    def disable_content_lookup(self):
+        """ Disable content lookup for item. """
+        self.listitem.setContentLookup(False)
+
+    def get_direct(self, path, list_type="video", folder=False, playable=True):
+        """
+        Take a url that can be directly sent to kodi and then returns a tuple of (path, listitem, isfolder)
+
+        Parameters
+        ----------
+        path : basestring
+            Url of video or addon to send to kodi.
+
+        list_type : str, optional(default='video')
+            Type of listitem content that will be send to kodi. Option are (video:audio).
+
+        folder : bool, optional(default=False)
+            True if listing folder items else False for video items.
+
+        playable : bool, optional(default=True)
+            Whether the listitem is playable or not.
+
+        Returns
+        -------
+        str
+            Path to send to kodi.
+
+        :class:`xbmcgui.ListItem`
+            Listitem to send to kodi.
+
+        bool
+            Whether the listitem is a folder or not.
+        """
+
+        label = self.label
+        listitem = self.listitem
+        listitem.setLabel(label)
+        self.info["title"] = label
+
+        # Set Kodi InfoLabels
+        listitem.setInfo(list_type, self.info)
+
+        # Set streamInfo if found
+        if self.stream.audio:
+            listitem.addStreamInfo("audio", self.stream.audio)
+        if self.stream.video:
+            listitem.addStreamInfo("video", self.stream.video)
+        if self.stream.subtitle:
+            listitem.addStreamInfo("subtitle", self.stream.subtitle)
+
+        # Set listitem propertys
+        for key, value in self.property:
+            listitem.setProperty(key, value)
+
+        if folder:
+            # Change Kodi Propertys to mark as Folder
+            listitem.setProperty("isplayable", "false")
+            listitem.setProperty("folder", "true")
+
+            # Set Kodi icon image if not already set
+            if "icon" not in self.art:
+                self.art["icon"] = "DefaultFolder.png"
+
+        else:
+            # Change Kodi Propertys to mark as Folder
+            listitem.setProperty("isplayable", "true" if playable else "false")
+            listitem.setProperty("folder", "false")
+
+            # Set Kodi icon image if not already set
+            if "icon" not in self.art:
+                self.art["icon"] = "DefaultVideo.png"
+
+            # Add Video Specific Context menu items
+            self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
+            self.context.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
+
+            # Add the title to the url dict for later use by the url resolver
+            self.url["title"] = label.encode("ascii", "ignore")
+
+            # Increment vid counter for later guessing of content list_type
+            ListItem.vidCounter += 1
+
+        # Add Context menu items
+        listitem.addContextMenuItems(self.context)
+
+        # Set listitem art
+        listitem.setArt(self.art)
+
+        # Return Tuple of url, listitem, isfolder
+        return path, listitem, folder
+
+    def get_tuple(self, action, list_type="video"):
+        """
+        Returns a tuple of listitem properties, (path, listitem, isfolder)
+
+        Parameters
+        ----------
+        action : object or unicode
+            Function or route path to listitem function
+
+        list_type : str, optional(default='video')
+            Type of listitem content that will be send to kodi. Option are (video:audio).
+
+        Returns
+        -------
+        str
+            Path to send to kodi.
+
+        :class:`xbmcgui.ListItem`
+            Listitem to send to kodi.
+
+        bool
+            Whether the listitem is a folder or not.
+        """
+        route_data = find_route(action)
+        path = route_data.path(self.url)
+        return self.get_direct(path, list_type, route_data.folder, route_data.playable)
 
     @classmethod
-    def show_debug(cls):
+    def add_item(cls, action, label, thumbnail=None, **url):
         """
-        Log all debug messages as error messages.
+        Basic constructor to add a simple listitem.
 
-        Useful to show debug messages in normal mode if any severe error occurred.
+        Parameters
+        ----------
+        action : object or str
+            Class that will be call to show recent results
+
+        label : bytestring
+            Label of Listitem
+
+        thumbnail : bytestring, optional
+            Thumbnail image of listitem
+
+        url : dict, optional
+            Url params to pass to listitem
+
+        Returns
+        -------
+        tuple
+            A tuple of path, listitem, isfolder
         """
-        if cls._debug_msgs:
-            xbmc.log("###### debug ######", xbmc.LOGNOTICE)
-            for msg in cls._debug_msgs:
-                xbmc.log(msg, xbmc.LOGNOTICE)
-            xbmc.log("###### debug ######", xbmc.LOGNOTICE)
 
-# Logging
-formatter = logging.Formatter("[%(name)s] %(message)s")
-logger = logging.getLogger(addonID)
-logger.setLevel(logging.DEBUG)
-kodi_handler = KodiLogHandler()
-kodi_handler.setFormatter(formatter)
-logger.addHandler(kodi_handler)
+        listitem = cls()
+        listitem.label = label
+        if thumbnail:
+            listitem.art["thumb"] = thumbnail
+        if url:
+            listitem.url.update(url)
+
+        return listitem.get_tuple(action)
+
+    @classmethod
+    def add_next(cls, **url):
+        """
+        A Listitem constructor for Next Page Item.
+
+        Parameters
+        ----------
+        url : dict
+            Dictionary containing url querys to control addon
+
+        Returns
+        -------
+        tuple
+            A tuple of path, listitem, isfolder
+        """
+
+        # Fetch current url query
+        base_url = args.copy()
+        base_url["updatelisting"] = "true"
+        base_url["nextpagecount"] = int(base_url.get("nextpagecount", 1)) + 1
+        if url:
+            base_url.update(url)
+
+        # Create listitem instance
+        listitem = cls()
+        listitem.label = u"[B]%s %i[/B]" % (localize("next_page"), base_url["nextpagecount"])
+        listitem.art.global_thumb(u"next.png")
+        listitem.url.update(base_url)
+
+        # Fetch current route and return
+        return listitem.get_tuple(selected_route)
+
+    @classmethod
+    def add_search(cls, action, label=None, **url):
+        """
+        A Listitem constructor to add Saved search Support to addon
+
+        Parameters
+        ----------
+        action : func or unicode
+            Class that will be farwarded to search dialog
+
+        label : str, optional(default='search')
+            Lable of Listitem
+
+        url : dict
+            Dictionary containing url querys to combine with search term
+
+        Returns
+        -------
+        tuple
+            A tuple of path, listitem, isfolder
+        """
+
+        listitem = cls()
+        listitem.label = u"[B]%s[/B]" % (label if label else localize("search"))
+        listitem.art.global_thumb(u"search.png")
+
+        route_data = find_route(action)
+        url["route"] = route_data.route
+        listitem.url.update(url)
+
+        return listitem.get_tuple("/internal/SavedSearches")
+
+    @classmethod
+    def add_recent(cls, action, label=None, **url):
+        """
+        A Listitem constructor to add Recent Folder to addon.
+
+        Parameters
+        ----------
+        action : :class:`Base`
+            Class that will be call to show recent results.
+
+        url : dict
+            Dictionary containing url querys to pass to Most Recent Class.
+
+        label : str, optional
+            Lable of Listitem
+
+        Returns
+        -------
+        tuple
+            A tuple of path, listitem, isfolder
+        """
+
+        listitem = cls()
+        listitem.label = u"[B]%s[/B]" % (label if label else localize("most_recent"))
+        listitem.art.global_thumb(u"recent.png")
+        if url:
+            listitem.url.update(url)
+
+        return listitem.get_tuple(action)
+
+    @classmethod
+    def add_youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
+        """
+        A Listitem constructor to add a youtube channel to addon
+
+        Parameters
+        ----------
+        content_id : unicode
+            ID of Youtube channel or playlist to list videos for
+
+        label : bytestring, optional
+            Title of listitem - default to add_string_ref '-Youtube Channel'
+
+        enable_playlists : bool, optional(default=True)
+            Set to True to enable listing of channel playlists.
+
+        wide_thumb : bool, optional(default=False)
+            Set to True to use a wide thumbnail or False for normal thumbnail image.
+
+        Returns
+        -------
+        tuple
+            A tuple of path, listitem, isfolder
+        """
+
+        listitem = cls()
+        listitem.label = u"[B]%s[/B]" % (label if label else localize("youtube_channel"))
+        listitem.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
+        listitem.url["contentid"] = content_id
+        listitem.url["enable_playlists"] = str(enable_playlists).lower()
+        return listitem.get_tuple("/internal/youtube/playlist")
+
+
+@execute("/internal/setViewMode")
+def view_mode_selecter():
+    from .internal import ViewModeSelecter
+    mode_selecter = ViewModeSelecter()
+    new_mode = mode_selecter.display_modes()
+    if new_mode is not None:
+        mode_selecter.set_mode(new_mode)
+
+
+@route("/internal/SavedSearches")
+def saved_searches():
+    from .internal import SavedSearches
+    data = SavedSearches()
+    return data.start()

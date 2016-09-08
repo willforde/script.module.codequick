@@ -1,130 +1,12 @@
 # Kodi imports
 import xbmcaddon
+import xbmcgui
 import xbmc
 
 # Package imports
-from .api import logger
+from .support import logger, get_addon_data
 
-__all__ = ["youtube_hd", "youtube_cache", "keyBoard", "get_skin_name", "strip_tags"]
-
-
-def get_addon_setting(addon_id, key):
-    """
-    Return setting for selected addon.
-
-    Parameters
-    ----------
-    addon_id: str
-        Id of the addon that contains the required setting.
-    key : str
-        Id of the required setting.
-
-    Returns
-    -------
-    unicode
-        setting from specified addon.
-
-    Raises
-    ------
-    RuntimeError
-        If given addon id was not found.
-    UnicodeError
-        If unable to convert property from utf8 to unicode.
-    """
-    return unicode(xbmcaddon.Addon(addon_id).getSetting(key), "utf8")
-
-
-def get_addon_data(addon_id, key):
-    """
-    Returns the value of an addon property as unicode.
-
-    Parameters
-    ----------
-    addon_id : str
-        Id of the addon that contains the required value.
-    key : str
-        Id of the required property.
-
-    Returns
-    -------
-    unicode
-        The required property of requested addon.
-
-    Raises
-    ------
-    RuntimeError
-        If given addon id was not found.
-    UnicodeError
-        If unable to convert property from utf8 to unicode.
-    """
-    return unicode(xbmcaddon.Addon(addon_id).getAddonInfo(key), "utf8")
-
-
-def youtube_hd(default=0, limit=1):
-    """
-    Return youtube quality setting as integer.
-
-    Parameters
-    ----------
-    default : int, optional(default=0)
-        default value to return if unable to fetch quality setting.
-    limit : int, optional(default=1)
-        limit setting value to any one of the quality settings.
-
-    Returns
-    -------
-    int
-        youtube quality setting as integer.
-
-        0 = 480p
-        1 = 720p
-        2 = 1080p
-        3 = 4k
-    """
-    try:
-        quality = int(get_addon_setting("plugin.video.youtube", "kodion.video.quality"))
-        ask = get_addon_setting("plugin.video.youtube", "kodion.video.quality.ask") == "true"
-    except (RuntimeError, ValueError) as e:
-        logger.error("Unable to fetch youtube video quality setting")
-        logger.error(e)
-        return default
-    else:
-        if ask is True:
-            return 1
-        elif quality < 3:
-            return 0
-        else:
-            if quality > limit + 2:
-                return limit
-            else:
-                return quality - 2
-
-
-def youtube_lang(lang=u"en"):
-    """
-    Return the language set by the youtube addon.
-
-    Parameters
-    ----------
-    lang : unicode, optional(default=u'en')
-        The default language to use if no language was set.
-
-    Returns
-    -------
-    unicode
-        The language to use when fetching youtube content.
-    """
-    try:
-        setting = get_addon_setting("plugin.video.youtube", "youtube.language")
-    except (RuntimeError, UnicodeDecodeError):
-        return unicode(lang)
-    else:
-        if setting:
-            dash = setting.find(u"-")
-            if dash > 0:
-                return setting[:dash]
-
-        return unicode(lang)
+__all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session", "urllib_session"]
 
 
 def keyboard(default="", heading="", hidden=False):
@@ -135,8 +17,10 @@ def keyboard(default="", heading="", hidden=False):
     ----------
     default : str, optional(default='')
         default text entry.
+
     heading : str, optional(default='')
         keyboard heading.
+
     hidden : bool, optional(default=False)
         True for hidden text entry.
 
@@ -157,6 +41,39 @@ def keyboard(default="", heading="", hidden=False):
         return unicode(text, "utf8")
     else:
         return u""
+
+
+def notification(heading, message, icon="info", display_time=5000, sound=True):
+    """
+    Send a notification to kodi
+
+    Parameters
+    ----------
+    heading : bytestring
+        Dialog heading.
+
+    message : bytestring
+        Dialog message.
+
+    icon : bytestring, optional(default="info")
+        Icon to use. option are 'error', 'info', 'warning'.
+
+    display_time : bytestring, optional(default=5000)
+        Display_time in milliseconds to show dialog.
+
+    sound : bytestring, optional(default=True)
+        Whether or not to play notification sound.
+    """
+
+    # Convert heading and messegs to UTF8 strings if needed
+    if isinstance(heading, unicode):
+        heading = heading.encode("utf8")
+    if isinstance(message, unicode):
+        message = message.encode("utf8")
+
+    # Send Error Message to Display
+    dialog = xbmcgui.Dialog()
+    dialog.notification(heading, message, icon, display_time, sound)
 
 
 def get_skin_name(skin_id):
@@ -204,6 +121,47 @@ def strip_tags(html):
     return html
 
 
-def container_refresh():
-    """ Refresh the Container listings """
-    xbmc.executebuiltin("Container.Refresh")
+def requests_session(max_age=None, disable_cache=False):
+    """
+    Return requests session object with builtin caching support
+
+    Parameters
+    ----------
+    max_age : int, optional(default=3600)
+        The max age in seconds that the __cache can be before it becomes stale. Valid values are.
+
+        -1, to allways return a cached response regardless of the age of the __cache.
+
+        0, allow use of the __cache but will always make a request to server to check the Not Modified Sence header,
+        witch will check if the __cache matchs the server before downloading the content again.
+
+        >=1, will return cached response untill the cached response is older than giving max age.
+
+    disable_cache : bool, optional(default=False)
+        If true the __cache system will be bypassed (disabled).
+    """
+    from .requests_caching import session
+    return session(max_age, disable_cache)
+
+
+def urllib_session(max_age=None, disable_cache=False):
+    """
+    Return a emulated requests session object using urllib with builtin caching support.
+
+    Parameters
+    ----------
+    max_age : int, optional(default=3600)
+        The max age in seconds that the __cache can be before it becomes stale. Valid values are.
+
+        -1, to allways return a cached response regardless of the age of the __cache.
+
+        0, allow use of the __cache but will always make a request to server to check the Not Modified Sence header,
+        witch will check if the __cache matchs the server before downloading the content again.
+
+        >0, will return cached response untill the cached response is older than giving max age.
+
+    disable_cache : bool, optional(default=False)
+        If true the __cache system will be bypassed (disabled).
+    """
+    from .urllib_caching import session
+    return session(max_age, disable_cache)
