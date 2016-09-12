@@ -189,10 +189,6 @@ class Response(object):
             # Unescape the content
             return self._unescape(unicode_data)
 
-    def json(self, **kwargs):
-        """ Returns the json-encoded content of a response, if any. """
-        return json.loads(self.content, encoding=self.encoding, **kwargs)
-
     @property
     def headers(self):
         """
@@ -228,6 +224,10 @@ class Response(object):
     def raw(self):
         """ File-like object representation of response (for advanced usage). """
         return self.__response
+
+    def json(self, **kwargs):
+        """ Returns the json-encoded content of a response, if any. """
+        return json.loads(self.content, encoding=self.encoding, **kwargs)
 
     def close(self):
         """
