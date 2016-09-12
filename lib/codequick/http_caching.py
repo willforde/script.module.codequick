@@ -317,10 +317,14 @@ class CacheHandler(object):
         if new_headers:
             return new_headers
 
-    def update(self, body, headers, status, reason, version=None, strict=None, decode_content=None):
+    def update(self, body, headers, status, reason, version=None, strict=None):
         # Remove Transfer-Encoding from header if response was a chunked response
         if "Transfer-encoding" in headers:
             del headers["Transfer-encoding"]
+
+        # Remove Content encoding header as the content will be decoded if it was encoded
+        if "Content-encoding" in headers:
+            del headers["Content-encoding"]
 
         # Create response data structure
         response = {"body": body,
@@ -328,8 +332,7 @@ class CacheHandler(object):
                     "status": status,
                     "version": version,
                     "reason": reason,
-                    "strict": strict,
-                    "decode_content": decode_content}
+                    "strict": strict}
 
         # Update the __cache response data store
         self.__response = response.copy()

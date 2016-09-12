@@ -158,27 +158,8 @@ class Response(object):
         if self.__content is not None:
             return self.__content
         else:
-            # Check if Response need to be decoded, else return raw response
-            content_encoding = headers.get(u"content-encoding", u"")
-            content = response.read()
-
-            # If content is compressed then decompress and decode into unicode
-            try:
-                # Decompress the content if content is gzip encoded
-                if "gzip" in content_encoding:
-                    content = zlib.decompress(content, 16 + zlib.MAX_WBITS)
-
-                # Decompress the content if content is compressed using deflate
-                elif "deflate" in content_encoding:
-                    content = zlib.decompress(content)
-
-            except zlib.error as e:
-                logger.error(str(e))
-                raise
-
-            else:
-                self.__content = content
-                return content
+            self.__content = self.__response.read()
+            return self.__content
 
     @property
     def text(self):
@@ -305,25 +286,41 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         return response.code
 
     @staticmethod
-    def update_cache(cache, response):
-        """ Update the __cache with the new server response """
-
-        # Fetch response headers
-        headers = response.info()
-
-        # Check if content is encoded (compressed)
-        content_encoding = headers.get(u"content-encoding")
-        decode_content = "gzip" in content_encoding or "deflate" in content_encoding
-
-        # Now update the __cache with the appropriate data
-        cache.update(body=response.read(), headers=headers, status=response.code,
-                     reason=response.msg, decode_content=decode_content)
-
-    @staticmethod
     def http_request(request):
         """ Add some extra headers to request """
         request.add_header("accept-encoding", "gzip,deflate")
         return request
+
+    @staticmethod
+    def decompress(content):
+        try:
+            # Decompress the content if content is gzip encoded
+            if "gzip" in content_encoding:
+                return zlib.decompress(content, 16 + zlib.MAX_WBITS)
+
+            # Decompress the content if content is compressed using deflate
+            elif "deflate" in content_encoding:
+                return zlib.decompress(content)
+
+        except zlib.error:
+            logger.error("Failed to decompress content body")
+            raise
+
+    def update_cache(self, cache, response):
+        """ Update the __cache with the new server response """
+
+        # Fetch response headers
+        headers = response.info()
+        body = response.read()
+
+        # Check if Response need to be decoded first, else return raw response
+        content_encoding = headers.get(u"content-encoding", u"")
+        if "gzip" in content_encoding or "deflate" in content_encoding:
+            body = self.decompress(body)
+
+        # Now update the __cache with the appropriate data
+        cache.update(body=body, headers=headers, status=response.code,
+                     reason=response.msg)
 
     def default_open(self, request):
         """

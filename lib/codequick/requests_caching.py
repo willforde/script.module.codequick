@@ -51,13 +51,13 @@ class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
 
         # Fetch the body of the response
         if response.chunked:
-            body = "".join([chunk for chunk in response.stream(decode_content=False)])
+            body = "".join([chunk for chunk in response.stream(decode_content=True)])
         else:
-            body = response.read(decode_content=False)
+            body = response.read(decode_content=True)
 
         # Now update the __cache with the appropriate data
         cache.update(body=body, headers=response.headers, status=response.status, reason=response.reason,
-                     version=response.version, strict=response.strict, decode_content=response.decode_content)
+                     version=response.version, strict=response.strict)
 
     def send(self, request, **kwargs):
         """
