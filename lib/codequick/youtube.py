@@ -452,7 +452,7 @@ class APIControl(object):
                 logger.debug("Skipping video %s: No cache data found", videoId)
                 continue
             elif video_data[u"status"][u"privacyStatus"] != u"public":
-                logger.debug("Skipping video %s: Video is marked as private", videoId)
+                logger.debug("Skipping video %s: Marked as private", videoId)
                 continue
 
             # Fetch video snippet & content_details
