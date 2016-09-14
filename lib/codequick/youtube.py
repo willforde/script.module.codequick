@@ -523,9 +523,7 @@ class APIControl(object):
 
         # Add next Page entry if pagetoken is giving
         if pagetoken:
-            params = args.copy()
-            params["pagetoken"] = pagetoken
-            yield ListItem.add_next(**params)
+            yield ListItem.add_next(pagetoken=pagetoken)
 
         # Add playlists item to results
         if not multi_channel and u"pagetoken" not in args and args.get(u"enable_playlists", u"false") == u"true":
