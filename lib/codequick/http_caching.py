@@ -16,6 +16,23 @@ USERAGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.
 DEFAULTAGE = 3600
 
 
+class CaseInsensitiveDict(dict):
+    """ A Case Insensitive dict"""
+    def __init__(self, headers):
+        super(CaseInsensitiveDict, self).__init__()
+        for key, value in headers.iteritems():
+            self[key.lower()] = value
+
+    def __getitem__(self, key):
+        return super(CaseInsensitiveDict, self).__getitem__(key.lower())
+
+    def __delitem__(self, key):
+        super(CaseInsensitiveDict, self).__delitem__(key.lower())
+
+    def __contains__(self, key):
+        return super(CaseInsensitiveDict, self).__contains__(key.lower())
+
+
 def session_common(session_cls):
     def decorator(func):
         def wrapper(max_age=None, disable_cache=False):
@@ -277,7 +294,7 @@ class CacheHandler(object):
                 uncompressed = zlib.decompress(raw_data)
                 cached = json.loads(uncompressed)
                 cached["body"] = base64.b64decode(str(cached["body"]))
-                cached["headers"] = httplib.HTTPMessage(io.BytesIO(base64.b64decode(str(cached["headers"]))))
+                cached["headers"] = CaseInsensitiveDict(cached["headers"])
 
             except zlib.error as e:
                 logger.debug("Cache decompress failed: %s", str(e))
@@ -308,16 +325,21 @@ class CacheHandler(object):
 
         # Check for conditional headers
         if "Etag" in headers:
-            new_headers["If-none-match"] = headers["Etag"]
+            logger.debug("Found conditional header: ETag = %s", headers["ETag"])
+            new_headers["If-None-Match"] = headers["ETag"]
 
         if "Last-modified" in headers:
-            new_headers["If-modified-since"] = headers["Last-modified"]
+            logger.debug("Found conditional header: Last-Modified = %s", headers["Last-modified"])
+            new_headers["If-Modified-Since"] = headers["Last-Modified"]
 
         # Return the conditional headers if any
         if new_headers:
             return new_headers
 
     def update(self, body, headers, status, reason, version=None, strict=None):
+        # Convert headers into a case insensitive dict
+        headers = CaseInsensitiveDict(headers)
+
         # Remove Transfer-Encoding from header if response was a chunked response
         if "Transfer-encoding" in headers:
             del headers["Transfer-encoding"]
@@ -339,7 +361,6 @@ class CacheHandler(object):
 
         # Serialize the response content to insure that json can do it's job
         response["body"] = base64.b64encode(response["body"])
-        response["headers"] = base64.b64encode(str(response["headers"]))
 
         # Serialize the whole response
         try:
