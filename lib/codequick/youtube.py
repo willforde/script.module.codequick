@@ -7,6 +7,7 @@ from .support import strings, logger, args, get_info, localize, get_addon_settin
 from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
 from .utils import requests_session
+from .utils import urllib_session as requests_session
 
 
 # Prerequisites
@@ -21,11 +22,8 @@ def playlist(contentid=None):
 
 @route("/internal/youtube/playlists")
 def playlists(contentid=None):
-    # If the function was called directly with a given content id then set the show_all flag
-    # to True so to enable linkink to all channel videos
-    contentid, show_all = (contentid, True) if contentid else (args[u"contentid"], False)
     gdata = APIControl()
-    return gdata.playlists(contentid, show_all)
+    return gdata.playlists(contentid if contentid else args[u"contentid"], contentid is not None)
 
 
 @route("/internal/youtube/related")
