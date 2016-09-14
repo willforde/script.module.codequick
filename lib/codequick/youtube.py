@@ -21,8 +21,11 @@ def playlist(contentid=None):
 
 @route("/internal/youtube/playlists")
 def playlists(contentid=None):
+    # If the function was called directly with a given content id then set the show_all flag
+    # to True so to enable linkink to all channel videos
+    contentid, show_all = (contentid, True) if contentid else (args[u"contentid"], False)
     gdata = APIControl()
-    return gdata.playlists(contentid if contentid else args[u"contentid"])
+    return gdata.playlists(contentid, show_all)
 
 
 @route("/internal/youtube/related")
@@ -537,7 +540,7 @@ class APIControl(object):
         # Instantiate Youtube API
         self.api = API()
 
-    def playlists(self, content_id):
+    def playlists(self, content_id, show_all=False):
         """
         List all playlist for giving channel
 
@@ -545,6 +548,9 @@ class APIControl(object):
         ----------
         content_id : unicode
             Channel uuid or channel name to list playlists for
+
+        show_all : bool, optional(default=False)
+            When True, a listitem linking to all of the channel videos will be available
         """
 
         # Fetch channel uuid
@@ -556,6 +562,11 @@ class APIControl(object):
             fanart = channel_cache[channel_id][u"fanart"]
         else:
             fanart = None
+
+        # Display a link for listing all channel video
+        if show_all:
+            title = u"[B]%s" % localize("all_videos")
+            yield ListItem.add_youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
 
         # Fetch channel playlists feed
         feed = self.api.playlists(channel_id)
