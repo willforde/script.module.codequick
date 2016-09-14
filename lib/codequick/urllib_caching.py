@@ -292,7 +292,7 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         return request
 
     @staticmethod
-    def decompress(content):
+    def decompress(content, content_encoding):
         try:
             # Decompress the content if content is gzip encoded
             if "gzip" in content_encoding:
@@ -316,7 +316,7 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         # Check if Response need to be decoded first, else return raw response
         content_encoding = headers.get(u"content-encoding", u"")
         if "gzip" in content_encoding or "deflate" in content_encoding:
-            body = self.decompress(body)
+            body = self.decompress(body, content_encoding)
 
         # Now update the __cache with the appropriate data
         cache.update(body=body, headers=headers, status=response.code,
