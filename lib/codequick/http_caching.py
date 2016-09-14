@@ -268,6 +268,32 @@ class CacheHandler(object):
             return timestamp
 
     @property
+    def conditional_headers(self):
+        """ Return a dict of conditional headers from cache """
+
+        # Fetch Cached headers
+        response = self.response
+        if not response:
+            return None
+
+        # Fetch response headers
+        headers = response["headers"]
+        new_headers = {}
+
+        # Check for conditional headers
+        if "Etag" in headers:
+            logger.debug("Found conditional header: ETag = %s", headers["ETag"])
+            new_headers["If-None-Match"] = headers["ETag"]
+
+        if "Last-modified" in headers:
+            logger.debug("Found conditional header: Last-Modified = %s", headers["Last-modified"])
+            new_headers["If-Modified-Since"] = headers["Last-Modified"]
+
+        # Return the conditional headers if any
+        if new_headers:
+            return new_headers
+
+    @property
     def response(self):
         """ Return the cache response that is stored on disk """
         if self.__response is not None:
@@ -309,32 +335,6 @@ class CacheHandler(object):
             # If we can get this far that every thing must be good
             self.__response = cached
             return cached
-
-    @property
-    def conditional_headers(self):
-        """ Return a dict of conditional headers from cache """
-
-        # Fetch Cached headers
-        response = self.response
-        if not response:
-            return None
-
-        # Fetch response headers
-        headers = response["headers"]
-        new_headers = {}
-
-        # Check for conditional headers
-        if "Etag" in headers:
-            logger.debug("Found conditional header: ETag = %s", headers["ETag"])
-            new_headers["If-None-Match"] = headers["ETag"]
-
-        if "Last-modified" in headers:
-            logger.debug("Found conditional header: Last-Modified = %s", headers["Last-modified"])
-            new_headers["If-Modified-Since"] = headers["Last-Modified"]
-
-        # Return the conditional headers if any
-        if new_headers:
-            return new_headers
 
     def update(self, body, headers, status, reason, version=None, strict=None):
         # Convert headers into a case insensitive dict
