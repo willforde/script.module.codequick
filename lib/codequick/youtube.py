@@ -679,7 +679,7 @@ class API(object):
         logger.debug("Youtube API Params for resource: %s", api_type)
         for key, value in params.iteritems():
             if key != "key":
-                logger.debug("Param : %s = %s", key, value)
+                logger.debug("--- %-11s = %s", key, value)
 
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
         source = self.req_session.get(url, params=params, headers=None if max_age is None else {"X-Max-Age": max_age})

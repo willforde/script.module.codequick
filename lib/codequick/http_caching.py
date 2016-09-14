@@ -136,7 +136,7 @@ class CacheAdapterCommon(object):
                     return self.prepare_cached_response(cache.response, request, from_cache=True)
                 else:
                     # Set cache headers to allow for 304 Not Modified response
-                    logger.debug("Cache is stale, setting conditional headers if any")
+                    logger.debug("Cache is stale, checking for conditional headers")
                     headers = cache.conditional_headers
                     if headers:
                         request.headers.update(headers)
