@@ -263,7 +263,7 @@ class APIControl(object):
         channel_data = channel_cache.setdefault(u"channels", {})
 
         # Directly return the content id if its a playlistID or uploadsID and playlist_uuid is required
-        if content_code == u"PL":
+        if content_code == u"PL" or content_code == u"FL":
             if playlist_uuid:
                 return contentid
             else:
@@ -354,8 +354,9 @@ class APIControl(object):
 
         # Also add reference for channel name if given
         if for_username:
-            logger.debug(feed)
-            channel_refs[for_username] = feed[u"items"][0][u"id"]
+            channelid = feed[u"items"][0][u"id"]
+            channel_refs[for_username] = channelid
+            logger.debug("Channel ID for channel %s is %s", for_username, channelid)
 
         # Sync __cache to disk
         channel_cache.sync()
@@ -447,7 +448,11 @@ class APIControl(object):
         for channelId, videoId in zip(channel_ids, video_ids):
             # Skip to the next video if no cached data was found or if the video is not public
             video_data = video_cache.get(videoId)
-            if video_data is None or video_data[u"status"][u"privacyStatus"] != u"public":
+            if video_data is None:
+                logger.debug("Skipping video %s: No cache data found", videoId)
+                continue
+            elif video_data[u"status"][u"privacyStatus"] != u"public":
+                logger.debug("Skipping video %s: Video is marked as private", videoId)
                 continue
 
             # Fetch video snippet & content_details
