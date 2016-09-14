@@ -132,7 +132,7 @@ class CacheAdapterCommon(object):
                 # Now check if that cache is fresh
                 if cache.fresh():
                     # Sense cache is fresh we can build a cached response and return it
-                    logger.debug("Cache is fresh, using cached response")
+                    logger.debug("Cache is fresh, returning cached response")
                     return self.prepare_cached_response(cache.response, request, from_cache=True)
                 else:
                     # Set cache headers to allow for 304 Not Modified response
