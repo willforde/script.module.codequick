@@ -42,10 +42,10 @@ def session_common(session_cls):
             Parameters
             ----------
             max_age : int, optional(default=3600)
-                Max age that the __cache can be before it becomes stale.
+                Max age that the cache can be before it becomes stale.
 
             disable_cache : bool, optional(default=False)
-                If true the __cache system will be bypassed (disabled).
+                If true the cache system will be bypassed (disabled).
             """
 
             # Create session object
@@ -97,7 +97,7 @@ class CacheAdapterCommon(object):
         if next_time < current_time:
             logger.debug("Initiating Cache Cleanup...")
 
-            # Loop each file within __cache directory
+            # Loop each file within cache directory
             for url_hash in os.listdir(self.cache_dir):
                 cache = CacheHandler(self.cache_dir, url_hash, 60 * 24 * 14)
                 if cache.file_fresh() is False:
@@ -107,35 +107,35 @@ class CacheAdapterCommon(object):
             set_setting("_next_cleanup", unicode(current_time + 1209600))
 
     def check_cache(self, request):
-        """ Check if the __cache contents is fresh and return the __cache if so """
+        """ Check if the cache contents is fresh and return the cache if so """
 
         # Local vars
         method = self.get_method(request)
         url = self.get_url(request)
 
-        # Reset __cache variable for the next request to start a fresh
+        # Reset cache variable for the next request to start a fresh
         if self.__cache:
             self.__cache.close()
             self.__cache = None
 
         logger.debug("%s Requesting Url: %s", method, url)
-        # Check __cache only for get requests
+        # Check cache only for get requests
         if method == "GET":
             # Fetch max age from request header
             max_age = int(request.headers.pop("X-max-age", DEFAULTAGE))
 
-            # Fetch the __cache if it exists
+            # Fetch the cache if it exists
             self.__cache = cache = self.get_cache(url, max_age)
 
-            # Check if __cache exists first
+            # Check if cache exists first
             if cache.exists():
-                # Now check if that __cache is fresh
+                # Now check if that cache is fresh
                 if cache.fresh():
-                    # Sense __cache is fresh we can build a cached response and return it
+                    # Sense cache is fresh we can build a cached response and return it
                     logger.debug("Cache is fresh, using cached response")
                     return self.prepare_cached_response(cache.response, request, from_cache=True)
                 else:
-                    # Set __cache headers to allow for 304 Not Modified response
+                    # Set cache headers to allow for 304 Not Modified response
                     logger.debug("Cache is stale, setting conditional headers if any")
                     headers = cache.conditional_headers
                     if headers:
@@ -147,7 +147,7 @@ class CacheAdapterCommon(object):
             status = self.get_status(response)
             cache = self.__cache
 
-            # Update __cache timestamp if server returns a 304 Not Modified Response
+            # Update cache timestamp if server returns a 304 Not Modified Response
             if status == 304:
                 cache.reset_timestamp()
                 logger.debug("Server return 304 Not Modified response, using cached response")
@@ -160,7 +160,7 @@ class CacheAdapterCommon(object):
                 else:
                     logger.debug("Caching request response")
 
-                # Save response to __cache and return it as a cached response
+                # Save response to cache and return it as a cached response
                 self.update_cache(cache, response)
                 response = self.prepare_cached_response(cache.response, request)
 
@@ -168,7 +168,7 @@ class CacheAdapterCommon(object):
         return response
 
     def get_cache(self, url, max_age=None):
-        """ Initialize __cache handler and return it """
+        """ Initialize cache handler and return it """
         url_hash = self.encode_url(url)
         return CacheHandler(self.cache_dir, url_hash, max_age)
 
@@ -181,7 +181,7 @@ class CacheAdapterCommon(object):
 
     @property
     def cache_dir(self):
-        """ Return __cache directory and create if missing """
+        """ Return cache directory and create if missing """
         if self.__cache_dir is not None:
             return self.__cache_dir
         else:
@@ -193,7 +193,7 @@ class CacheAdapterCommon(object):
 
 class CacheHandler(object):
     """
-    Cache Handler to manage the on disk __cache
+    Cache Handler to manage the on disk cache
 
     Parameters
     ----------
@@ -201,7 +201,7 @@ class CacheHandler(object):
         SHA1 hash of the url from the request to be cached.
 
     max_age : int, optional(default=3600)
-        Max age that the __cache can be before it becomes stale.
+        Max age that the cache can be before it becomes stale.
     """
 
     def __init__(self, cache_dir, url_hash, max_age=None):
@@ -216,22 +216,22 @@ class CacheHandler(object):
         self.max_age = max_age
 
     def exists(self):
-        """ Return True if __cache exists else False """
+        """ Return True if cache exists else False """
         return self.__exists and self.response is not None
 
     def fresh(self):
-        """ Return True if __cache is fresh else False """
+        """ Return True if cache is fresh else False """
         response = self.response
 
-        # Check that the __cache response exists first
+        # Check that the cache response exists first
         if response is None:
             return False
 
-        # Check that the response is of status 301 or that the __cache is not older than the max age
+        # Check that the response is of status 301 or that the cache is not older than the max age
         elif response.get("status") == 301 or self.max_age == -1 or self.file_fresh():
             return True
 
-        # Just return false to indecate that the __cache is not fresh
+        # Just return false to indecate that the cache is not fresh
         else:
             return False
 
@@ -239,13 +239,13 @@ class CacheHandler(object):
         return (time.time() - self.timestamp) < self.max_age
 
     def delete(self):
-        """ Delete __cache from disk"""
-        logger.debug("Removing __cache: %s", url_hash)
+        """ Delete cache from disk"""
+        logger.debug("Removing cache: %s", url_hash)
         self.close()
         try:
             os.remove(self.cache_path)
         except OSError:
-            logger.debug("Cache Error: Unable to delete __cache from disk")
+            logger.debug("Cache Error: Unable to delete cache from disk")
 
     def close(self):
         """ Reset instance variables and loaded response"""
@@ -260,7 +260,7 @@ class CacheHandler(object):
 
     @property
     def timestamp(self):
-        """ Return the last modified timestamp of the __cache file """
+        """ Return the last modified timestamp of the cache file """
         if self.__timestamp is not None:
             return self.__timestamp
         else:
@@ -269,16 +269,16 @@ class CacheHandler(object):
 
     @property
     def response(self):
-        """ Return the __cache response that is stored on disk """
+        """ Return the cache response that is stored on disk """
         if self.__response is not None:
             return self.__response
         else:
-            # Skip if __cache dont actually exists
+            # Skip if cache dont actually exists
             if not self.__exists:
                 return None
 
             try:
-                # Atempt to read in a raw __cache data
+                # Atempt to read in a raw cache data
                 with open(self.cache_path, "rb") as stream:
                     raw_data = stream.read()
                     if not raw_data:
@@ -312,7 +312,7 @@ class CacheHandler(object):
 
     @property
     def conditional_headers(self):
-        """ Return a dict of conditional headers from __cache """
+        """ Return a dict of conditional headers from cache """
 
         # Fetch Cached headers
         response = self.response
@@ -356,7 +356,7 @@ class CacheHandler(object):
                     "reason": reason,
                     "strict": strict}
 
-        # Update the __cache response data store
+        # Update the cache response data store
         self.__response = response.copy()
 
         # Serialize the response content to insure that json can do it's job

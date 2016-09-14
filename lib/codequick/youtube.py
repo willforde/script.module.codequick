@@ -667,8 +667,8 @@ class API(object):
         params : dict
             Dict of parameters that will be send to the api as a query.
 
-        max_age : int
-            Max age override for the url __cache.
+        max_age : int, optional
+            Max age override for the url cache.
         """
 
         # Check api_type of video id(s) before making request
@@ -683,7 +683,7 @@ class API(object):
 
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
         source = self.req_session.get(url, params=params, headers=None if max_age is None else {"X-Max-Age": max_age})
-        response = json.loads(source.content)#, encoding=source.encoding)
+        response = json.loads(source.content, encoding=source.encoding)
         if u"error" not in response:
             return response
         else:
@@ -827,7 +827,7 @@ class API(object):
         params["channelId"] = channel_id
 
         # Connect to server and return json response
-        feed = self._connect_v3("playlists", params, 60 * 8)
+        feed = self._connect_v3("playlists", params)
         pagetoken = feed.get(u"nextPageToken")
 
         # Loop all pages
