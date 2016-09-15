@@ -242,9 +242,9 @@ class CacheHandler(object):
 
     def delete(self):
         """ Delete cache from disk"""
-        logger.debug("Removing cache: %s", url_hash)
         self.close()
         try:
+            logger.debug("Removing cache: %s", self.cache_path)
             os.remove(self.cache_path)
         except OSError:
             logger.debug("Cache Error: Unable to delete cache from disk")
