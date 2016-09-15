@@ -291,43 +291,42 @@ class CacheHandler(object):
         """ Return the cache response that is stored on disk """
         if self.__response is not None:
             return self.__response
+
+        # Skip if cache dont actually exists
+        if not self.__exists:
+            return None
+
+        try:
+            # Atempt to read in a raw cache data
+            with open(self.cache_path, "rb") as stream:
+                json_data = json.load(stream)
+
+            # Convert content body form ascii to binary
+            decoded_data = base64.b64decode(str(json_data["body"]))
+            json_data["body"] = zlib.decompress(decoded_data)
+
+        except (IOError, OSError) as e:
+            logger.debug("Cache Error: Failed to read cached response, %s", str(e))
+            self.delete()
+            return None
+
+        except (ValueError, TypeError) as e:
+            logger.debug("Cache Error: Failed to deserialize content body, %s", str(e))
+            self.delete()
+            return None
+
+        except zlib.error as e:
+            logger.debug("Cache Error: Failed to decompress content body, %s", str(e))
+            self.delete()
+            return None
+
         else:
-            # Skip if cache dont actually exists
-            if not self.__exists:
-                return None
+            # Convert header dict into a case insensitive dict
+            json_data["headers"] = CaseInsensitiveDict(json_data["headers"])
 
-            try:
-                # Atempt to read in a raw cache data
-                with open(self.cache_path, "rb") as stream:
-                    raw_data = stream.read()
-                    if not raw_data:
-                        raise IOError("Content of %s is empty", self.cache_path)
-
-            except (IOError, OSError) as e:
-                logger.debug("Cache read failed: %s", str(e))
-                self.delete()
-                return None
-
-            try:
-                # Deserialize and decode the raw data
-                uncompressed = zlib.decompress(raw_data)
-                cached = json.loads(uncompressed)
-                cached["body"] = base64.b64decode(str(cached["body"]))
-                cached["headers"] = CaseInsensitiveDict(cached["headers"])
-
-            except zlib.error as e:
-                logger.debug("Cache decompress failed: %s", str(e))
-                self.delete()
-                return None
-
-            except (ValueError, TypeError) as e:
-                logger.debug("Cache deserialize failed: %s", str(e))
-                self.delete()
-                return None
-
-            # If we can get this far that every thing must be good
-            self.__response = cached
-            return cached
+        # If we can get this far that every thing must be good
+        self.__response = json_data
+        return json_data
 
     def update(self, body, headers, status, reason, version=None, strict=None):
         # Convert headers into a Case Insensitive Dict
@@ -354,30 +353,31 @@ class CacheHandler(object):
         # Update the cache response data store
         self.__response = response.copy()
 
-        # Serialize the response content to insure that json can do it's job
-        response["body"] = base64.b64encode(response["body"])
-
-        # Serialize the whole response
         try:
-            json_serial = json.dumps(response, ensure_ascii=True)
-        except TypeError:
-            logger.debug("Cache Error: Failed to serialize the response using json")
-            raise
+            # Compress the content body
+            compressed = zlib.compress(response["body"], 1)
 
-        # Compress the json Serialized response
-        try:
-            compressed = zlib.compress(json_serial, 1)
-        except zlib.error:
-            logger.debug("Cache Error: Failed to compress serialized response")
-            raise
+            # Convert compressed binary data to ascii
+            response["body"] = base64.b64encode(compressed)
 
-        # Save serialized response to disk
-        try:
+            # Save the response to disk using json Serialization
             with open(self.cache_path, "wb") as stream:
-                stream.write(compressed)
-        except (IOError, OSError):
-            logger.debug("Cache Error: Failed to Save serialized response to disk")
+                json.dump(response, stream)
+
+        except zlib.error:
+            logger.debug("Cache Error: Failed to compress content body")
             self.delete()
             raise
+
+        except (ValueError, TypeError) as e:
+            logger.debug("Cache Error: Failed to base64 encode the content body, %s")
+            self.delete()
+            raise
+
+        except (IOError, OSError):
+            logger.debug("Cache Error: Failed to Save json serialized response to disk")
+            self.delete()
+            raise
+
         else:
             self.__exists = True
