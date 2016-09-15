@@ -23,9 +23,6 @@ def session(session_obj):
 
 
 class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
-    # Class vars
-    cache_dir_name = u"cache_requests"
-
     def __init__(self, *args, **kwargs):
         # Call Parent init method
         super(CacheAdapter, self).__init__(*args, **kwargs)

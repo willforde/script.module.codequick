@@ -271,7 +271,6 @@ class Response(object):
 
 class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
     # Class vars
-    cache_dir_name = u"cache_urllib"
     from_cache = False
 
     @staticmethod

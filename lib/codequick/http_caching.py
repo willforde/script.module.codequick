@@ -15,6 +15,11 @@ from .support import get_info, get_setting, set_setting, logger, args
 USERAGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
 DEFAULTAGE = 3600
 
+# Set the cache directory and create it if missing
+CACHE_DIR = os.path.join(get_info("profile"), u"cache")
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+
 
 class CaseInsensitiveDict(dict):
     """ A Case Insensitive dict"""
@@ -77,8 +82,6 @@ def session_common(session_cls):
 
 
 class CacheAdapterCommon(object):
-    # Class vars
-    __cache_dir = None
     __cache = None
 
     def __del__(self):
@@ -100,8 +103,8 @@ class CacheAdapterCommon(object):
             logger.debug("Initiating Cache Cleanup...")
 
             # Loop each file within cache directory
-            for url_hash in os.listdir(self.cache_dir):
-                cache = CacheHandler(self.cache_dir, url_hash, 60 * 24 * 14)
+            for url_hash in os.listdir(CACHE_DIR):
+                cache = CacheHandler(url_hash, 60 * 24 * 14)
                 if cache.file_fresh() is False:
                     cache.delete()
 
@@ -172,7 +175,7 @@ class CacheAdapterCommon(object):
     def get_cache(self, url, max_age=None):
         """ Initialize cache handler and return it """
         url_hash = self.encode_url(url)
-        return CacheHandler(self.cache_dir, url_hash, max_age)
+        return CacheHandler(url_hash, max_age)
 
     @staticmethod
     def encode_url(url):
@@ -180,17 +183,6 @@ class CacheAdapterCommon(object):
         if "#" in url:
             url = url[:url.find("#")]
         return hashlib.sha1(url).hexdigest()
-
-    @property
-    def cache_dir(self):
-        """ Return cache directory and create if missing """
-        if self.__cache_dir is not None:
-            return self.__cache_dir
-        else:
-            self.__cache_dir = cache_dir = os.path.join(get_info("profile"), self.cache_dir_name)
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-            return cache_dir
 
 
 class CacheHandler(object):
@@ -206,12 +198,12 @@ class CacheHandler(object):
         Max age that the cache can be before it becomes stale.
     """
 
-    def __init__(self, cache_dir, url_hash, max_age=None):
+    def __init__(self, url_hash, max_age=None):
         logger.debug("SHA1 Hash => %s", url_hash)
         if max_age is None:
             max_age = DEFAULTAGE
 
-        self.cache_path = os.path.join(cache_dir, url_hash)
+        self.cache_path = os.path.join(CACHE_DIR, url_hash)
         self.__exists = os.path.exists(self.cache_path)
         self.__timestamp = None
         self.__response = None
