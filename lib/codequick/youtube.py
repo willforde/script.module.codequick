@@ -7,8 +7,8 @@ from .support import strings, logger, args, get_info, localize, get_addon_settin
 from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
 from .utils import requests_session
-from .utils import urllib_session as requests_session
-# from .utils import requests_session
+# from .utils import urllib_session as requests_session
+from .utils import requests_session
 
 
 # Prerequisites

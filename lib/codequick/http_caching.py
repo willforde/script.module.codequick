@@ -28,11 +28,11 @@ class CaseInsensitiveDict(dict):
 
     def __delitem__(self, key):
         key = self.lowerkeymap[key.lower()]
-        super(CaseInsensitiveDict, self).__delitem__(key.lower())
+        super(CaseInsensitiveDict, self).__delitem__(key)
 
     def __contains__(self, key):
         key = self.lowerkeymap[key.lower()]
-        return super(CaseInsensitiveDict, self).__contains__(key.lower())
+        return super(CaseInsensitiveDict, self).__contains__(key)
 
 
 def session_common(session_cls):
