@@ -8,6 +8,7 @@ from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
 from .utils import requests_session
 from .utils import urllib_session as requests_session
+# from .utils import requests_session
 
 
 # Prerequisites
@@ -694,7 +695,7 @@ class API(object):
                 logger.debug("--- %-11s = %s", key, value)
 
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
-        source = self.req_session.get(url, params=params, headers=None if max_age is None else {"X-Max-Age": max_age})
+        source = self.req_session.get(url, params=params, headers=None if max_age is None else {"x-max-age": max_age})
         response = json.loads(source.content, encoding=source.encoding)
         if u"error" not in response:
             return response

@@ -19,17 +19,19 @@ DEFAULTAGE = 3600
 class CaseInsensitiveDict(dict):
     """ A Case Insensitive dict"""
     def __init__(self, headers):
-        super(CaseInsensitiveDict, self).__init__()
-        for key, value in headers.iteritems():
-            self[key.lower()] = value
+        super(CaseInsensitiveDict, self).__init__(headers)
+        self.lowerkeymap = {key.lower(): key for key in headers.keys()}
 
     def __getitem__(self, key):
-        return super(CaseInsensitiveDict, self).__getitem__(key.lower())
+        key = self.lowerkeymap[key.lower()]
+        return super(CaseInsensitiveDict, self).__getitem__(key)
 
     def __delitem__(self, key):
+        key = self.lowerkeymap[key.lower()]
         super(CaseInsensitiveDict, self).__delitem__(key.lower())
 
     def __contains__(self, key):
+        key = self.lowerkeymap[key.lower()]
         return super(CaseInsensitiveDict, self).__contains__(key.lower())
 
 
@@ -59,11 +61,11 @@ def session_common(session_cls):
             if disable_cache is False and get_setting("disable-cache") is False:
                 # Add max age custom header
                 if u"refresh" in args:
-                    _session.headers["X-max-age"] = "0"
+                    _session.headers["x-max-age"] = "0"
                 elif max_age is None:
-                    _session.headers["X-max-age"] = str(DEFAULTAGE)
+                    _session.headers["x-max-age"] = str(DEFAULTAGE)
                 else:
-                    _session.headers["X-max-age"] = str(max_age)
+                    _session.headers["x-max-age"] = str(max_age)
 
                 # Create Adapter
                 func(_session)
@@ -122,7 +124,7 @@ class CacheAdapterCommon(object):
         # Check cache only for get requests
         if method == "GET":
             # Fetch max age from request header
-            max_age = int(request.headers.pop("X-max-age", DEFAULTAGE))
+            max_age = int(request.headers.pop("x-max-age", DEFAULTAGE))
 
             # Fetch the cache if it exists
             self.__cache = cache = self.get_cache(url, max_age)
@@ -337,15 +339,17 @@ class CacheHandler(object):
             return cached
 
     def update(self, body, headers, status, reason, version=None, strict=None):
-        # Convert headers into a case insensitive dict
+        # Convert headers into a Case Insensitive Dict
         headers = CaseInsensitiveDict(headers)
 
         # Remove Transfer-Encoding from header if response was a chunked response
-        if "Transfer-encoding" in headers:
+        if "Transfer-Encoding" in headers:
+            logger.debug("Removing header: Transfer-Encoding = %s", headers["Transfer-encoding"])
             del headers["Transfer-encoding"]
 
         # Remove Content encoding header as the content will be decoded if it was encoded
-        if "Content-encoding" in headers:
+        if "Content-Encoding" in headers:
+            logger.debug("Removing header: Content-Encoding = %s", headers["Content-encoding"])
             del headers["Content-encoding"]
 
         # Create response data structure

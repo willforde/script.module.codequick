@@ -1,11 +1,13 @@
 # Standard Library Imports
 import htmlentitydefs
 import urlparse
+import httplib
 import urllib2
 import urllib
 import json
 import zlib
 import re
+import io
 
 # Package imports
 from .support import logger
@@ -28,6 +30,7 @@ class Session(object):
     params : dict
         Dictionary of querystring data to attach to each Request.
     """
+
     def __init__(self):
         self.__handleList = []
         self.__opener = None
@@ -138,6 +141,7 @@ def session(session_obj):
 
 class Response(object):
     """ The Response object, which contains a server's response to an HTTP request. """
+
     def __init__(self, request, response):
         self.__headers = headers = response.info()
         self.__response = response
@@ -355,5 +359,11 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
 
 class HTTPResponse(urllib2.addinfourl):
     def __init__(self, body=None, headers=None, status=None, reason=None, url=None):
-        urllib2.addinfourl.__init__(self, body, headers, url, status)
+        # Convert headers to a httplib.HTTPMessage instance
+        msg_headers = httplib.HTTPMessage(io.BytesIO(""))
+        for key, value in headers.iteritems():
+            msg_headers.addheader(key, value)
+
+        # Farward on the the source class
+        urllib2.addinfourl.__init__(self, io.BytesIO(body), msg_headers, url, status)
         self.msg = reason
