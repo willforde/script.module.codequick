@@ -311,7 +311,7 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
             raise
 
     def update_cache(self, cache, response):
-        """ Update the __cache with the new server response """
+        """ Update the cache with the new server response """
 
         # Fetch response headers
         headers = response.info()
@@ -322,13 +322,13 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         if "gzip" in content_encoding or "deflate" in content_encoding:
             body = self.decompress(body, content_encoding)
 
-        # Now update the __cache with the appropriate data
+        # Now update the cache with the appropriate data
         cache.update(body=body, headers=headers, status=response.code,
                      reason=response.msg)
 
     def default_open(self, request):
         """
-        Use the request information to check if it exists in the __cache
+        Use the request information to check if it exists in the cache
         and return cached response if so. Else forward on the said request
         """
         self.from_cache = False
@@ -341,7 +341,7 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         return new_response
 
     def handle_304(self, cache, request, _):
-        """ Refresh the __cache sence the __cache matches the server """
+        """ Refresh the cache sence the cache matches the server """
         return self.prepare_cached_response(cache.response, request)
 
     def prepare_cached_response(self, response, request, from_cache=False):
@@ -349,7 +349,7 @@ class CacheAdapter(urllib2.BaseHandler, CacheAdapterCommon):
         self.from_cache = from_cache
         url = self.get_url(request)
 
-        # Return the prepared __cache response
+        # Return the prepared cache response
         return HTTPResponse(response["body"], response["headers"], response["status"], response["reason"], url)
 
     # Redirect HTTPS Requests and Responses to HTTP

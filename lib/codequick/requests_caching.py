@@ -47,7 +47,7 @@ class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
 
     @staticmethod
     def update_cache(cache, response):
-        """ Update the __cache with the new server response """
+        """ Update the cache with the new server response """
 
         # Fetch the body of the response
         if response.chunked:
@@ -55,13 +55,13 @@ class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
         else:
             body = response.read(decode_content=True)
 
-        # Now update the __cache with the appropriate data
+        # Now update the cache with the appropriate data
         cache.update(body=body, headers=response.headers, status=response.status, reason=response.reason,
                      version=response.version, strict=response.strict)
 
     def send(self, request, **kwargs):
         """
-        Use the request information to check if it exists in the __cache
+        Use the request information to check if it exists in the cache
         and return cached response if so. Else forward on the said request
         """
 
@@ -82,7 +82,7 @@ class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
         return super(CacheAdapter, self).build_response(request, new_response if new_response else response)
 
     def handle_304(self, cache, request, response):
-        """ Refresh the __cache sence the __cache matches the server """
+        """ Refresh the cache sence the cache matches the server """
 
         # Read a possible response body and release the connection.
         response.read(decode_content=False)
