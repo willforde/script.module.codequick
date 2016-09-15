@@ -36,8 +36,7 @@ class CaseInsensitiveDict(dict):
         super(CaseInsensitiveDict, self).__delitem__(key)
 
     def __contains__(self, key):
-        key = self.lowerkeymap[key.lower()]
-        return super(CaseInsensitiveDict, self).__contains__(key)
+        return key.lower() in self.lowerkeymap
 
 
 def session_common(session_cls):
