@@ -369,7 +369,7 @@ class CacheHandler(object):
             self.delete()
             raise
 
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             logger.debug("Cache Error: Failed to base64 encode the content body, %s")
             self.delete()
             raise
