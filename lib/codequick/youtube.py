@@ -147,7 +147,7 @@ class APIControl(object):
     def __del__(self):
         """ Trim down the __cache if __cache gets too big """
         # Fetch video __cache
-        video_cache = self._video_data
+        video_cache = self.__video_data
         if video_cache:
             # Check the amount of videos that are cached
             cache_len = len(video_cache)
