@@ -23,10 +23,6 @@ def session(session_obj):
 
 
 class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
-    def __init__(self, *args, **kwargs):
-        # Call Parent init method
-        super(CacheAdapter, self).__init__(*args, **kwargs)
-
     @staticmethod
     def get_url(request):
         """ Return the url of the request """
