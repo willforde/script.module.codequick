@@ -862,7 +862,7 @@ class API(object):
             The token for the next page of results.
 
         search_params : dict
-            Youtube API search Parameters, refer to "https://developers.google.com/youtube/v3/docs/search/".
+            Youtube API search Parameters, refer to "https://developers.google.com/youtube/v3/docs/search/"
         """
 
         # Set Default parameters

@@ -331,7 +331,7 @@ class CacheHandler(object):
         self.__response = json_data
         return json_data
 
-    def update(self, body, headers, status, reason, version=11, strict=True):
+    def update(self, body, headers, status, reason, version=1, strict=True):
         # Convert headers into a Case Insensitive Dict
         headers = CaseInsensitiveDict(headers)
 
