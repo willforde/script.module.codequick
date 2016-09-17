@@ -43,15 +43,13 @@ class CacheAdapter(HTTPAdapter, CacheAdapterCommon):
         """ Update the cache with the new server response """
 
         # Fetch the body of the response
-        headers = response.headers
         if response.chunked:
             body = "".join([chunk for chunk in response.stream(decode_content=False)])
-            del headers["Transfer-encoding"]
         else:
             body = response.read(decode_content=False)
 
         # Now update the cache with the appropriate data
-        cache.update(body=body, headers=headers, status=response.status, reason=response.reason,
+        cache.update(body=body, headers=response.headers, status=response.status, reason=response.reason,
                      version=response.version, strict=response.strict)
 
     def send(self, request, **kwargs):

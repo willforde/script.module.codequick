@@ -331,9 +331,14 @@ class CacheHandler(object):
         self.__response = json_data
         return json_data
 
-    def update(self, body, headers, status, reason, version=None, strict=None):
+    def update(self, body, headers, status, reason, version=11, strict=True):
         # Convert headers into a Case Insensitive Dict
         headers = CaseInsensitiveDict(headers)
+
+        # Remove Transfer-Encoding from header if exists
+        if "Transfer-Encoding" in headers:
+            logger.debug("Removing header: Transfer-Encoding = %s", headers["Transfer-encoding"])
+            del headers["Transfer-encoding"]
 
         # Create response data structure
         response = {"body": body,
@@ -342,7 +347,6 @@ class CacheHandler(object):
                     "version": version,
                     "reason": reason,
                     "strict": strict}
-        # "decode_content": True}
 
         # Update the cache response data store
         self.__response = response.copy()
@@ -358,7 +362,7 @@ class CacheHandler(object):
 
             # Save the response to disk using json Serialization
             with open(self.cache_path, "wb") as stream:
-                json.dump(response, stream)
+                json.dump(response, stream, indent=4, separators=(",", ":"))
 
         except zlib.error:
             logger.debug("Cache Error: Failed to compress content body")

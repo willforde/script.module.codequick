@@ -163,7 +163,7 @@ class Response(object):
             return self.__content
 
         # Check if Response need to be decoded, else return raw response
-        content_encoding = headers.get(u"content-encoding", u"")
+        content_encoding = self.__headers.get(u"content-encoding", u"")
         content = self.__response.read()
 
         try:
@@ -360,7 +360,13 @@ class HTTPResponse(urllib2.addinfourl):
         # Convert headers to a httplib.HTTPMessage instance
         msg_headers = httplib.HTTPMessage(io.BytesIO(""))
         for key, value in headers.iteritems():
-            msg_headers.addheader(key, value)
+            msg_headers.addheader(key.lower(), value)
+
+        # Setup msg_headers
+        msg_headers.encodingheader = msg_headers.getheader("content-transfer-encoding")
+        msg_headers.typeheader = msg_headers.getheader("content-type")
+        msg_headers.parsetype()
+        msg_headers.parseplist()
 
         # Farward on the the source class
         urllib2.addinfourl.__init__(self, io.BytesIO(body), msg_headers, url, status)
