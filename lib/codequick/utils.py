@@ -141,6 +141,7 @@ def requests_session(max_age=None, disable_cache=False):
         If true the cache system will be bypassed (disabled).
     """
     from .requests_caching import session
+    # from .requests_caching_new import session
     return session(max_age, disable_cache)
 
 

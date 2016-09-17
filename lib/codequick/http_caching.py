@@ -31,6 +31,10 @@ class CaseInsensitiveDict(dict):
         key = self.lowerkeymap[key.lower()]
         return super(CaseInsensitiveDict, self).__getitem__(key)
 
+    def __setitem__(self, key, value):
+        self.lowerkeymap[key.lower()] = value
+        super(CaseInsensitiveDict, self).__setitem__(key, value)
+
     def __delitem__(self, key):
         key = self.lowerkeymap[key.lower()]
         super(CaseInsensitiveDict, self).__delitem__(key)
@@ -302,8 +306,7 @@ class CacheHandler(object):
                 json_data = json.load(stream)
 
             # Convert content body form ascii to binary
-            decoded_data = base64.b64decode(str(json_data["body"]))
-            json_data["body"] = zlib.decompress(decoded_data)
+            json_data["body"] = base64.b64decode(str(json_data["body"]))
 
         except (IOError, OSError) as e:
             logger.debug("Cache Error: Failed to read cached response, %s", str(e))
@@ -332,16 +335,6 @@ class CacheHandler(object):
         # Convert headers into a Case Insensitive Dict
         headers = CaseInsensitiveDict(headers)
 
-        # Remove Transfer-Encoding from header if response was a chunked response
-        if "Transfer-Encoding" in headers:
-            logger.debug("Removing header: Transfer-Encoding = %s", headers["Transfer-encoding"])
-            del headers["Transfer-encoding"]
-
-        # Remove Content encoding header as the content will be decoded if it was encoded
-        if "Content-Encoding" in headers:
-            logger.debug("Removing header: Content-Encoding = %s", headers["Content-encoding"])
-            del headers["Content-encoding"]
-
         # Create response data structure
         response = {"body": body,
                     "headers": headers,
@@ -349,16 +342,19 @@ class CacheHandler(object):
                     "version": version,
                     "reason": reason,
                     "strict": strict}
+        # "decode_content": True}
 
         # Update the cache response data store
         self.__response = response.copy()
 
         try:
-            # Compress the content body
-            compressed = zlib.compress(response["body"], 1)
+            # Compress content body is not already compressed
+            if "Content-Encoding" not in headers:
+                body = zlib.compress(body, 1)
+                headers["Content-Encoding"] = "deflate"
 
             # Convert compressed binary data to ascii
-            response["body"] = base64.b64encode(compressed)
+            response["body"] = base64.b64encode(body)
 
             # Save the response to disk using json Serialization
             with open(self.cache_path, "wb") as stream:
