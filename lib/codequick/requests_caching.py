@@ -374,7 +374,6 @@ class CacheHandler(object):
 
         # Remove Transfer-Encoding from header if exists
         if "Transfer-Encoding" in headers:
-            logger.debug("Removing header: Transfer-Encoding = %s", headers["Transfer-encoding"])
             del headers["Transfer-encoding"]
 
         # Create response data structure

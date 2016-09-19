@@ -558,13 +558,13 @@ class APIControl(object):
         else:
             fanart = None
 
-        # Display a link for listing all channel video
+        # Fetch channel playlists feed
+        feed = self.api.playlists(channel_id)
+
+        # Display a link for listing all channel videos
         if show_all:
             title = u"[B]%s" % localize("all_videos")
             yield ListItem.add_youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
-
-        # Fetch channel playlists feed
-        feed = self.api.playlists(channel_id)
 
         # Loop Entries
         for playlist_item in feed[u"items"]:
