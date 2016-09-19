@@ -243,8 +243,8 @@ class CacheHandler(object):
         if max_age is None:
             max_age = DEFAULTAGE
 
-        self.cache_path = os.path.join(CACHE_DIR, url_hash)
-        self.__exists = os.path.exists(self.cache_path)
+        self.cache_file = os.path.join(CACHE_DIR, url_hash)
+        self.__exists = os.path.exists(self.cache_file)
         self.__timestamp = None
         self.__response = None
         self.max_age = max_age
@@ -276,8 +276,8 @@ class CacheHandler(object):
         """ Delete cache from disk"""
         self.close()
         try:
-            logger.debug("Removing cache: %s", self.cache_path)
-            os.remove(self.cache_path)
+            logger.debug("Removing cache: %s", self.cache_file)
+            os.remove(self.cache_file)
         except OSError:
             logger.debug("Cache Error: Unable to delete cache from disk")
 
@@ -289,7 +289,7 @@ class CacheHandler(object):
 
     def reset_timestamp(self):
         """ Reset the last modified timestamp """
-        os.utime(self.cache_path, None)
+        os.utime(self.cache_file, None)
         self.__timestamp = time.time()
 
     @property
@@ -298,7 +298,7 @@ class CacheHandler(object):
         if self.__timestamp is not None:
             return self.__timestamp
         else:
-            self.__timestamp = timestamp = os.stat(self.cache_path).st_mtime
+            self.__timestamp = timestamp = os.stat(self.cache_file).st_mtime
             return timestamp
 
     @property
@@ -339,7 +339,7 @@ class CacheHandler(object):
 
         try:
             # Atempt to read in a raw cache data
-            with open(self.cache_path, "rb") as stream:
+            with open(self.cache_file, "rb") as stream:
                 json_data = json.load(stream)
 
             # Convert content body form ascii to binary
@@ -398,7 +398,7 @@ class CacheHandler(object):
             response["body"] = base64.b64encode(body)
 
             # Save the response to disk using json Serialization
-            with open(self.cache_path, "wb") as stream:
+            with open(self.cache_file, "wb") as stream:
                 json.dump(response, stream, indent=4, separators=(",", ":"))
 
         except zlib.error:
