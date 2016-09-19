@@ -1,12 +1,9 @@
 # Kodi imports
-import xbmcaddon
-import xbmcgui
 import xbmc
-
-# Package imports
+import xbmcgui
 from .support import logger, get_addon_data
 
-__all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session", "urllib_session"]
+__all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session"]
 
 
 def keyboard(default="", heading="", hidden=False):
@@ -141,27 +138,4 @@ def requests_session(max_age=None, disable_cache=False):
         If true the cache system will be bypassed (disabled).
     """
     from .requests_caching import session
-    return session(max_age, disable_cache)
-
-
-def urllib_session(max_age=None, disable_cache=False):
-    """
-    Return a emulated requests session object using urllib with builtin caching support.
-
-    Parameters
-    ----------
-    max_age : int, optional(default=3600)
-        The max age in seconds that the cache can be before it becomes stale. Valid values are.
-
-        -1, to allways return a cached response regardless of the age of the cache.
-
-        0, allow use of the cache but will always make a request to server to check the Not Modified Sence header,
-        witch will check if the cache matchs the server before downloading the content again.
-
-        >0, will return cached response untill the cached response is older than giving max age.
-
-    disable_cache : bool, optional(default=False)
-        If true the cache system will be bypassed (disabled).
-    """
-    from .urllib_caching import session
     return session(max_age, disable_cache)
