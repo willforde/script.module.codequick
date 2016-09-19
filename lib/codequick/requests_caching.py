@@ -1,18 +1,20 @@
 # Standard Library Imports
 import base64
 import hashlib
-import io
-import json
-import os
-import time
 import zlib
+import time
+import json
+import io
+import os
 
+# Package imports
+from .support import get_info, get_setting, set_setting, logger, args
+
+# Request packages imports
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3 import disable_warnings
 from requests.packages.urllib3.response import HTTPResponse
-
-from .support import get_info, get_setting, set_setting, logger, args
 
 # Disable requests ssl warnings
 disable_warnings()
