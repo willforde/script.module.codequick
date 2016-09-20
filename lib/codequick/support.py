@@ -23,11 +23,11 @@ class KodiLogHandler(logging.Handler):
     """ Custom Logger Handler to forward logs to kodi """
     _debug_msgs = []
     log_level_map = {0: 0,
-                     10: xbmc.LOGDEBUG,
-                     20: xbmc.LOGNOTICE,
-                     30: xbmc.LOGWARNING,
-                     40: xbmc.LOGERROR,
-                     50: xbmc.LOGSEVERE}
+                     10: xbmc.LOGDEBUG,    # logger.debug
+                     20: xbmc.LOGNOTICE,   # logger.info
+                     30: xbmc.LOGWARNING,  # logger.warning
+                     40: xbmc.LOGERROR,    # logger.error
+                     50: xbmc.LOGSEVERE}   # logger.critical
 
     def emit(self, record):
         """ Forward the log record to kodi to let kodi handle the logging """
