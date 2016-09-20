@@ -162,16 +162,16 @@ class APIControl(object):
                 for vdata in video_cache.itervalues():
                     status = vdata[u"status"]
                     if status[u"privacyStatus"] == u"public" and status[u"uploadStatus"] == u"processed":
-                        dated.append((vdata[u"id"], vdata[u"snippet"][u"channelId"], vdata[u"snippet"][u"publishedAt"]))
+                        dated.append((vdata[u"snippet"][u"publishedAt"], vdata[u"id"], vdata[u"snippet"][u"channelId"]))
                     else:
                         remove_list.append(vdata[u"id"])
 
                 # Sort __cache by published date
-                sorted_cache = sorted(dated, key=lambda data: data[2])
+                sorted_cache = sorted(dated)
                 valid_channel_refs = set()
 
                 # Remove 500 of the oldest videos
-                for count, (videoid, channelid, published) in enumerate(sorted_cache):
+                for count, (published, videoid, channelid) in enumerate(sorted_cache):
                     if count < 500:
                         remove_list.append(videoid)
                     else:
