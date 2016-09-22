@@ -20,5 +20,5 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 from .support import *
 from .storage import *
 from .utils import *
-from .api import route, resolve, execute
+from .api import route, resolve, execute, ListItem
 from . import youtube
