@@ -461,7 +461,7 @@ class Stream(object):
         elif stream_type == "subtitle":
             self.subtitle.update(values)
 
-    def hd(self, value):
+    def hd(self, value, aspect=None):
         """
         Set the required stream info to show HD/4K logos.
 
@@ -472,9 +472,11 @@ class Stream(object):
             1 = 720p
             2 = 1080p
             3 = 4K
+
+        aspect : float, optional
+            The aspect of the video
         """
         video_info = self.video
-        aspect = None
 
         # Standard Definition
         if value == 0:
@@ -485,19 +487,22 @@ class Stream(object):
         elif value == 1:
             video_info["width"] = 1280
             video_info["height"] = 720
-            aspect = 1.78
+            if not aspect:
+                aspect = 1.78
 
         # Full HD
         elif value == 2:
             video_info["width"] = 1920
             video_info["height"] = 1080
-            aspect = 1.78
+            if not aspect:
+                aspect = 1.78
 
         # 4K
         elif value == 3:
             video_info["width"] = 3840
             video_info["height"] = 2160
-            aspect = 1.78
+            if not aspect:
+                aspect = 1.78
 
         # Set aspect if not already set, won't override
         if aspect and "aspect" not in video_info:
