@@ -281,10 +281,14 @@ class PlayMedia(object):
         str:
             The extracted video url
         """
-        import YDStreamExtractor
-        video_info = YDStreamExtractor.getVideoInfo(url, quality)
+        # Sence youtubeDL is optional, return None when youtubeDL is not found
+        try:
+            import YDStreamExtractor
+        except ImportError:
+            return None
 
         # If there is more than one stream found then ask for selection
+        video_info = YDStreamExtractor.getVideoInfo(url, quality)
         if video_info.hasMultipleStreams():
             return self.__source_selection(video_info)
         else:
