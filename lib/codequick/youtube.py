@@ -529,7 +529,7 @@ class APIControl(object):
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb(u"youtube.png")
             item.url["contentid"] = channel_ids[0]
-            yield item.get(YTPlaylists)
+            yield item.get_tuple(playlists)
 
     def __init__(self):
         # Instantiate Youtube API
