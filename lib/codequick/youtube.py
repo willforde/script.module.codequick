@@ -3,7 +3,7 @@ import json
 import os
 
 # Package imports
-from .support import strings, logger, args, get_info, localize, get_addon_setting
+from .support import strings, logger, args, get_info, localize, get_addon_setting, cleanup_functions
 from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
 from .utils import requests_session
@@ -144,7 +144,7 @@ class APIControl(object):
     """ Class to control the access to the youtube API """
     __video_data = __channel_data = __category_data = None
 
-    def __del__(self):
+    def cleanup(self):
         """ Trim down the __cache if __cache gets too big """
         # Fetch video __cache
         video_cache = self.__video_data
@@ -534,6 +534,7 @@ class APIControl(object):
     def __init__(self):
         # Instantiate Youtube API
         self.api = API()
+        cleanup_functions.append(self.cleanup)
 
     def playlists(self, content_id, show_all=False):
         """

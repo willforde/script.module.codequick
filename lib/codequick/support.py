@@ -134,6 +134,7 @@ addonID = addonData.getAddonInfo("id")
 
 # Process kodi info
 strings = {}
+cleanup_functions = []
 logger = setup_logging(addonID)
 parsedUrl = process_sys_args(sys.argv)
 handle = int(sys.argv[1]) if sys.argv[1].isdigit() else -1
@@ -335,7 +336,19 @@ def run(debug=False):
         dialog.notification(e.__class__.__name__, str(e), "error")
         xbmcplugin.endOfDirectory(handle, succeeded=False)
     else:
+        # Log the execution time of this addon
         logger.debug("# Total time to execute: %s", time.time() - before)
+
+        # Execute all registored cleanup functions if any
+        if cleanup_functions:
+            for func in cleanup_functions:
+                try:
+                    func()
+                except Exception as e:
+                    logger.exception("Cleanup function failed:" % str(e))
+
+        # If debug param is true then log all the debug messages as notice messages so
+        # kodi will output the debug messages to the normal none debug log.
         if debug:
             KodiLogHandler.show_debug()
 

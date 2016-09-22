@@ -8,7 +8,7 @@ import io
 import os
 
 # Package imports
-from .support import get_info, get_setting, set_setting, logger, args
+from .support import get_info, get_setting, set_setting, logger, args, cleanup_functions
 
 # Request packages imports
 import requests
@@ -92,33 +92,6 @@ def session(max_age=None, disable_cache=False):
 
 class CacheAdapter(HTTPAdapter):
     __cache = None
-
-    def __del__(self):
-        """
-        Cleanup method to remove stale caches to save on disk space
-        Executes every 14 days (2 weeks)
-        """
-
-        # Fetch time of last cleanup operation
-        next_time = get_setting("_next_cleanup")
-        try:
-            next_time = float(next_time)
-        except ValueError:
-            next_time = 0
-
-        # Cleanup if lasttime + 28 days is still less than current time
-        current_time = time.time()
-        if next_time < current_time:
-            logger.debug("Initiating Cache Cleanup...")
-
-            # Loop each file within cache directory
-            for url_hash in os.listdir(CACHE_DIR):
-                cache = CacheHandler(url_hash, 60 * 24 * 14)
-                if cache.file_fresh() is False:
-                    cache.delete()
-
-            # Save current_time of cleanup for later use
-            set_setting("_next_cleanup", unicode(current_time + 1209600))
 
     def send(self, request, **kwargs):
         """
@@ -417,3 +390,34 @@ class CacheHandler(object):
 
         else:
             self.__exists = True
+
+
+def cache_cleanup():
+    """
+    Cleanup method to remove stale caches to save on disk space
+    Executes every 14 days (2 weeks)
+    """
+
+    # Fetch time of last cleanup operation
+    next_time = get_setting("_next_cleanup")
+    try:
+        next_time = float(next_time)
+    except ValueError:
+        next_time = 0
+
+    # Cleanup if lasttime + 28 days is still less than current time
+    current_time = time.time()
+    if next_time < current_time:
+        logger.debug("Initiating Cache Cleanup...")
+
+        # Loop each file within cache directory
+        for url_hash in os.listdir(CACHE_DIR):
+            cache = CacheHandler(url_hash, 60 * 24 * 14)
+            if cache.file_fresh() is False:
+                cache.delete()
+
+        # Save current_time of cleanup for later use
+        set_setting("_next_cleanup", unicode(current_time + 1209600))
+
+# Registor cache cleanup method for execution after EndOfDirectory was called
+cleanup_functions.append(cache_cleanup)
