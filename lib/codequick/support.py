@@ -215,6 +215,17 @@ class RouteData(object):
         # Create addon url for kodi
         return path_unsplit(self._str_route, query, None)
 
+    def call(self):
+        """ Call the registered function """
+
+        # Instantiate parent with callable function
+        if self.parent:
+            self.parent(self.func)
+
+        # Just call function directly
+        else:
+            self.func()
+
 
 def current_path(**querys):
     """
@@ -323,11 +334,8 @@ def run(debug=False):
     logger.debug('Dispatching to route "%s": function "%s"', selected_route, data_route.name)
 
     try:
-        # Instantiate parent with calable function
-        if data_route.parent:
-            data_route.parent(data_route.func)
-        else:
-            data_route.func()
+        # Execute the registered function
+        data_route.call()
 
     except Exception as e:
         KodiLogHandler.show_debug()
