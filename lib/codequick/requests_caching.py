@@ -50,6 +50,10 @@ class CaseInsensitiveDict(dict):
     def __contains__(self, key):
         return key.lower() in self.lowerkeymap
 
+    def copy(self):
+        data_copy = super(CaseInsensitiveDict, self).copy()
+        return CaseInsensitiveDict(data_copy)
+
 
 def session(max_age=None, disable_cache=False):
     """
@@ -359,9 +363,10 @@ class CacheHandler(object):
 
         # Update the cache response data store
         self.__response = response.copy()
+        self.__response["headers"] = headers.copy()
 
         try:
-            # Compress content body is not already compressed
+            # Compress content body if not already compressed
             if "Content-Encoding" not in headers:
                 body = zlib.compress(body, 1)
                 headers["Content-Encoding"] = "deflate"
