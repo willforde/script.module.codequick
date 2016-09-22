@@ -311,7 +311,7 @@ def find_route(data):
         return _route_store[ascii_path]
 
 
-def run():
+def run(debug=False):
     """ Fetch and execute the requested route function """
 
     # Fetch current time so to monitor the time it takes to execute
@@ -336,7 +336,8 @@ def run():
         xbmcplugin.endOfDirectory(handle, succeeded=False)
     else:
         logger.debug("# Total time to execute: %s", time.time() - before)
-        KodiLogHandler.show_debug()
+        if debug:
+            KodiLogHandler.show_debug()
 
 
 def localize(string_id):
