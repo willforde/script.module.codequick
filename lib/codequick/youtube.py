@@ -145,14 +145,14 @@ class APIControl(object):
     __video_data = __channel_data = __category_data = None
 
     def cleanup(self):
-        """ Trim down the __cache if __cache gets too big """
-        # Fetch video __cache
+        """ Trim down the cache if cache gets too big """
+        # Fetch video cache
         video_cache = self.__video_data
         if video_cache:
             # Check the amount of videos that are cached
             cache_len = len(video_cache)
 
-            # Clean __cache only when there is more than 2000 videos cached
+            # Clean cache only when there is more than 2000 videos cached
             if cache_len > 2000:
                 logger.debug("Running Youtube Cache Cleanup")
                 remove_list = []
@@ -166,7 +166,7 @@ class APIControl(object):
                     else:
                         remove_list.append(vdata[u"id"])
 
-                # Sort __cache by published date
+                # Sort cache by published date
                 sorted_cache = sorted(dated)
                 valid_channel_refs = set()
 
@@ -185,7 +185,7 @@ class APIControl(object):
                         logger.debug("Removing cached video : %s", videoid)
                         del video_cache[videoid]
 
-                    # Clean the channel __cache of unreferenced channel ids
+                    # Clean the channel cache of unreferenced channel ids
                     channel_cache = self._channel_data.get(u"channels")
                     if channel_cache:
                         sync = False
@@ -194,10 +194,10 @@ class APIControl(object):
                                 del channel_cache[channelid]
                                 sync = True
 
-                        # Close connection to channel __cache
+                        # Close connection to channel cache
                         channel_cache.close(sync)
 
-            # Close connection to __cache database
+            # Close connection to cache database
             video_cache.close()
 
     @property
@@ -312,7 +312,7 @@ class APIControl(object):
 
     def _update_channel_cache(self, channel_id=None, for_username=None):
         """
-        Update on disk __cache of channel information
+        Update on disk cache of channel information
 
         Parameters
         ----------
@@ -329,12 +329,12 @@ class APIControl(object):
         # Make channels api request
         feed = self.api.channels(channel_id, for_username)
 
-        # Fetch channel __cache
+        # Fetch channel cache
         channel_cache = self._channel_data
         channel_refs = channel_cache.setdefault(u"ref", {})
         channel_data = channel_cache.setdefault(u"channels", {})
 
-        # Update __cache
+        # Update cache
         for item in feed[u"items"]:
             # Fetch common info
             title = item[u"snippet"][u"localized"][u"title"]
@@ -347,7 +347,7 @@ class APIControl(object):
             else:
                 fanart = None
 
-            # Set and save channel info into __cache
+            # Set and save channel info into cache
             data = {"title": title, "description": description, "uploads": uploads, "fanart": fanart}
             channel_data[item[u"id"]] = data
             channel_refs[uploads] = item[u"id"]
@@ -358,12 +358,12 @@ class APIControl(object):
             channel_refs[for_username] = channelid
             logger.debug("Channel ID for channel %s is %s", for_username, channelid)
 
-        # Sync __cache to disk
+        # Sync cache to disk
         channel_cache.sync()
 
     def _update_category_cache(self, cat_id=None):
         """
-        Update on disk __cache of category information
+        Update on disk cache of category information
 
         Parameters
         ----------
@@ -378,7 +378,7 @@ class APIControl(object):
         # Fetch category Information
         feed = self.api.video_categories(cat_id)
 
-        # Update category __cache
+        # Update category cache
         category_data = self._category_data
         for item in feed[u"items"]:
             category_data[item[u"id"]] = item[u"snippet"][u"title"]
@@ -386,7 +386,7 @@ class APIControl(object):
 
     def _update_video_cache(self, ids):
         """
-        Update on disk __cache of video information
+        Update on disk cache of video information
 
         Parameters
         ----------
@@ -399,7 +399,7 @@ class APIControl(object):
         category_data = self._category_data
         feed = self.api.videos(ids)
 
-        # Add data to __cache
+        # Add data to cache
         check_categories = True
         for video in feed[u"items"]:
             video_database[video[u"id"]] = video
@@ -427,7 +427,7 @@ class APIControl(object):
         category_cache = self._category_data
         video_cache = self._video_data
 
-        # Check for any missing __cache
+        # Check for any missing cache
         fetch_channels = frozenset(filter(lambda channelid: channelid not in channel_cache, channel_ids))
         fetch_videos = frozenset(filter(lambda videoid: videoid not in video_cache, video_ids))
         multi_channel = len(frozenset(channel_ids)) > 1
