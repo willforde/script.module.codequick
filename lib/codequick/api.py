@@ -28,8 +28,8 @@ sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
 # Update string references
 strings.update(search=137,
                next_page=33078,
-               most_recent=32903,
-               related_videos=32904,
+               most_recent=32902,
+               related_videos=32903,
                youtube_channel=32901,
                select_playback_item=25006)
 

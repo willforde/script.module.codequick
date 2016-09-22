@@ -16,29 +16,25 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#####################################
-# Common Addon Codes: 32900 - 32969 #
-#####################################
+################################
+# Addon Strings: 32900 - 32969 #
+################################
 
 msgctxt "#32901"
 msgid "Youtube Channel"
 msgstr ""
 
 msgctxt "#32902"
-msgid "Go to:"
-msgstr ""
-
-msgctxt "#32903"
 msgid "Most Recent"
 msgstr ""
 
-msgctxt "#32904"
+msgctxt "#32903"
 msgid "Related Videos"
 msgstr ""
 
-#######################################
-# Common Setting Codes: 32970 - 32999 #
-#######################################
+##################################
+# Setting Strings: 32970 - 32999 #
+##################################
 
 msgctxt "#32971"
 msgid "Set Folder View Mode"
@@ -50,8 +46,4 @@ msgstr ""
 
 msgctxt "#32973"
 msgid "Disable Cache"
-msgstr ""
-
-msgctxt "#32974"
-msgid "Disable Bug Reports"
 msgstr ""
