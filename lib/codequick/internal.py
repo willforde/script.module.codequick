@@ -8,7 +8,7 @@ import xbmc
 # Package imports
 from .support import strings, logger, args, get_info, set_setting, get_setting, localize
 from .storage import DictStorage, SetStorage
-from .utils import get_skin_name, Keyboard
+from .utils import get_skin_name, keyboard
 from .api import ListItem
 
 # Prerequisites
