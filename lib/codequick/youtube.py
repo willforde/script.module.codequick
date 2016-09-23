@@ -3,10 +3,9 @@ import json
 import os
 
 # Package imports
-from .support import strings, logger, args, get_info, localize, get_addon_setting, cleanup_functions
+from .support import strings, logger, args, get_info, localize, get_addon_setting, cleanup_functions, requests_session
 from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
-from .utils import requests_session
 
 
 # Prerequisites
