@@ -12,7 +12,7 @@ import xbmc
 
 # Package imports
 from .support import route_register, strings, logger, handle, args, get_info, get_setting, localize, current_path
-from .support import find_route, selected_route
+from .support import find_route, selected_route, get_addon_data
 
 # Setup sort method set
 sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
@@ -100,7 +100,7 @@ def virtualfs(func):
 
     if listitems:
         # Convert results from generator to list
-        listitems = list(listitems)
+        listitems = filter(None, listitems)
 
         # Add listitems to
         xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
@@ -826,6 +826,13 @@ class ListItem(object):
             A tuple of path, listitem, isfolder
         """
 
+        # Check if youtube addon exists before creating a listitem for it
+        try:
+            get_addon_data("plugin.video.youtube", "name")
+        except RuntimeError:
+            return False
+
+        # Youtube exists, Creating listitem link
         listitem = cls()
         listitem.label = u"[B]%s[/B]" % (label if label else localize("youtube_channel"))
         listitem.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
