@@ -78,12 +78,7 @@ def session(max_age=None, disable_cache=False):
     # Create a HTTPAdapter to be used in requests
     if disable_cache is False and get_setting("disable-cache") is False:
         # Add max age custom header
-        if u"refresh" in params:
-            _session.headers["x-max-age"] = "0"
-        elif max_age is None:
-            _session.headers["x-max-age"] = str(DEFAULTAGE)
-        else:
-            _session.headers["x-max-age"] = str(max_age)
+        _session.headers["x-max-age"] = str(DEFAULTAGE) if max_age is None else str(max_age)
 
         # Create Adapter
         adapter = CacheAdapter()
@@ -116,7 +111,7 @@ class CacheAdapter(HTTPAdapter):
         # Check cache only for get requests
         if method == "GET":
             # Fetch max age from request header
-            max_age = int(request.headers.pop("x-max-age", DEFAULTAGE))
+            max_age = 0 if u"refresh" in params else int(request.headers.pop("x-max-age", DEFAULTAGE))
 
             # Fetch the cache if it exists
             url_hash = self.encode_url(url)
