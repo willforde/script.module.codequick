@@ -8,7 +8,7 @@ import io
 import os
 
 # Package imports
-from .support import get_info, get_setting, set_setting, logger, args, cleanup_functions
+from .support import get_info, get_setting, set_setting, logger, params, cleanup_functions
 
 # Request packages imports
 import requests
@@ -78,7 +78,7 @@ def session(max_age=None, disable_cache=False):
     # Create a HTTPAdapter to be used in requests
     if disable_cache is False and get_setting("disable-cache") is False:
         # Add max age custom header
-        if u"refresh" in args:
+        if u"refresh" in params:
             _session.headers["x-max-age"] = "0"
         elif max_age is None:
             _session.headers["x-max-age"] = str(DEFAULTAGE)

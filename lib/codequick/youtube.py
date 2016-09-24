@@ -3,7 +3,7 @@ import json
 import os
 
 # Package imports
-from .support import strings, logger, args, get_info, localize, get_addon_setting, cleanup_functions, requests_session
+from .support import strings, logger, params, get_info, localize, get_addon_setting, cleanup_functions, requests_session
 from .storage import DictStorage, ShelfStorage
 from .api import route, resolve, ListItem
 
@@ -15,19 +15,19 @@ strings.update(playlists=136, all_videos=16100)
 @route("/internal/youtube/playlist")
 def playlist(contentid=None):
     gdata = APIControl()
-    return gdata.playlist(contentid if contentid else args[u"contentid"])
+    return gdata.playlist(contentid if contentid else params[u"contentid"])
 
 
 @route("/internal/youtube/playlists")
 def playlists(contentid=None):
     gdata = APIControl()
-    return gdata.playlists(contentid if contentid else args[u"contentid"], contentid is not None)
+    return gdata.playlists(contentid if contentid else params[u"contentid"], contentid is not None)
 
 
 @route("/internal/youtube/related")
 def related(videoid=None):
     gdata = APIControl()
-    return gdata.related(videoid if videoid else args[u"videoid"])
+    return gdata.related(videoid if videoid else params[u"videoid"])
 
 
 def build_video_url(videoid):
@@ -443,7 +443,7 @@ class APIControl(object):
         local_int = int
         is_hd = youtube_hd(default=2)
         re_find = __import__("re").compile("(\d+)(\w)")
-        is_related = str(u"videoid" in args).lower()
+        is_related = str(u"videoid" in params).lower()
         for channelId, videoId in zip(channel_ids, video_ids):
             # Skip to the next video if no cached data was found or if the video is not public
             video_data = video_cache.get(videoId)
@@ -522,7 +522,7 @@ class APIControl(object):
             yield ListItem.add_next(pagetoken=pagetoken)
 
         # Add playlists item to results
-        if not multi_channel and u"pagetoken" not in args and args.get(u"enable_playlists", u"false") == u"true":
+        if not multi_channel and u"pagetoken" not in params and params.get(u"enable_playlists", u"false") == u"true":
             item = ListItem()
             item.label = u"[B]%s[/B]" % localize("playlists")
             item.art["icon"] = "DefaultVideoPlaylists.png"
@@ -608,7 +608,7 @@ class APIControl(object):
         """
         video_list = []
         channel_list = []
-        feed = self.api.search(args.get(u"pagetoken"), relatedToVideoId=video_id)
+        feed = self.api.search(params.get(u"pagetoken"), relatedToVideoId=video_id)
         for item in feed[u"items"]:
             channel_list.append(item[u"snippet"][u"channelId"])
             video_list.append(item[u"id"][u"videoId"])
@@ -630,7 +630,7 @@ class APIControl(object):
         playlist_id = self._validate_uuid(content_id, playlist_uuid=True)
 
         # Fetch playlist feed
-        feed = self.api.playlist_items(playlist_id, args.get("pagetoken"))
+        feed = self.api.playlist_items(playlist_id, params.get("pagetoken"))
         channel_list = []
         video_list = []
 
@@ -666,7 +666,7 @@ class API(object):
                                "prettyPrint": pretty_print,
                                "key": key if key else "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}
 
-    def _connect_v3(self, api_type, params, max_age=None):
+    def _connect_v3(self, api_type, query, max_age=None):
         """
         Send API request and return response as a json object
 
@@ -675,7 +675,7 @@ class API(object):
         api_type : str
             The type of api request to make.
 
-        params : dict
+        query : dict
             Dict of parameters that will be send to the api as a query.
 
         max_age : int, optional
@@ -683,17 +683,17 @@ class API(object):
         """
 
         # Check api_type of video id(s) before making request
-        if "id" in params and hasattr(params["id"], '__iter__'):
-            params["id"] = u",".join(params["id"])
+        if "id" in query and hasattr(query["id"], '__iter__'):
+            query["id"] = u",".join(query["id"])
 
-        # Log the params debug log
+        # Log the query debug log
         logger.debug("Youtube API Params for resource: %s", api_type)
-        for key, value in params.iteritems():
+        for key, value in query.iteritems():
             if key != "key":
                 logger.debug("--- %-11s = %s", key, value)
 
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
-        source = self.req_session.get(url, params=params, headers=None if max_age is None else {"x-max-age": max_age})
+        source = self.req_session.get(url, params=query, headers=None if max_age is None else {"x-max-age": max_age})
         response = json.loads(source.content, encoding=source.encoding)
         if u"error" not in response:
             return response
@@ -723,23 +723,23 @@ class API(object):
         """
 
         # Set parameters
-        params = self.default_params.copy()
-        params["fields"] = \
+        query = self.default_params.copy()
+        query["fields"] = \
             u"items(id,brandingSettings/image/bannerTvMediumImageUrl," \
             u"contentDetails/relatedPlaylists/uploads,snippet/localized)"
-        params["part"] = u"contentDetails,brandingSettings,snippet"
-        params["hl"] = self.language
+        query["part"] = u"contentDetails,brandingSettings,snippet"
+        query["hl"] = self.language
 
         # Add the channel_id or channel name of the channel to params
         if channel_id:
-            params["id"] = channel_id
+            query["id"] = channel_id
         elif for_username:
-            params["forUsername"] = for_username
+            query["forUsername"] = for_username
         else:
             raise ValueError("No valid Argument was giving for channels")
 
         # Connect to server and return json response
-        return self._connect_v3("channels", params)
+        return self._connect_v3("channels", query)
 
     def video_categories(self, cat_id=None, region_code="us"):
         """
@@ -759,18 +759,18 @@ class API(object):
         """
 
         # Set parameters
-        params = self.default_params.copy()
-        params["fields"] = u"items(id,snippet/title)"
-        params["part"] = u"snippet"
-        params["hl"] = self.language
-        params["regionCode"] = region_code
+        query = self.default_params.copy()
+        query["fields"] = u"items(id,snippet/title)"
+        query["part"] = u"snippet"
+        query["hl"] = self.language
+        query["regionCode"] = region_code
 
         # Set mode of fetching, by id or region
         if cat_id:
-            params["id"] = cat_id
+            query["id"] = cat_id
 
         # Fetch video Information
-        return self._connect_v3("videoCategories", params)
+        return self._connect_v3("videoCategories", query)
 
     def playlist_items(self, playlist_id, pagetoken=None):
         """
@@ -786,17 +786,17 @@ class API(object):
         """
 
         # Set parameters
-        params = self.default_params.copy()
-        params["fields"] = u"nextPageToken,items(snippet(channelId,resourceId/videoId))"
-        params["part"] = u"snippet"
-        params["playlistId"] = playlist_id
+        query = self.default_params.copy()
+        query["fields"] = u"nextPageToken,items(snippet(channelId,resourceId/videoId))"
+        query["part"] = u"snippet"
+        query["playlistId"] = playlist_id
 
         # Add pageToken if exists
         if pagetoken:
-            params["pageToken"] = pagetoken
+            query["pageToken"] = pagetoken
 
         # Connect to server and return json response
-        return self._connect_v3("playlistItems", params)
+        return self._connect_v3("playlistItems", query)
 
     def videos(self, video_id):
         """
@@ -809,16 +809,16 @@ class API(object):
         """
 
         # Set parameters
-        params = self.default_params.copy()
-        params["fields"] = u"items(id,snippet(publishedAt,channelId,thumbnails/medium/url,channelTitle," \
-                           u"categoryId,localized),contentDetails(duration,definition),statistics/viewCount," \
-                           u"status/privacyStatus)"
-        params["part"] = u"contentDetails,statistics,snippet,status"
-        params["hl"] = self.language
-        params["id"] = video_id
+        query = self.default_params.copy()
+        query["fields"] = u"items(id,snippet(publishedAt,channelId,thumbnails/medium/url,channelTitle," \
+                          u"categoryId,localized),contentDetails(duration,definition),statistics/viewCount," \
+                          u"status/privacyStatus)"
+        query["part"] = u"contentDetails,statistics,snippet,status"
+        query["hl"] = self.language
+        query["id"] = video_id
 
         # Connect to server and return json response
-        return self._connect_v3("videos", params)
+        return self._connect_v3("videos", query)
 
     def playlists(self, channel_id):
         """
@@ -831,20 +831,20 @@ class API(object):
         """
 
         # Set Default parameters
-        params = self.default_params.copy()
-        params["fields"] = u"nextPageToken,items(id,contentDetails/itemCount,snippet" \
-                           u"(publishedAt,localized,thumbnails/medium/url))"
-        params["part"] = u"snippet,contentDetails"
-        params["channelId"] = channel_id
+        query = self.default_params.copy()
+        query["fields"] = u"nextPageToken,items(id,contentDetails/itemCount,snippet" \
+                          u"(publishedAt,localized,thumbnails/medium/url))"
+        query["part"] = u"snippet,contentDetails"
+        query["channelId"] = channel_id
 
         # Connect to server and return json response
-        feed = self._connect_v3("playlists", params)
+        feed = self._connect_v3("playlists", query)
         pagetoken = feed.get(u"nextPageToken")
 
         # Loop all pages
         while pagetoken:
-            params["pageToken"] = pagetoken
-            next_feed = self._connect_v3("playlists", params)
+            query["pageToken"] = pagetoken
+            next_feed = self._connect_v3("playlists", query)
             feed[u"items"].extend(next_feed[u"items"])
             pagetoken = next_feed.get(u"nextPageToken")
 
@@ -866,17 +866,17 @@ class API(object):
         """
 
         # Set Default parameters
-        params = self.default_params.copy()
-        params["fields"] = u"nextPageToken,items(id/videoId,snippet/channelId)"
-        params["relevanceLanguage"] = self.language
-        params["safeSearch"] = u"none"
-        params["part"] = u"snippet"
-        params["type"] = u"video"
-        params.update(search_params)
+        query = self.default_params.copy()
+        query["fields"] = u"nextPageToken,items(id/videoId,snippet/channelId)"
+        query["relevanceLanguage"] = self.language
+        query["safeSearch"] = u"none"
+        query["part"] = u"snippet"
+        query["type"] = u"video"
+        query.update(search_params)
 
         # Add pageToken if needed
         if pagetoken:
-            params["pageToken"] = pagetoken
+            query["pageToken"] = pagetoken
 
         # Connect to server and return json response
-        return self._connect_v3("search", params)
+        return self._connect_v3("search", query)

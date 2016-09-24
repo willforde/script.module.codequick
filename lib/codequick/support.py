@@ -16,7 +16,7 @@ import xbmc
 _func_store = {}
 _route_store = {}
 
-__all__ = ["strings", "logger", "args", "run", "localize", "get_info", "get_setting", "set_setting"]
+__all__ = ["strings", "logger", "params", "run", "localize", "get_info", "get_setting", "set_setting"]
 
 
 class KodiLogHandler(logging.Handler):
@@ -85,12 +85,12 @@ def setup_logging(addon_id):
 
 def process_sys_args(argv):
     """
-    Convert the system args that are passed in from kodi into a urlparse object.
+    Convert the system params that are passed in from kodi into a urlparse object.
 
     Parameters
     ----------
     argv : sized
-        The system args passed in from kodi
+        The system params passed in from kodi
 
     Returns
     -------
@@ -139,9 +139,9 @@ logger = setup_logging(addonID)
 parsedUrl = process_sys_args(sys.argv)
 handle = int(sys.argv[1]) if sys.argv[1].isdigit() else -1
 selected_route = parsedUrl.path if parsedUrl.path else u"/"
-args = dict(urlparse.parse_qsl(parsedUrl.query)) if parsedUrl.query else {}
-if args:
-    logger.debug("Program arguments: %s", repr(args))
+params = dict(urlparse.parse_qsl(parsedUrl.query)) if parsedUrl.query else {}
+if params:
+    logger.debug("Program arguments: %s", repr(params))
 
 # Create a partial function that unsplits a url but has the first 2 parts already passed in as strings
 path_unsplit = functools.partial(urlunsplit, str(parsedUrl.scheme), str(parsedUrl.netloc))
@@ -233,8 +233,8 @@ def current_path(**querys):
 
     Parameters
     ----------
-    querys : args, optional
-        Keyword args of query entries that will be appended to url.
+    querys : params, optional
+        Keyword params of query entries that will be appended to url.
 
     Returns
     -------
@@ -244,8 +244,8 @@ def current_path(**querys):
 
     # Check if querys are needed to be mirged with the base query
     if querys:
-        if args:
-            args_copy = args.copy()
+        if params:
+            args_copy = params.copy()
             args_copy.update(querys)
             query_string = urllib.urlencode(args_copy)
         else:

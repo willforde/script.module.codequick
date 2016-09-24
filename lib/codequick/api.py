@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import route_register, strings, logger, handle, args, get_info, get_setting, localize, current_path
+from .support import route_register, strings, logger, handle, params, get_info, get_setting, localize, current_path
 from .support import find_route, selected_route, get_addon_data
 
 # Setup sort method set
@@ -120,8 +120,8 @@ def virtualfs(func):
             xbmc.executebuiltin("Container.SetViewMode(%s)" % str(view_mode))
 
     # End Directory Listings
-    update_listing = u"refresh" in args or (u"updatelisting" in args and args[u"updatelisting"] == u"true")
-    cache_to_disc = u"cachetodisc" in args
+    update_listing = u"refresh" in params or (u"updatelisting" in params and params[u"updatelisting"] == u"true")
+    cache_to_disc = u"cachetodisc" in params
     xbmcplugin.endOfDirectory(handle, bool(listitems), update_listing, cache_to_disc)
 
 
@@ -129,7 +129,7 @@ class PlayMedia(object):
     def __init__(self, func):
         # Instance Vars
         self.__headers = []
-        self.__mimeType = args.get("mimetype")
+        self.__mimeType = params.get("mimetype")
 
         # Resolve Video Url
         resolved = func(self)
@@ -199,7 +199,7 @@ class PlayMedia(object):
         # Loop each item to create playlist
         for count, url in enumerate(urls, 1):
             listitem = xbmcgui.ListItem()
-            listitem.setLabel(u"%s Part %i" % (args[u"title"], count))
+            listitem.setLabel(u"%s Part %i" % (params[u"title"], count))
             url = self.__check_url(url)
             listitem.setPath(url)
 
@@ -241,7 +241,7 @@ class PlayMedia(object):
 
         # Create Main listitem
         main_listitem = xbmcgui.ListItem()
-        main_listitem.setLabel(args[u"title"])
+        main_listitem.setLabel(params[u"title"])
         if self.__mimeType:
             main_listitem.setMimeType(self.__mimeType)
 
@@ -724,7 +724,7 @@ class ListItem(object):
         """
 
         # Fetch current url query
-        base_url = args.copy()
+        base_url = params.copy()
         base_url["updatelisting"] = "true"
         base_url["nextpagecount"] = int(base_url.get("nextpagecount", 1)) + 1
         if url:

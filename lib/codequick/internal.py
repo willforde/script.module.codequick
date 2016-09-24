@@ -6,7 +6,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import strings, logger, args, get_info, set_setting, get_setting, localize
+from .support import strings, logger, params, get_info, set_setting, get_setting, localize
 from .storage import DictStorage, SetStorage
 from .utils import get_skin_name, keyboard
 from .api import ListItem
@@ -31,7 +31,7 @@ class ViewModeSelecter(object):
     def __init__(self):
         # Instance variables
         self.skinID = xbmc.getSkinDir()
-        self.mode = args[u"arg1"]
+        self.mode = params[u"arg1"]
 
         # Fetch database of skin codes
         skincode_path = os.path.join(get_info("path_global"), u"resources", u"data")
@@ -175,12 +175,12 @@ class SavedSearches(object):
         self.searches = searches = SetStorage(get_info("profile"), u"searchterms.json")
 
         # Remove term from saved searches if remove argument was passed
-        if args.get("remove") in searches:
-            searches.remove(args.pop("remove"))
+        if params.get("remove") in searches:
+            searches.remove(params.pop("remove"))
             searches.sync()
 
         # Show search dialog if search argument was passed or there is not search term saved
-        elif not searches or args.pop("search", None) is not None:
+        elif not searches or params.pop("search", None) is not None:
             self.search_dialog()
 
         # List all saved search terms
@@ -208,13 +208,13 @@ class SavedSearches(object):
         """
 
         # Create Speed vars
-        base_url = args[u"url"]
-        farwarding_route = args[u"route"]
+        base_url = params[u"url"]
+        farwarding_route = params[u"route"]
 
         # Add search listitem entry
         item = ListItem()
         item.label = u"[B]%s[/B]" % localize("search")
-        query = args.copy()
+        query = params.copy()
         query["search"] = "true"
         query["updatelisting"] = "true"
         query["cachetodisc"] = "true"
@@ -223,8 +223,8 @@ class SavedSearches(object):
 
         # Create Context Menu item Params
         str_remove = localize("remove")
-        query_cx = args.copy()
-        query_li = args.copy()
+        query_cx = params.copy()
+        query_li = params.copy()
 
         # Loop earch search item
         for searchTerm in self.searches:
