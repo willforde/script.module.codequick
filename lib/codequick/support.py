@@ -148,6 +148,14 @@ path_unsplit = functools.partial(urlunsplit, str(parsedUrl.scheme), str(parsedUr
 current_unsplit = functools.partial(urlunsplit, str(parsedUrl.scheme), str(parsedUrl.netloc), str(parsedUrl.path))
 
 
+def unicode_route(route):
+    """ Return a route as unicode with any non ascii chars removed """
+    try:
+        return unicode(route).lower()
+    except UnicodeDecodeError:
+        return unicode(route, "ascii", "ignore").lower()
+
+
 class RouteData(object):
     """
     Class that used for accessing the route function and parent.
@@ -184,7 +192,7 @@ class RouteData(object):
         The name of the function that will be called.
     """
 
-    def __init__(self, parent, func, route_path, is_folder, is_playable):
+    def __init__(self, parent, func, pass_args, route_path, is_folder, is_playable):
         self.name = unicode(func.__name__)
         self.route = route_path
         self._str_route = str(route_path)
@@ -192,6 +200,7 @@ class RouteData(object):
         self.func = func
         self.folder = False if is_playable else is_folder
         self.playable = False if is_folder else is_playable
+        self._pass_args = pass_args
 
     def path(self, query=None):
         """
@@ -217,14 +226,15 @@ class RouteData(object):
 
     def call(self):
         """ Call the registered function """
+        required_args = [params[arg] for arg in self._pass_args if arg in params]
 
         # Instantiate parent with callable function
         if self.parent:
-            self.parent(self.func)
+            self.parent(self.func, required_args)
 
         # Just call function directly
         else:
-            self.func()
+            self.func(*required_args)
 
 
 def current_path(**querys):
@@ -257,7 +267,7 @@ def current_path(**querys):
     return current_unsplit(query_string, "")
 
 
-def route_register(parent, route_path, is_folder=False, is_playable=False):
+def route_register(parent, route_path, is_folder=False, is_playable=False, pass_args=None):
     """
     Common function to register a function with routes using a decorator.
 
@@ -269,11 +279,14 @@ def route_register(parent, route_path, is_folder=False, is_playable=False):
     route_path : str
         The route path that will be used to map to the decorated function.
 
-    is_folder : bool
+    is_folder : bool, optional(default=False)
         Indicate if the route is a folder or not.
 
-    is_playable : bool
+    is_playable : bool, optional(default=False)
         Indicate if the route is playable or not.
+
+    pass_args : list of str, optional
+        A list of requested arguments to send to calling function
 
     Returns
     -------
@@ -282,10 +295,10 @@ def route_register(parent, route_path, is_folder=False, is_playable=False):
     """
 
     def decorator(func):
-        ascii_route = unicode(route_path, "ascii", "ignore").lower()
-        data = RouteData(parent, func, ascii_route, is_folder, is_playable)
-        _func_store[func] = data
+        ascii_route = unicode_route(route_path)
+        data = RouteData(parent, func, pass_args, ascii_route, is_folder, is_playable)
         _route_store[ascii_route] = data
+        _func_store[func] = data
         return func
 
     # Return the decorator that will register the function
@@ -315,12 +328,8 @@ def find_route(data):
     if data in _func_store:
         return _func_store[data]
     else:
-        try:
-            ascii_path = unicode(data).lower()
-        except UnicodeDecodeError:
-            ascii_path = unicode(data, "ascii", "ignore").lower()
-
-        return _route_store[ascii_path]
+        ascii_route = unicode_route(data)
+        return _route_store[ascii_route]
 
 
 def run(debug=False):

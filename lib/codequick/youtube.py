@@ -12,22 +12,22 @@ from .api import route, resolve, ListItem
 strings.update(playlists=136, all_videos=16100)
 
 
-@route("/internal/youtube/playlist")
-def playlist(contentid=None):
+@route(u"/internal/youtube/playlist", u"contentid")
+def playlist(contentid):
     gdata = APIControl()
-    return gdata.playlist(contentid if contentid else params[u"contentid"])
+    return gdata.playlist(contentid)
 
 
-@route("/internal/youtube/playlists")
-def playlists(contentid=None):
+@route(u"/internal/youtube/playlists", u"contentid")
+def playlists(contentid):
     gdata = APIControl()
-    return gdata.playlists(contentid if contentid else params[u"contentid"], contentid is not None)
+    return gdata.playlists(contentid, u"contentid" not in params)
 
 
-@route("/internal/youtube/related")
-def related(videoid=None):
+@route(u"/internal/youtube/related", u"videoid")
+def related(videoid):
     gdata = APIControl()
-    return gdata.related(videoid if videoid else params[u"videoid"])
+    return gdata.related(videoid)
 
 
 def build_video_url(videoid):

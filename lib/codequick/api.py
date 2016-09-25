@@ -34,7 +34,7 @@ strings.update(search=137,
                select_playback_item=25006)
 
 
-def route(route_path="/"):
+def route(route_path, *args):
     """
     This is the main route decorator that is used for normal listing of listitems, video or folders.
 
@@ -48,10 +48,10 @@ def route(route_path="/"):
     func
         The original function, unmodified.
     """
-    return route_register(virtualfs, route_path, is_folder=True)
+    return route_register(virtualfs, route_path, is_folder=True, pass_args=args)
 
 
-def resolve(route_path):
+def resolve(route_path, *args):
     """
     This is the route decorator that is used when resolving a video url from a site.
 
@@ -65,10 +65,10 @@ def resolve(route_path):
     func
         The original function, unmodified.
     """
-    return route_register(PlayMedia, route_path, is_playable=True)
+    return route_register(PlayMedia, route_path, is_playable=True, pass_args=args)
 
 
-def execute(route_path):
+def execute(route_path, *args):
     """
     This is the route decorator that is used when executing code as a script.
 
@@ -82,10 +82,10 @@ def execute(route_path):
     func
         The original function, unmodified.
     """
-    return route_register(None, route_path)
+    return route_register(None, route_path, pass_args=args)
 
 
-def virtualfs(func):
+def virtualfs(func, required_args):
     """
     Add Directory List Items to Kodi
 
@@ -93,10 +93,13 @@ def virtualfs(func):
     ----------
     func : func
         Call the dispatched function and send the listitems to kodi.
+
+    required_args : list of str
+        List of arguments to pass to function
     """
 
     # Fetch the list of listitems
-    listitems = func()
+    listitems = func(*required_args)
 
     if listitems:
         # Convert results from generator to list
@@ -126,13 +129,13 @@ def virtualfs(func):
 
 
 class PlayMedia(object):
-    def __init__(self, func):
+    def __init__(self, func, required_args):
         # Instance Vars
         self.__headers = []
         self.__mimeType = params.get("mimetype")
 
         # Resolve Video Url
-        resolved = func(self)
+        resolved = func(self, *required_args)
         self.__send_to_kodi(resolved)
 
         # Monkey patch in the youtube url builder functions
