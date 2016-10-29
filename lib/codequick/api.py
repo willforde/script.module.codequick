@@ -34,6 +34,11 @@ strings.update(search=137,
                select_playback_item=25006)
 
 
+class InvalidInfoLabel(ValueError):
+    """ Raised when there is an invalid value given to a infolabel """
+    pass
+
+
 def route(route_path, *args):
     """
     This is the main route decorator that is used for normal listing of listitems, video or folders.
@@ -411,7 +416,10 @@ class Info(dict):
             else:
                 sortAdd(sort_type)
                 if type_converter:
-                    value = type_converter(value)
+                    try:
+                        value = type_converter(value)
+                    except ValueError:
+                        raise InvalidInfoLabel("Value for %s, %s is not of %s" % (key, value, type_converter))
 
         # Set the updated value
         super(Info, self).__setitem__(key, value)
