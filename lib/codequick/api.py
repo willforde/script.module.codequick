@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 # Standard Library Imports
 import urllib
 import os
