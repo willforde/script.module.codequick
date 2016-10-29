@@ -383,7 +383,18 @@ class PlayMedia(object):
             return None
 
 
-class Art(dict):
+class AttributeDict(dict):
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
+class Art(AttributeDict):
     _image_local = os.path.join(get_info("path"), u"resources", u"media", u"%s")
     _image_global = os.path.join(get_info("path_global"), u"resources", u"media", u"%s")
     _fanart = get_info("fanart")
@@ -402,7 +413,7 @@ class Art(dict):
         self["thumb"] = self._image_global % image
 
 
-class Info(dict):
+class Info(AttributeDict):
     def __setitem__(self, key, value):
         # Convert duration into an integer if required
         if key == "duration":
@@ -453,9 +464,9 @@ class Info(dict):
 
 class Stream(object):
     def __init__(self):
-        self.video = {}
-        self.audio = {"channels": 2}
-        self.subtitle = {}
+        self.video = AttributeDict()
+        self.audio = AttributeDict(channels=2)
+        self.subtitle = AttributeDict()
 
     def add(self, stream_type, values):
         """
