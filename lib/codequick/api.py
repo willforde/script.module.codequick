@@ -435,7 +435,8 @@ class Info(AttributeDict):
                         raise InvalidInfoLabel("Value for %s, %s is not of %s" % (key, value, type_converter))
 
         # Set the updated value
-        super(Info, self).__setitem__(key, value)
+        if value is not None:
+            super(Info, self).__setitem__(key, value)
 
     def date(self, date, date_format):
         converted_date = strptime(date, date_format)
