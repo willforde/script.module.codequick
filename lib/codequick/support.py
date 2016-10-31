@@ -296,10 +296,14 @@ def route_register(parent, route_path, is_folder=False, is_playable=False, pass_
 
     def decorator(func):
         ascii_route = unicode_route(route_path)
-        data = RouteData(parent, func, pass_args, ascii_route, is_folder, is_playable)
-        _route_store[ascii_route] = data
-        _func_store[func] = data
-        return func
+        if ascii_route in _route_store:
+            debug_args = (ascii_route, func.__name__, _route_store[ascii_route].name)
+            raise RuntimeError("Route %s for function %s is already registered to function %s" % debug_args)
+        else:
+            data = RouteData(parent, func, pass_args, ascii_route, is_folder, is_playable)
+            _route_store[ascii_route] = data
+            _func_store[func] = data
+            return func
 
     # Return the decorator that will register the function
     return decorator
