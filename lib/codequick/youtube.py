@@ -591,8 +591,8 @@ class APIControl(object):
             item.info["plot"] = snippet[u"localized"][u"description"]
 
             # Fetch Possible Date and Check if Available
-            date = snippet[u"publishedAt"]
-            item.info.date(date[:date.find("T")], "%Y-%m-%d")
+            # date = snippet[u"publishedAt"]
+            # item.info.date(date[:date.find("T")], "%Y-%m-%d")
 
             # Add InfoLabels and Data to Processed List
             yield item.get_tuple(playlist)
