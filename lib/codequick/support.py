@@ -316,12 +316,12 @@ def find_route(data):
     Parameters
     ----------
     data : object or str
-        The function that is associated with a route.
+        A function or route to find associated calling object
 
     Returns
     -------
     :class:`RouteData`
-        The Route class that has parent, function and route attributes.
+        The calling route class that has parent, function and route attributes.
 
     Raises
     ------
@@ -329,11 +329,15 @@ def find_route(data):
         Will be raised if no route is associated with given function or route path.
     """
 
+    # Search for route object
     if data in _func_store:
         return _func_store[data]
-    else:
+    elif isinstance(data, "basestring"):
         ascii_route = unicode_route(data)
-        return _route_store[ascii_route]
+        if ascii_route in _route_store:
+            return _route_store[ascii_route]
+
+    raise ValueError("Unable to find given route: %r" % data)
 
 
 def run(debug=False):
