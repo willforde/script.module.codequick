@@ -1,4 +1,4 @@
-""""
+"""
 Copyright: (c) 2013 - 2016 William Forde (willforde+codequick@gmail.com)
 License: GPLv3, see LICENSE for more details
 
