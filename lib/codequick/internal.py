@@ -12,8 +12,7 @@ from .utils import get_skin_name, keyboard
 from .api import ListItem
 
 # Prerequisites
-strings.update(custom=636, remove=1210, default=571,
-               enter_number=611, enter_search_string=16017)
+strings.update(custom=636, remove=1210, default=571, enter_number=611, enter_search_string=16017)
 
 
 class ViewModeSelecter(object):
