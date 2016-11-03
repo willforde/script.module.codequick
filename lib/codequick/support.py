@@ -333,7 +333,7 @@ def find_route(data):
     # Search for route object
     if data in _func_store:
         return _func_store[data]
-    elif isinstance(data, "basestring"):
+    elif isinstance(data, basestring):
         ascii_route = unicode_route(data)
         if ascii_route in _route_store:
             return _route_store[ascii_route]
