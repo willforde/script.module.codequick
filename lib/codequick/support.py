@@ -16,7 +16,8 @@ import xbmc
 _func_store = {}
 _route_store = {}
 
-__all__ = ["strings", "logger", "params", "run", "localize", "get_info", "get_setting", "set_setting"]
+__all__ = ["strings", "logger", "params", "run", "localize", "get_info",
+           "get_setting", "set_setting", "requests_session"]
 
 
 class KodiLogHandler(logging.Handler):
