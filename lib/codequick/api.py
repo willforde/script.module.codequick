@@ -383,7 +383,7 @@ class PlayMedia(object):
             return None
 
 
-class Art(object):
+class Art(dict):
     _image_local = os.path.join(get_info("path"), u"resources", u"media", u"%s")
     _image_global = os.path.join(get_info("path_global"), u"resources", u"media", u"%s")
     _fanart = get_info("fanart")
@@ -402,7 +402,7 @@ class Art(object):
         self["thumb"] = self._image_global % image
 
 
-class Info(object):
+class Info(dict):
     def __setitem__(self, key, value):
         # Convert duration into an integer if required
         if key == "duration":
