@@ -2,6 +2,7 @@
 import xbmc
 import xbmcgui
 from .support import logger, get_addon_data
+from HTMLParser import HTMLParser
 
 __all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session"]
 
@@ -116,3 +117,85 @@ def strip_tags(html):
         sub_start = html.find(u"<")
         sub_end = html.find(u">")
     return html
+
+
+class SectionParser(HTMLParser):
+    def __init__(self, tag_name=None, attrs=None):
+        """ Initialize and reset this instance. """
+        HTMLParser.__init__(self)
+        self._search_tag = tag_name
+        self._counter = 0
+
+        # Split attributes into wanted an unwanted attributes
+        self._unwanted_attrs = [attrs.pop(key) for key, value in attrs.items() if value is False]
+        self._wanted_attrs = attrs
+
+        self.start_pos = None
+        self.end_pos = None
+
+    def filter(self, html):
+        # Parse the html to find the requested tag section start and end line numbers
+        try:
+            self.feed(html)
+        except EOFError:
+            pass
+
+        # Filter down to only the lines that are requested
+        filtered_lines = [line for count, line in enumerate(html.split("\n")) if
+                          (self.start_pos[0] - 2) < count < self.end_pos[0]]
+
+        # Strip out any unwanted text in the first and last line
+        filtered_lines[0] = filtered_lines[0][self.start_pos[1]:]
+        filtered_lines[-1] = filtered_lines[-1][:self.end_pos[1] + len("</%s>" % self._search_tag)]
+
+        # Convert the filtered lines back into a unicode string
+        return u"\n".join(filtered_lines)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == self._search_tag:
+            # Increment the tag counter to indicate that we are still inside the requested tag
+            # When tag counter returns back to zero then we must be finished with that tag section
+            if self._counter > 0:
+                self._counter += 1
+
+            # If we have required attrs to match then search all attrs for wanted attrs
+            # And also check that we do not have any attrs that are unwanted
+            elif attrs and (self._wanted_attrs or self._unwanted_attrs):
+                wanted_attrs = self._wanted_attrs.copy()
+                unwanted_attrs = self._unwanted_attrs
+                for key, value in attrs:
+                    # Check for unwanted attrs
+                    if key in unwanted_attrs:
+                        return None
+
+                    # Check for wanted attrs
+                    elif key in wanted_attrs:
+                        c_value = wanted_attrs[key]
+                        if c_value == value or c_value is True:
+                            # Remove the attra form the wanted dict of attrs
+                            # Indicates that this attr has been found
+                            del wanted_attrs[key]
+
+                # Check that wanted_attrs is empty sense empty means that all attrs ware found
+                # Now the tag counter can start so to indicate that we are inside the requested tag
+                if not wanted_attrs:
+                    self._counter = 1
+                    self.start_pos = self.getpos()
+
+            # Start tag counter if requested tag is found and there is no attributes required
+            elif not self._wanted_attrs:
+                self._counter = 1
+                self.start_pos = self.getpos()
+
+    def handle_endtag(self, tag):
+        if tag == self._search_tag:
+            # When tag counter is already at 1 then we must be at the requested end tag so we must
+            # raise EOFError to stop parsing anymore html
+            if self._counter == 1:
+                self.end_pos = self.getpos()
+                raise EOFError
+
+            # We must not yet be at the end of the requested tag
+            # So just decrement the tag counter
+            else:
+                self._counter -= 1
