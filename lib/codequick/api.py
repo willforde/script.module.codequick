@@ -695,7 +695,7 @@ class ListItem(object):
         action : object or str
             Class that will be call to show recent results
 
-        label : bytestring
+        label : basestring
             Label of Listitem
 
         thumbnail : bytestring, optional
