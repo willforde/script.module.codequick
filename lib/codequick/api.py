@@ -494,8 +494,12 @@ class Stream(object):
         """
         video_info = self.video
 
+        # Skip if value is None, Unknown
+        if value is None:
+            return None
+
         # Standard Definition
-        if value == 0:
+        elif value == 0:
             video_info["width"] = 768
             video_info["height"] = 576
 
