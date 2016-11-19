@@ -293,6 +293,7 @@ class PlayMedia(object):
         try:
             import YDStreamExtractor
         except ImportError:
+            logger.debug("YoutubeDL module not installed. Please install to enable 'extract_source'")
             return None
 
         # If there is more than one stream found then ask for selection
@@ -575,23 +576,17 @@ class ListItem(object):
         """ Disable content lookup for item. """
         self.listitem.setContentLookup(False)
 
-    def get_direct(self, path, list_type="video", folder=False, playable=True):
+    def get(self, path, list_type="video"):
         """
         Take a url that can be directly sent to kodi and then returns a tuple of (path, listitem, isfolder)
 
         Parameters
         ----------
-        path : basestring
+        path : basestring or route
             Url of video or addon to send to kodi.
 
         list_type : str, optional(default='video')
             Type of listitem content that will be send to kodi. Option are (video:audio).
-
-        folder : bool, optional(default=False)
-            True if listing folder items else False for video items.
-
-        playable : bool, optional(default=True)
-            Whether the listitem is playable or not.
 
         Returns
         -------
@@ -604,6 +599,15 @@ class ListItem(object):
         bool
             Whether the listitem is a folder or not.
         """
+
+        if isinstance(path, basestring):
+            folder = False
+            playable = True
+        else:
+            route_data = find_route(path)
+            path = route_data.path(self.url)
+            folder = route_data.folder
+            playable = route_data.playable
 
         label = self.label
         listitem = self.listitem
@@ -633,7 +637,6 @@ class ListItem(object):
             # Set Kodi icon image if not already set
             if "icon" not in self.art:
                 self.art["icon"] = "DefaultFolder.png"
-
         else:
             # Change Kodi Propertys to mark as Folder
             listitem.setProperty("isplayable", "true" if playable else "false")
@@ -661,33 +664,6 @@ class ListItem(object):
 
         # Return Tuple of url, listitem, isfolder
         return path, listitem, folder
-
-    def get_tuple(self, action, list_type="video"):
-        """
-        Returns a tuple of listitem properties, (path, listitem, isfolder)
-
-        Parameters
-        ----------
-        action : object or unicode
-            Function or route path to listitem function
-
-        list_type : str, optional(default='video')
-            Type of listitem content that will be send to kodi. Option are (video:audio).
-
-        Returns
-        -------
-        str
-            Path to send to kodi.
-
-        :class:`xbmcgui.ListItem`
-            Listitem to send to kodi.
-
-        bool
-            Whether the listitem is a folder or not.
-        """
-        route_data = find_route(action)
-        path = route_data.path(self.url)
-        return self.get_direct(path, list_type, route_data.folder, route_data.playable)
 
     @classmethod
     def add_item(cls, action, label, thumbnail=None, **url):
@@ -721,7 +697,7 @@ class ListItem(object):
         if url:
             listitem.url.update(url)
 
-        return listitem.get_tuple(action)
+        return listitem.get(action)
 
     @classmethod
     def add_next(cls, **url):
@@ -753,7 +729,7 @@ class ListItem(object):
         listitem.url.update(base_url)
 
         # Fetch current route and return
-        return listitem.get_tuple(selected_route)
+        return listitem.get(selected_route)
 
     @classmethod
     def add_search(cls, action, label=None, **url):
@@ -785,7 +761,7 @@ class ListItem(object):
         url["route"] = route_data.route
         listitem.url.update(url)
 
-        return listitem.get_tuple("/internal/SavedSearches")
+        return listitem.get("/internal/SavedSearches")
 
     @classmethod
     def add_recent(cls, action, label=None, **url):
@@ -815,7 +791,7 @@ class ListItem(object):
         if url:
             listitem.url.update(url)
 
-        return listitem.get_tuple(action)
+        return listitem.get(action)
 
     @classmethod
     def add_youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
@@ -854,7 +830,7 @@ class ListItem(object):
         listitem.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
         listitem.url["contentid"] = content_id
         listitem.url["enable_playlists"] = str(enable_playlists).lower()
-        return listitem.get_tuple("/internal/youtube/playlist")
+        return listitem.get("/internal/youtube/playlist")
 
 
 @execute("/internal/setViewMode")

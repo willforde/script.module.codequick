@@ -515,7 +515,7 @@ class APIControl(object):
 
             # Return the listitem
             url = build_video_url(video_data[u"id"])
-            yield item.get_direct(url)
+            yield item.get(url)
 
         # Add next Page entry if pagetoken is giving
         if pagetoken:
@@ -528,7 +528,7 @@ class APIControl(object):
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb(u"youtube.png")
             item.url["contentid"] = channel_ids[0]
-            yield item.get_tuple(playlists)
+            yield item.get(playlists)
 
     def __init__(self):
         # Instantiate Youtube API
@@ -595,7 +595,7 @@ class APIControl(object):
             # item.info.date(date[:date.find("T")], "%Y-%m-%d")
 
             # Add InfoLabels and Data to Processed List
-            yield item.get_tuple(playlist)
+            yield item.get(playlist)
 
     def related(self, video_id):
         """
