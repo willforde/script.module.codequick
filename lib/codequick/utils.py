@@ -121,22 +121,21 @@ def strip_tags(html):
 
 
 class ETBuilder(HTMLParser):
-    def __init__(self, wanted_tags, tag=None, attrs=None, root_tag=None):
+    def __init__(self, tag=u"", attrs=None, wanted_tags=None, root_tag=None):
         """Initialize and reset this instance."""
         HTMLParser.__init__(self)
-        self._in_sec = False if tag else True
+        self._in_sec = None if tag else True
         self._tree = ElementTree.TreeBuilder()
         self._search_tag = tag
         self._root_tag = root_tag
-        self._section_elem = None
 
         # Make sure that wanted_tags is a list
-        if isinstance(wanted_tags, basestring):
-            wanted_tags = [wanted_tags]
+        if wanted_tags is None:
+            wanted_tags = []
         elif isinstance(wanted_tags, tuple):
             wanted_tags = list(wanted_tags)
         else:
-            msg = "Wanted tags is not of type: str, unicode, tuple, or list, %s" % type(wanted_tags)
+            msg = "Wanted tags is not of type: tuple or list, %s" % type(wanted_tags)
             assert isinstance(wanted_tags, list), msg
 
         # Append the search tag to wanted tags so the parser can use it as the root tag
@@ -157,7 +156,7 @@ class ETBuilder(HTMLParser):
         try:
             self.feed(html)
         except EOFError:
-            pass
+            self.reset()
 
         # End the root tag if set
         if self._root_tag:
@@ -169,14 +168,27 @@ class ETBuilder(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         # Search for requested section if required
-        if self._in_sec is False and tag == self._search_tag and self._check_attrs(attrs):
-            elem = self._tree.start(tag, dict(attrs) if attrs else {})
-            self._in_sec = True
-            self._section_elem = elem
+        if tag == self._search_tag and self._check_attrs(attrs):
+            self._in_sec = self._tree.start(tag, dict(attrs) if attrs else {})
+            self._search_tag = u""
 
         # Build tree of requested element tags
-        elif self._in_sec and (not self._w_tags or tag in self._w_tags):
+        elif self._in_sec is not None and (not self._w_tags or tag in self._w_tags):
             self._tree.start(tag, dict(attrs) if attrs else {})
+
+    def handle_endtag(self, tag):
+        # Close current tree element for requested tags
+        if self._in_sec is not None and (not self._w_tags or tag in self._w_tags):
+            elem = self._close_tag(tag)
+            if self._in_sec is elem:
+                self._in_sec = None
+                raise EOFError
+
+    def handle_data(self, data):
+        # Add tag data to element only if it contains text and not just an empty string with white spaces
+        data = data.strip()
+        if data and self._in_sec is not None and (not self._w_tags or self.lasttag in self._w_tags):
+            self._tree.data(data)
 
     def _check_attrs(self, attrs):
         # If we have required attrs to match then search all attrs for wanted attrs
@@ -205,18 +217,6 @@ class ETBuilder(HTMLParser):
         # Start tag counter if requested tag is found and there is no attributes required
         elif not self._w_attrs:
             return True
-
-    def handle_endtag(self, tag):
-        # Close current tree element for requested tags
-        if self._in_sec and (not self._w_tags or tag in self._w_tags) and self._section_elem is self._close_tag(tag):
-            self._in_sec = False
-            raise EOFError
-
-    def handle_data(self, data):
-        # Add tag data to element only if it contains text and not just an empty string with white spaces
-        data = data.strip()
-        if data and self._in_sec and (not self._w_tags or self.lasttag in self._w_tags):
-            self._tree.data(data)
 
     def _close_tag(self, tag):
         try:
