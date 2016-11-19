@@ -114,10 +114,10 @@ def process_sys_args(argv):
         if arg_len == 1:
             raise ValueError("No action value was giving from script call")
         elif arg_len == 2:
-            url = "plugin://%s/%s" % (addonID, argv[1])
+            url = "plugin://%s%s" % (addonID, argv[1])
         else:
             query = "&".join(["arg%i=%s" % (count, arg) for count, arg in enumerate(argv[2:], start=1)])
-            url = "plugin://%s/%s?%s" % (addonID, sys.argv[1], query)
+            url = "plugin://%s%s?%s" % (addonID, sys.argv[1], query)
 
     # Return the url as a split named tuple
     return urlparse.urlsplit(unicode(url, "latin1"))
