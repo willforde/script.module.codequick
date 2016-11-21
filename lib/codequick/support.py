@@ -13,7 +13,6 @@ import xbmcgui
 import xbmc
 
 # Dict store for func and route mappings to route class object
-_func_store = {}
 _route_store = {}
 
 __all__ = ["strings", "logger", "params", "run", "localize", "get_info",
@@ -149,40 +148,20 @@ path_unsplit = functools.partial(urlunsplit, str(parsedUrl.scheme), str(parsedUr
 current_unsplit = functools.partial(urlunsplit, str(parsedUrl.scheme), str(parsedUrl.netloc), str(parsedUrl.path))
 
 
-def unicode_route(route):
-    """ Return a route as unicode with any non ascii chars removed """
-    try:
-        return unicode(route).lower()
-    except UnicodeDecodeError:
-        return unicode(route, "ascii", "ignore").lower()
-
-
 class RouteData(object):
     """
-    Class that used for accessing the route function and parent.
+    Class thats used for accessing the route function
 
     Parameters
     ----------
-    parent : :class:`Base`
-        The parent class that will be initiated and passed to function
-
     func : function
         The function that will be added to the route dispatcher.
 
-    route_path : unicode
+    route : bytestring
         The path that the route dispatcher will used to map to function
-
-    is_folder : bool
-        Indicate if the route is a folder or not.
-
-    is_playable : bool
-        Indicate if the route is playable or not.
 
     Attributes
     ----------
-    parent : :class:`Base`
-        The parent that will be used to process the responses that are received from the function.
-
     func : function
         The function that will be called.
 
@@ -192,18 +171,16 @@ class RouteData(object):
     name : unicode
         The name of the function that will be called.
     """
-
-    def __init__(self, parent, func, pass_args, route_path, is_folder, is_playable):
+    def __init__(self, func, route):
         self.name = unicode(func.__name__)
-        self.route = route_path
-        self._str_route = str(route_path)
-        self.parent = parent
-        self.func = func
-        self.folder = False if is_playable else is_folder
-        self.playable = False if is_folder else is_playable
-        self._pass_args = pass_args
+        self.route = route
+        self._func = func
 
-    def path(self, query=None):
+    def __call__(self, *args, **kwargs):
+        """Allow this class to be called as if it was a function"""
+        return self._func(*args, **kwargs)
+
+    def kodi_path(self, query=None):
         """
         Return addon url for callback by kodi
 
@@ -223,19 +200,21 @@ class RouteData(object):
             query = urllib.urlencode(query)
 
         # Create addon url for kodi
-        return path_unsplit(self._str_route, query, None)
+        return path_unsplit(self.route, query, None)
 
-    def call(self):
-        """ Call the registered function """
-        required_args = [params[arg] for arg in self._pass_args if arg in params]
+    @classmethod
+    def register(cls, route):
+        def decorator(func):
+            # Registor this class route
+            if route in _route_store:
+                debug_args = (route, func.__name__, _route_store[route].name)
+                raise RuntimeError("Route %s for function %s is already registered to function %s" % debug_args)
+            else:
+                route_cls = cls(func, route)
+                _route_store[route] = route_cls
+                return route_cls
 
-        # Instantiate parent with callable function
-        if self.parent:
-            self.parent(self.func, required_args)
-
-        # Just call function directly
-        else:
-            self.func(*required_args)
+        return decorator
 
 
 def current_path(**querys):
@@ -268,79 +247,6 @@ def current_path(**querys):
     return current_unsplit(query_string, "")
 
 
-def route_register(parent, route_path, is_folder=False, is_playable=False, pass_args=None):
-    """
-    Common function to register a function with routes using a decorator.
-
-    Parameters
-    ----------
-    parent : :class:`Base`
-        The parent class used to process the response form registered function.
-
-    route_path : str
-        The route path that will be used to map to the decorated function.
-
-    is_folder : bool, optional(default=False)
-        Indicate if the route is a folder or not.
-
-    is_playable : bool, optional(default=False)
-        Indicate if the route is playable or not.
-
-    pass_args : list of str, optional
-        A list of requested arguments to send to calling function
-
-    Returns
-    -------
-    func
-        Decorator that register function and returns it unmodified.
-    """
-
-    def decorator(func):
-        ascii_route = unicode_route(route_path)
-        if ascii_route in _route_store:
-            debug_args = (ascii_route, func.__name__, _route_store[ascii_route].name)
-            raise RuntimeError("Route %s for function %s is already registered to function %s" % debug_args)
-        else:
-            data = RouteData(parent, func, pass_args, ascii_route, is_folder, is_playable)
-            _route_store[ascii_route] = data
-            _func_store[func] = data
-            return func
-
-    # Return the decorator that will register the function
-    return decorator
-
-
-def find_route(data):
-    """
-    Method to find the route associated to given function or route path.
-
-    Parameters
-    ----------
-    data : object or str
-        A function or route to find associated calling object
-
-    Returns
-    -------
-    :class:`RouteData`
-        The calling route class that has parent, function and route attributes.
-
-    Raises
-    ------
-    KeyError
-        Will be raised if no route is associated with given function or route path.
-    """
-
-    # Search for route object
-    if data in _func_store:
-        return _func_store[data]
-    elif isinstance(data, basestring):
-        ascii_route = unicode_route(data)
-        if ascii_route in _route_store:
-            return _route_store[ascii_route]
-
-    raise ValueError("Unable to find given route: %r" % data)
-
-
 def run(debug=False):
     """ Fetch and execute the requested route function """
 
@@ -348,12 +254,12 @@ def run(debug=False):
     before = time.time()
 
     # Fetch the requested function that will be executed
-    data_route = find_route(selected_route)
-    logger.debug('Dispatching to route "%s": function "%s"', selected_route, data_route.name)
+    route_cls = _route_store[selected_route]
+    logger.debug('Dispatching to route "%s": function "%s"', selected_route, route_cls.name)
 
     try:
         # Execute the registered function
-        data_route.call()
+        route_cls.execute()
 
     except Exception as e:
         KodiLogHandler.show_debug()

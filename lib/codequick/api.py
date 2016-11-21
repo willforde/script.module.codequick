@@ -11,8 +11,8 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import route_register, strings, logger, handle, params, get_info, get_setting, localize, current_path
-from .support import find_route, selected_route, get_addon_data
+from .support import strings, logger, handle, params, get_info, get_setting, localize, current_path
+from .support import selected_route, get_addon_data, RouteData
 
 # Setup sort method set
 sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
@@ -34,46 +34,7 @@ strings.update(search=137,
                select_playback_item=25006)
 
 
-class InvalidInfoLabel(ValueError):
-    """ Raised when there is an invalid value given to a infolabel """
-    pass
-
-
-def route(route_path, *args):
-    """
-    This is the main route decorator that is used for normal listing of listitems, video or folders.
-
-    Parameters
-    ----------
-    route_path : bytestring, optional(default="/")
-        The route path that will be used to map to the decorated function.
-
-    Returns
-    -------
-    func
-        The original function, unmodified.
-    """
-    return route_register(virtualfs, route_path, is_folder=True, pass_args=args)
-
-
-def resolve(route_path, *args):
-    """
-    This is the route decorator that is used when resolving a video url from a site.
-
-    Parameters
-    ----------
-    route_path : bytestring
-        The route path that will be used to map to the decorated function.
-
-    Returns
-    -------
-    func
-        The original function, unmodified.
-    """
-    return route_register(PlayMedia, route_path, is_playable=True, pass_args=args)
-
-
-def execute(route_path, *args):
+def execute(route_path):
     """
     This is the route decorator that is used when executing code as a script.
 
@@ -84,69 +45,131 @@ def execute(route_path, *args):
 
     Returns
     -------
-    func
-        The original function, unmodified.
+    :class:`Executer`
+        A class that handles the routed function.
     """
-    return route_register(None, route_path, pass_args=args)
+    return Executer.register(route_path)
 
 
-def virtualfs(func, required_args):
+def route(route_path):
     """
-    Add Directory List Items to Kodi
+    This is the main route decorator that is used for listing of listitems, video or folders.
 
     Parameters
     ----------
-    func : func
-        Call the dispatched function and send the listitems to kodi.
+    route_path : bytestring
+        The route path that will be used to map to the decorated function.
 
-    required_args : list of str
-        List of arguments to pass to function
+    Returns
+    -------
+    :class:`VirtualFS`
+        A class that handles the routed function.
     """
+    return VirtualFS.register(route_path)
 
-    # Fetch the list of listitems
-    listitems = func(*required_args)
 
-    if listitems:
-        # Convert results from generator to list
-        listitems = filter(None, listitems)
+def resolve(route_path):
+    """
+    This is the route decorator that is used when resolving a video url from a site.
 
-        # Add listitems to
-        xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
+    Parameters
+    ----------
+    route_path : bytestring
+        The route path that will be used to map to the decorated function.
 
-        # Set Kodi Sort Methods
-        _addSortMethod = xbmcplugin.addSortMethod
-        for sortMethod in sorted(sortMethods):
-            _addSortMethod(handle, sortMethod)
+    Returns
+    -------
+    :class:`PlayMedia`
+        A class that handles the routed function.
+    """
+    return PlayMedia.register(route_path)
 
-        # Guess Content Type and set View Mode
-        is_folder = ListItem.vidCounter < (len(listitems) / 2)
-        # xbmcplugin.setContent(handle, "files" if isFolder else "episodes")
-        listing_type = "folder" if is_folder else "video"
-        setting_key = "%s.%s.view" % (xbmc.getSkinDir(), listing_type)
-        view_mode = get_setting(setting_key, raw_setting=True)
+
+class Executer(RouteData):
+    is_playable = False
+    is_folder = False
+
+    def execute(self):
+        """Execute the function"""
+        self._func()
+
+
+class VirtualFS(RouteData):
+    is_playable = False
+    is_folder = True
+
+    def execute(self):
+        """Add Directory List Items to Kodi"""
+
+        # Fetch the list of listitems
+        listitems = self._func()
+
+        if listitems:
+            # Convert results from generator to list
+            listitems = list(listitems)
+
+            # Add listitems to kodi
+            xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
+
+            # Set Kodi Sort Methods
+            _addSortMethod = xbmcplugin.addSortMethod
+            for sortMethod in sorted(sortMethods):
+                _addSortMethod(handle, sortMethod)
+
+            # Guess Content Type and View Mode
+            is_folder = ListItem.vidCounter < (len(listitems) / 2)
+            self.__content_type(is_folder)
+
+            self.__end_directory(True)
+        else:
+            self.__end_directory(True)
+
+    @staticmethod
+    def __content_type(isfolder):
+        """Guess content type and set kodi parameters, setContent & SetViewMode """
+        xbmcplugin.setContent(handle, "files" if isfolder else "episodes")
+        listing_type = "folder" if isfolder else "video"
+        set_key = "%s.%s.view" % (xbmc.getSkinDir(), listing_type)
+        view_mode = get_setting(set_key, raw_setting=True)
         if view_mode:
             xbmc.executebuiltin("Container.SetViewMode(%s)" % str(view_mode))
 
-    # End Directory Listings
-    update_listing = u"refresh" in params or (u"updatelisting" in params and params[u"updatelisting"] == u"true")
-    cache_to_disc = u"cachetodisc" in params
-    xbmcplugin.endOfDirectory(handle, bool(listitems), update_listing, cache_to_disc)
+    @staticmethod
+    def __end_directory(success):
+        """Mark the end of directory listings"""
+        cache_to_disc = u"cachetodisc" in params
+        update_listing = u"refresh" in params or (u"updatelisting" in params and params[u"updatelisting"] == u"true")
+        xbmcplugin.endOfDirectory(handle, success, update_listing, cache_to_disc)
 
 
-class PlayMedia(object):
-    def __init__(self, func, required_args):
-        # Instance Vars
-        self.__headers = []
-        self.__mimeType = params.get("mimetype")
+class PlayMedia(RouteData):
+    is_playable = True
+    is_folder = False
 
-        # Resolve Video Url
-        resolved = func(self, *required_args)
-        self.__send_to_kodi(resolved)
+    def __init__(self, *args, **kwargs):
+        super(PlayMedia, self).__init__(*args, **kwargs)
 
         # Monkey patch in the youtube url builder functions
         from .youtube import build_video_url, build_playist_url
-        self.youtube_playlist_url = build_playist_url
-        self.youtube_video_url = build_video_url
+        setattr(self, "youtube_playlist_url", build_playist_url)
+        setattr(self, "youtube_video_url", build_video_url)
+
+        # Instance Vars
+        self.__headers = []
+        self.__mimetype = None
+
+    def execute(self):
+        """Resolve Video Url"""
+        try:
+            resolved = self._func(self)
+        except TypeError as e:
+            if "takes no arguments" in str(e):
+                raise TypeError("Resolver function must accept tools argument")
+            else:
+                raise
+        else:
+            assert resolved, "Unable to resolve url"
+            self.__send_to_kodi(resolved)
 
     def set_mime_type(self, value):
         """
@@ -157,7 +180,7 @@ class PlayMedia(object):
         value : bytestring
             The mimetype of the video.
         """
-        self.__mimeType = str(value)
+        self.__mimetype = str(value)
 
     def set_user_agent(self, useragent):
         """
@@ -212,8 +235,8 @@ class PlayMedia(object):
             listitem.setPath(url)
 
             # Set mimetype if any
-            if self.__mimeType:
-                listitem.setMimeType(self.__mimeType)
+            if self.__mimetype:
+                listitem.setMimeType(self.__mimetype)
 
             # Populate Playlis
             playlist.add(url, listitem)
@@ -250,8 +273,8 @@ class PlayMedia(object):
         # Create Main listitem
         main_listitem = xbmcgui.ListItem()
         main_listitem.setLabel(params[u"title"])
-        if self.__mimeType:
-            main_listitem.setMimeType(self.__mimeType)
+        if self.__mimetype:
+            main_listitem.setMimeType(self.__mimetype)
 
         url = self.__check_url(url)
         main_listitem.setPath(url)
@@ -342,8 +365,8 @@ class PlayMedia(object):
         # Create listitem object if resolved object is a basestring (string/unicode)
         elif isinstance(resolved, basestring):
             listitem = xbmcgui.ListItem()
-            if self.__mimeType:
-                listitem.setMimeType(self.__mimeType)
+            if self.__mimetype:
+                listitem.setMimeType(self.__mimetype)
 
             resolved = self.__check_url(resolved)
             listitem.setPath(resolved)
@@ -420,7 +443,7 @@ class Info(dict):
                     try:
                         value = type_converter(value)
                     except ValueError:
-                        raise InvalidInfoLabel("Value for %s, %s is not of %s" % (key, value, type_converter))
+                        raise ValueError("Value for %s, %s is not of %s" % (key, value, type_converter))
 
         # Set the updated value
         if value is not None:
@@ -542,13 +565,12 @@ class Context(list):
         self.add(func, self._strRelated, **query)
 
     def add(self, func, label, **query):
-        data = find_route(func)
         if query:
             if "updatelisting" not in query:
                 query["updatelisting"] = "true"
-            command = "XBMC.Container.Update(%s)" % data.path(query)
+            command = "XBMC.Container.Update(%s)" % func.kodi_path(query)
         else:
-            command = "XBMC.Container.Update(%s?updatelisting=true)" % data.path()
+            command = "XBMC.Container.Update(%s?updatelisting=true)" % func.kodi_path()
 
         # Append Command to context menu
         # noinspection PyTypeChecker
@@ -600,14 +622,13 @@ class ListItem(object):
             Whether the listitem is a folder or not.
         """
 
-        if isinstance(path, basestring):
+        if isinstance(path, RouteData):
+            folder = path.is_folder
+            playable = path.is_playable
+            path = path.kodi_path(self.url)
+        else:
             folder = False
             playable = True
-        else:
-            route_data = find_route(path)
-            path = route_data.path(self.url)
-            folder = route_data.folder
-            playable = route_data.playable
 
         label = self.label
         listitem = self.listitem
@@ -724,7 +745,7 @@ class ListItem(object):
 
         # Create listitem instance
         listitem = cls()
-        listitem.label = u"[B]%s %i[/B]" % (localize("next_page"), base_url["nextpagecount"])
+        listitem.label = u"[B]%s %s[/B]" % (localize("next_page"), base_url["nextpagecount"])
         listitem.art.global_thumb(u"next.png")
         listitem.url.update(base_url)
 
@@ -756,12 +777,10 @@ class ListItem(object):
         listitem = cls()
         listitem.label = u"[B]%s[/B]" % (label if label else localize("search"))
         listitem.art.global_thumb(u"search.png")
-
-        route_data = find_route(action)
-        url["route"] = route_data.route
+        url["route"] = action.route
         listitem.url.update(url)
 
-        return listitem.get("/internal/SavedSearches")
+        return listitem.get(saved_searches)
 
     @classmethod
     def add_recent(cls, action, label=None, **url):
