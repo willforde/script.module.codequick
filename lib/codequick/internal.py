@@ -238,4 +238,4 @@ class SavedSearches(object):
             item.context.menu_update(saved_searches, str_remove, **query_cx)
 
             # Return Listitem data
-            yield item.get_tuple(farwarding_route)
+            yield item.get(farwarding_route)
