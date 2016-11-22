@@ -121,6 +121,7 @@ class VirtualFS(RouteData):
             self.__end_directory(True)
         else:
             self.__end_directory(False)
+            raise RuntimeError("No listitems ware loaded")
 
     @staticmethod
     def __content_type(isfolder):
@@ -882,5 +883,4 @@ def view_mode_selecter():
 @route("/internal/SavedSearches")
 def saved_searches():
     from .internal import SavedSearches
-    data = SavedSearches()
-    return data.start()
+    return SavedSearches().start()
