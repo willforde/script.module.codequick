@@ -12,7 +12,7 @@ import xbmc
 
 # Package imports
 from .support import strings, logger, handle, params, get_info, get_setting, localize, current_path
-from .support import selected_route, get_addon_data, RouteData
+from .support import _route_store, selected_route, get_addon_data, RouteData
 
 # Setup sort method set
 sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
@@ -429,7 +429,9 @@ class Art(dict):
 class Info(dict):
     def __setitem__(self, key, value):
         # Convert duration into an integer if required
-        if key == "duration":
+        if value is None:
+            logger.debug("None type value detected for info label %s, Ignoring", key)
+        elif key == "duration":
             value = self._duration(value)
             sortAdd(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
         else:
@@ -446,8 +448,7 @@ class Info(dict):
                         raise ValueError("Value for %s, %s is not of %s" % (key, value, type_converter))
 
         # Set the updated value
-        if value is not None:
-            super(Info, self).__setitem__(key, value)
+        super(Info, self).__setitem__(key, value)
 
     def date(self, date, date_format):
         converted_date = strptime(date, date_format)
@@ -573,7 +574,6 @@ class Context(list):
             command = "XBMC.Container.Update(%s?updatelisting=true)" % func.kodi_path()
 
         # Append Command to context menu
-        # noinspection PyTypeChecker
         self.append((label, command))
 
 
@@ -631,6 +631,7 @@ class ListItem(object):
             playable = True
 
         label = self.label
+        assert label, "No label set on listitem"
         listitem = self.listitem
         listitem.setLabel(label)
         self.info["title"] = label
@@ -687,6 +688,25 @@ class ListItem(object):
         return path, listitem, folder
 
     @classmethod
+    def add_dict(cls, data):
+        listitem = cls()
+        listitem.label = data["label"]
+
+        if "art" in data:
+            listitem.art.update(data["art"])
+        if "info" in data:
+            listitem.info.update(data["info"])
+        if "url" in data:
+            listitem.url.update(data["url"])
+        if "property" in data:
+            listitem.property.update(data["property"])
+        if "stream" in data:
+            for stream_type, values in data["stream"].iteritems():
+                listitem.stream.add(stream_type, values)
+
+        return listitem.get(data["route"])
+
+    @classmethod
     def add_item(cls, action, label, thumbnail=None, **url):
         """
         Basic constructor to add a simple listitem.
@@ -739,7 +759,7 @@ class ListItem(object):
         # Fetch current url query
         base_url = params.copy()
         base_url["updatelisting"] = "true"
-        base_url["nextpagecount"] = int(base_url.get("nextpagecount", 1)) + 1
+        base_url["nextpagecount"] = str(int(base_url.get("nextpagecount", 1)) + 1)
         if url:
             base_url.update(url)
 
@@ -750,7 +770,7 @@ class ListItem(object):
         listitem.url.update(base_url)
 
         # Fetch current route and return
-        return listitem.get(selected_route)
+        return listitem.get(_route_store[selected_route])
 
     @classmethod
     def add_search(cls, action, label=None, **url):
