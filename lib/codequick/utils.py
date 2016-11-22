@@ -139,7 +139,7 @@ class ETBuilder(HTMLParser):
             assert isinstance(wanted_tags, list), msg
 
         # Append the search tag to wanted tags so the parser can use it as the root tag
-        if tag and tag not in wanted_tags:
+        if tag and wanted_tags and tag not in wanted_tags:
             wanted_tags.append(tag)
 
         # Split attributes into wanted and unwanted attributes
@@ -222,8 +222,15 @@ class ETBuilder(HTMLParser):
         try:
             # Close the current tree element
             return self._tree.end(tag)
-        except AssertionError:
-            # Attemp to fix tree if a bad end tag was detected
-            print "Bad end tag detected", tag, self.lasttag
-            self._tree.end(self.lasttag)
-            return self._tree.end(tag)
+        except AssertionError, e:
+            str_error = str(e)
+            if "end tag mismatch" in str_error:
+                # Atempt to extract the expected tag and
+                # check that it matches the last tag
+                expected = str_error.replace("expected ", "").split("(")[-1].split(",")[0]
+                if expected == self.lasttag:
+                    return self._tree.end(tag)
+                else:
+                    raise
+            else:
+                raise
