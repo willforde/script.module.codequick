@@ -103,11 +103,9 @@ class VirtualFS(RouteData):
 
         # Fetch the list of listitems
         listitems = self._func()
+        listitems = list(listitems)
 
         if listitems:
-            # Convert results from generator to list
-            listitems = list(listitems)
-
             # Add listitems to kodi
             xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
 
@@ -122,7 +120,7 @@ class VirtualFS(RouteData):
 
             self.__end_directory(True)
         else:
-            self.__end_directory(True)
+            self.__end_directory(False)
 
     @staticmethod
     def __content_type(isfolder):
