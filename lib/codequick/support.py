@@ -49,7 +49,7 @@ class KodiLogHandler(logging.Handler):
         if cls._debug_msgs:
             xbmc.log("###### debug ######", xbmc.LOGNOTICE)
             for msg in cls._debug_msgs:
-                xbmc.log(msg, xbmc.LOGNOTICE)
+                xbmc.log(msg, xbmc.LOGWARNING)
             xbmc.log("###### debug ######", xbmc.LOGNOTICE)
 
 
