@@ -221,9 +221,19 @@ class ETBuilder(HTMLParser):
     def _close_tag(self, tag):
         try:
             # Close the current tree element
-            return self._tree.end(tag)
+            elem = self._tree.end(tag)
+
+            # Check that the closed tag is whats expected
+            if elem.tag == tag:
+                return elem
+            else:
+                # Didn't find expected tag element. Must raise AssertionError sense the elementtree
+                # treebuilder would normaly raise that error but it is silenly ignored in kodi
+                raise AssertionError("end tag mismatch (expected %s, got %s)" % (elem.tag, tag))
+
         except AssertionError, e:
             str_error = str(e)
+            logger.debug(str_error)
             if "end tag mismatch" in str_error:
                 # Atempt to extract the expected tag and
                 # check that it matches the last tag
