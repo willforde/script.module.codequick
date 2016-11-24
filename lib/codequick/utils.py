@@ -97,29 +97,6 @@ def get_skin_name(skin_id):
         return u"Unknown"
 
 
-def strip_tags(html):
-    """
-    Strips out html code and return plan text.
-
-    Parameters
-    ----------
-    html : unicode
-        HTML code that will be striped of html tags.
-
-    Returns
-    -------
-    unicode
-        Text with the html tags striped out.
-    """
-    sub_start = html.find(u"<")
-    sub_end = html.find(u">")
-    while sub_end > sub_start > -1:
-        html = html.replace(html[sub_start:sub_end + 1], u"").strip()
-        sub_start = html.find(u"<")
-        sub_end = html.find(u">")
-    return html
-
-
 class ETBuilder(HTMLParser):
     def __init__(self, tag=u"", attrs=None, wanted_tags=None, root_tag=None):
         """Initialize and reset this instance."""
