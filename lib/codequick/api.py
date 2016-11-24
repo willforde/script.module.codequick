@@ -103,25 +103,28 @@ class VirtualFS(RouteData):
 
         # Fetch the list of listitems
         listitems = self._func()
-        listitems = list(listitems)
 
-        if listitems:
-            # Add listitems to kodi
-            xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
-
-            # Set Kodi Sort Methods
-            _addSortMethod = xbmcplugin.addSortMethod
-            for sortMethod in sorted(sortMethods):
-                _addSortMethod(handle, sortMethod)
-
-            # Guess Content Type and View Mode
-            is_folder = ListItem.vidCounter < (len(listitems) / 2)
-            self.__content_type(is_folder)
-
-            self.__end_directory(True)
-        else:
+        if listitems is None:
             self.__end_directory(False)
-            raise RuntimeError("No listitems ware loaded")
+        else:
+            listitems = list(listitems)
+            if listitems:
+                # Add listitems to kodi
+                xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
+
+                # Set Kodi Sort Methods
+                _addSortMethod = xbmcplugin.addSortMethod
+                for sortMethod in sorted(sortMethods):
+                    _addSortMethod(handle, sortMethod)
+
+                # Guess Content Type and View Mode
+                is_folder = ListItem.vidCounter < (len(listitems) / 2)
+                self.__content_type(is_folder)
+
+                self.__end_directory(True)
+            else:
+                self.__end_directory(False)
+                raise RuntimeError("No listitems ware loaded")
 
     @staticmethod
     def __content_type(isfolder):
