@@ -21,7 +21,7 @@ disable_warnings()
 
 # Set user agent that will be used
 USERAGENT = "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
-DEFAULTAGE = 3600
+DEFAULTAGE = 14400
 
 # Set the cache directory and create it if missing
 CACHE_DIR = os.path.join(get_info("profile"), u"cache")
