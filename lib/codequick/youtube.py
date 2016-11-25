@@ -1,4 +1,5 @@
 # Standard Library Imports
+import urlparse
 import json
 import os
 
@@ -79,6 +80,40 @@ def build_playist_url(playlistid, mode=u"normal"):
         A plugin url to the youtube addon that will play the given playlist
     """
     return u"plugin://plugin.video.youtube/play/?playlist_id=%s&mode=%s" % (playlistid, mode)
+
+
+def parse_url(url):
+    """
+    Parse a youtube url for a video or playlist id and return a youtube addon url
+
+    Parameters
+    ----------
+    url : str
+        The url to parse
+
+    Returns
+    -------
+    unicode
+        A plugin url to the youtube addon that will play the given video or playlist
+    """
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
+    path_lower = path.lower()
+
+    # https://www.youtube.com/playlist?list=PLCB22B4CD54FA9F49
+    # https://www.youtube.com/embed/videoseries?list=PLCB22B4CD54FA9F49
+    if path_lower.startswith(u"/embed/videoseries") or path_lower.startswith(u"/playlist"):
+        playlistid = urlparse.parse_qs(query)["list"][0]
+        return build_playist_url(playlistid)
+
+    # https://www.youtube.com/embed/5oxznP9Wc_w
+    elif path_lower.startswith(u"/embed/") or path_lower.startswith(u"/v/"):
+        videoid = path[path.rfind(u"/") + 1:]
+        return build_video_url(videoid)
+
+    # https://www.youtube.com/watch?v=5oxznP9Wc_w
+    elif path_lower.startswith(u"/watch"):
+        videoid = urlparse.parse_qs(query)["v"][0]
+        return build_video_url(videoid)
 
 
 def youtube_hd(default=0, limit=1):
