@@ -162,16 +162,20 @@ class PlayMedia(RouteData):
 
     def execute(self):
         """Resolve Video Url"""
+        resolved = None
         try:
             resolved = self._func(self)
         except TypeError as e:
             if "takes no arguments" in str(e):
-                raise TypeError("Resolver function must accept tools argument")
+                resolved = self._func()
+                #raise TypeError("Resolver function must accept tools argument")
             else:
                 raise
-        else:
-            assert resolved, "Unable to resolve url"
+
+        if resolved:
             self.__send_to_kodi(resolved)
+        else:
+            raise ValueError("Unable to resolve url")
 
     def set_mime_type(self, value):
         """
@@ -250,7 +254,7 @@ class PlayMedia(RouteData):
         # Return first playlist item to send to kodi
         return playlist[0]
 
-    def creat_loopback(self, url, **next_params):
+    def create_loopback(self, url, title=None, **next_params):
         """
         Create a playlist where the second item loops back to current addon to load next video. e.g. Party Mode
 
@@ -258,6 +262,9 @@ class PlayMedia(RouteData):
         ----------
         url : unicode
             Url for the first playable listitem to use.
+
+        title : unicode, optional
+            The title to give to the listitem
 
         next_params : kwargs, optional
             Extra params to add to the loopback request to access the next video.
@@ -270,21 +277,24 @@ class PlayMedia(RouteData):
 
         # Create Playlist
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        playlist.clear()
 
         # Create Main listitem
         main_listitem = xbmcgui.ListItem()
-        main_listitem.setLabel(params[u"title"])
+        main_listitem.setLabel(title if title else params[u"title"])
         if self.__mimetype:
             main_listitem.setMimeType(self.__mimetype)
 
         url = self.__check_url(url)
         main_listitem.setPath(url)
-        playlist.add(url, main_listitem)
+
+        if "_loopback_" not in params:
+            playlist.clear()
+            playlist.add(url, main_listitem)
+            next_params["_loopback_"] = "true"
 
         # Create Loopback listitem
         loop_listitem = xbmcgui.ListItem()
-        loop_listitem.setLabel("Loopback")
+        loop_listitem.setLabel(params[u"title"])
         loopback_url = current_path(**next_params)
         loop_listitem.setPath(loopback_url)
         playlist.add(loopback_url, loop_listitem)
@@ -624,34 +634,17 @@ class ListItem(object):
             Whether the listitem is a folder or not.
         """
 
-        if isinstance(path, RouteData):
+        try:
             folder = path.is_folder
             playable = path.is_playable
-            path = path.kodi_path(self.url)
-        else:
+        except AttributeError:
             folder = False
             playable = True
 
         label = self.label
-        assert label, "No label set on listitem"
         listitem = self.listitem
         listitem.setLabel(label)
         self.info["title"] = label
-
-        # Set Kodi InfoLabels
-        listitem.setInfo(list_type, self.info)
-
-        # Set streamInfo if found
-        if self.stream.audio:
-            listitem.addStreamInfo("audio", self.stream.audio)
-        if self.stream.video:
-            listitem.addStreamInfo("video", self.stream.video)
-        if self.stream.subtitle:
-            listitem.addStreamInfo("subtitle", self.stream.subtitle)
-
-        # Set listitem propertys
-        for key, value in self.property:
-            listitem.setProperty(key, value)
 
         if folder:
             # Change Kodi Propertys to mark as Folder
@@ -674,11 +667,30 @@ class ListItem(object):
             self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
             self.context.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
 
+            # Increment vid counter for later guessing of content list_type
+            ListItem.vidCounter += 1
+
             # Add the title to the url dict for later use by the url resolver
             self.url["title"] = label.encode("ascii", "ignore")
 
-            # Increment vid counter for later guessing of content list_type
-            ListItem.vidCounter += 1
+        # If path is a RouteData object then create the plugin path
+        if isinstance(path, RouteData):
+            path = path.kodi_path(self.url)
+
+        # Set Kodi InfoLabels
+        listitem.setInfo(list_type, self.info)
+
+        # Set streamInfo if found
+        if self.stream.audio:
+            listitem.addStreamInfo("audio", self.stream.audio)
+        if self.stream.video:
+            listitem.addStreamInfo("video", self.stream.video)
+        if self.stream.subtitle:
+            listitem.addStreamInfo("subtitle", self.stream.subtitle)
+
+        # Set listitem propertys
+        for key, value in self.property:
+            listitem.setProperty(key, value)
 
         # Add Context menu items
         listitem.addContextMenuItems(self.context)
