@@ -34,7 +34,7 @@ strings.update(search=137,
                select_playback_item=25006)
 
 
-def execute(route_path):
+def execute(route_path, **kwargs):
     """
     This is the route decorator that is used when executing code as a script.
 
@@ -48,10 +48,10 @@ def execute(route_path):
     :class:`Executer`
         A class that handles the routed function.
     """
-    return Executer.register(route_path)
+    return Executer.register(route_path, kwargs)
 
 
-def route(route_path):
+def route(route_path, **kwargs):
     """
     This is the main route decorator that is used for listing of listitems, video or folders.
 
@@ -65,10 +65,10 @@ def route(route_path):
     :class:`VirtualFS`
         A class that handles the routed function.
     """
-    return VirtualFS.register(route_path)
+    return VirtualFS.register(route_path, kwargs)
 
 
-def resolve(route_path):
+def resolve(route_path, **kwargs):
     """
     This is the route decorator that is used when resolving a video url from a site.
 
@@ -82,7 +82,7 @@ def resolve(route_path):
     :class:`PlayMedia`
         A class that handles the routed function.
     """
-    return PlayMedia.register(route_path)
+    return PlayMedia.register(route_path, kwargs)
 
 
 class Executer(RouteData):
@@ -113,9 +113,13 @@ class VirtualFS(RouteData):
                 xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
 
                 # Set Kodi Sort Methods
-                _addSortMethod = xbmcplugin.addSortMethod
-                for sortMethod in sorted(sortMethods):
-                    _addSortMethod(handle, sortMethod)
+                if self._sorting and sortMethods:
+                    _addSortMethod = xbmcplugin.addSortMethod
+                    for sortMethod in sorted(sortMethods):
+                        _addSortMethod(handle, sortMethod)
+                else:
+                    # Disable sorting
+                    xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
 
                 # Guess Content Type and View Mode
                 is_folder = ListItem.vidCounter < (len(listitems) / 2)
@@ -616,7 +620,7 @@ class ListItem(object):
 
         Parameters
         ----------
-        path : basestring or route
+        path : None, basestring, :class:`RouteData`
             Url of video or addon to send to kodi.
 
         list_type : str, optional(default='video')
@@ -647,15 +651,28 @@ class ListItem(object):
         self.info["title"] = label
 
         if folder:
-            # Change Kodi Propertys to mark as Folder
+            # Change Kodi isplayable / isfolder Propertys
             listitem.setProperty("isplayable", "false")
             listitem.setProperty("folder", "true")
 
             # Set Kodi icon image if not already set
             if "icon" not in self.art:
                 self.art["icon"] = "DefaultFolder.png"
+
+        elif path is None:
+            # Change Kodi isplayable / isfolder Propertys
+            listitem.setProperty("isplayable", "false")
+            listitem.setProperty("folder", "false")
+
+            # Set Kodi icon image if not already set
+            if "icon" not in self.art:
+                self.art["icon"] = "DefaultVideo.png"
+
+            # Change path to an empty string so kodi wont give out
+            path = ""
+
         else:
-            # Change Kodi Propertys to mark as Folder
+            # Change Kodi isplayable / isfolder Propertys
             listitem.setProperty("isplayable", "true" if playable else "false")
             listitem.setProperty("folder", "false")
 
@@ -829,7 +846,7 @@ class ListItem(object):
         url : dict
             Dictionary containing url querys to pass to Most Recent Class.
 
-        label : str, optional
+        label : str, optional(default="Most Recent)
             Lable of Listitem
 
         Returns

@@ -171,10 +171,11 @@ class RouteData(object):
     name : unicode
         The name of the function that will be called.
     """
-    def __init__(self, func, route):
+    def __init__(self, func, route, sort=True):
         self.name = unicode(func.__name__)
         self.route = route
         self._func = func
+        self._sorting = sort
 
     def __call__(self, *args, **kwargs):
         """Allow this class to be called as if it was a function"""
@@ -203,14 +204,14 @@ class RouteData(object):
         return path_unsplit(self.route, query, None)
 
     @classmethod
-    def register(cls, route):
+    def register(cls, route, kwargs=None):
         def decorator(func):
             # Registor this class route
             if route in _route_store:
                 debug_args = (route, func.__name__, _route_store[route].name)
                 raise RuntimeError("Route %s for function %s is already registered to function %s" % debug_args)
             else:
-                route_cls = cls(func, route)
+                route_cls = cls(func, route, **kwargs)
                 _route_store[route] = route_cls
                 return route_cls
 
