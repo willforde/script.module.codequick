@@ -3,7 +3,7 @@ import xbmc
 import xbmcgui
 from .support import logger, get_addon_data
 from HTMLParser import HTMLParser
-from xml.etree import ElementTree as ElementTree
+from xml.etree import ElementTree
 
 __all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session"]
 
@@ -105,6 +105,12 @@ class ETBuilder(HTMLParser):
         self._tree = ElementTree.TreeBuilder()
         self._search_tag = tag
         self._root_tag = root_tag
+        self._fail_limit = 3
+
+        # Some tags in html do not require closing tags so thoes tags will need to be auto closed (Void elements)
+        # Refer to: https://www.w3.org/TR/html/syntax.html#void-elements
+        self._void_elements = frozenset(["area", "base", "br", "col", "embed", "hr", "img", "input", "keygen", "link",
+                                         "menuitem", "meta", "param", "source", "track", "wbr", ""])
 
         # Make sure that wanted_tags is a list
         if wanted_tags is None:
@@ -153,9 +159,18 @@ class ETBuilder(HTMLParser):
         elif self._in_sec is not None and (not self._w_tags or tag in self._w_tags):
             self._tree.start(tag, dict(attrs) if attrs else {})
 
+            # Auto close any Replace element
+            if tag in self._void_elements:
+                self._tree.end(tag)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag != "a":
+            self.handle_endtag(tag)
+
     def handle_endtag(self, tag):
         # Close current tree element for requested tags
-        if self._in_sec is not None and (not self._w_tags or tag in self._w_tags):
+        if self._in_sec is not None and (not self._w_tags or tag in self._w_tags) and tag not in self._void_elements:
             elem = self._close_tag(tag)
             if self._in_sec is elem:
                 self._in_sec = None
@@ -196,28 +211,18 @@ class ETBuilder(HTMLParser):
             return True
 
     def _close_tag(self, tag):
-        try:
-            # Close the current tree element
-            elem = self._tree.end(tag)
-
-            # Check that the closed tag is whats expected
-            if elem.tag == tag:
-                return elem
-            else:
-                # Didn't find expected tag element. Must raise AssertionError sense the elementtree
-                # treebuilder would normaly raise that error but it is silenly ignored in kodi
-                raise AssertionError("end tag mismatch (expected %s, got %s)" % (elem.tag, tag))
-
-        except AssertionError, e:
-            str_error = str(e)
-            logger.debug(str_error)
-            if "end tag mismatch" in str_error:
-                # Atempt to extract the expected tag and
-                # check that it matches the last tag
-                expected = str_error.replace("expected ", "").split("(")[-1].split(",")[0]
-                if expected == self.lasttag:
-                    return self._tree.end(tag)
+        for count in range(1, self._fail_limit+1):
+            try:
+                # Close the current tree element
+                elem = self._tree.end(tag)
+                if elem.tag == tag:
+                    return elem
                 else:
+                    # Didn't find expected tag element. Must raise AssertionError sense the elementtree
+                    # treebuilder would normaly raise that error but it is silenly ignored in kodi
+                    raise AssertionError("end tag mismatch (expected %s, got %s)" % (elem.tag, tag))
+            except AssertionError:
+                if self._fail_limit == count:
                     raise
-            else:
-                raise
+                else:
+                    continue
