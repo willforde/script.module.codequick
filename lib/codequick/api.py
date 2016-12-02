@@ -166,16 +166,7 @@ class PlayMedia(RouteData):
 
     def execute(self):
         """Resolve Video Url"""
-        resolved = None
-        try:
-            resolved = self._func(self)
-        except TypeError as e:
-            if "takes no arguments" in str(e):
-                resolved = self._func()
-                #raise TypeError("Resolver function must accept tools argument")
-            else:
-                raise
-
+        resolved = self._func()
         if resolved:
             self.__send_to_kodi(resolved)
         else:
