@@ -254,11 +254,11 @@ def run(debug=False):
     # Fetch current time so to monitor the time it takes to execute
     before = time.time()
 
-    # Fetch the requested function that will be executed
-    route_cls = _route_store[selected_route]
-    logger.debug('Dispatching to route "%s": function "%s"', selected_route, route_cls.name)
-
     try:
+        # Fetch the requested function that will be executed
+        route_cls = _route_store[selected_route]
+        logger.debug('Dispatching to route "%s": function "%s"', selected_route, route_cls.name)
+
         # Execute the registered function
         route_cls.execute()
 
