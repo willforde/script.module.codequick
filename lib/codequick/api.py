@@ -12,7 +12,7 @@ import xbmc
 
 # Package imports
 from .support import strings, logger, handle, params, get_info, get_setting, localize, current_path
-from .support import _route_store, selected_route, get_addon_data, RouteData
+from .support import selected_route, get_addon_data, RouteData
 
 # Setup sort method set
 sortMethods = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
@@ -792,7 +792,7 @@ class ListItem(object):
         listitem.url.update(base_url)
 
         # Fetch current route and return
-        return listitem.get(_route_store[selected_route])
+        return listitem.get(selected_route)
 
     @classmethod
     def add_search(cls, action, label=None, **url):

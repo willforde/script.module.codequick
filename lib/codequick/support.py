@@ -138,7 +138,7 @@ cleanup_functions = []
 logger = setup_logging(addonID)
 parsedUrl = process_sys_args(sys.argv)
 handle = int(sys.argv[1]) if sys.argv[1].isdigit() else -1
-selected_route = parsedUrl.path if parsedUrl.path else u"/"
+selected_route = None
 params = dict(urlparse.parse_qsl(parsedUrl.query)) if parsedUrl.query else {}
 if params:
     logger.debug("Program arguments: %s", repr(params))
@@ -256,8 +256,10 @@ def run(debug=False):
 
     try:
         # Fetch the requested function that will be executed
-        route_cls = _route_store[selected_route]
+        route_cls = _route_store[parsedUrl.path if parsedUrl.path else u"/"]
         logger.debug('Dispatching to route "%s": function "%s"', selected_route, route_cls.name)
+        global selected_route
+        selected_route = route_cls
 
         # Execute the registered function
         route_cls.execute()
