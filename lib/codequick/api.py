@@ -126,6 +126,10 @@ class VirtualFS(RouteData):
                 self.__content_type(is_folder)
 
                 self.__end_directory(True)
+
+                # Call post functions if any
+                for func in self._post_func:
+                    func()
             else:
                 self.__end_directory(False)
                 raise RuntimeError("No listitems ware loaded")

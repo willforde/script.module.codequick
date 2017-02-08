@@ -176,6 +176,7 @@ class RouteData(object):
         self.route = route
         self._func = func
         self._sorting = sort
+        self._post_func = []
 
     def __call__(self, *args, **kwargs):
         """Allow this class to be called as if it was a function"""
@@ -216,6 +217,10 @@ class RouteData(object):
                 return route_cls
 
         return decorator
+
+    def post(self, func):
+        """Add function that will be called after directory has been populated"""
+        self._post_func.append(func)
 
 
 def current_path(**querys):
