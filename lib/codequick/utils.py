@@ -1,38 +1,51 @@
+# Standard Library Imports
+import urlparse
+
 # Kodi imports
 import xbmc
-import xbmcgui
-from .support import logger, get_addon_data
-from HTMLParser import HTMLParser
-from xml.etree import ElementTree
-
-__all__ = ["keyboard", "notification", "get_skin_name", "strip_tags", "requests_session"]
 
 
-def keyboard(default="", heading="", hidden=False):
+def parse_qs(qs):
+    """
+    Parse a urlencoded query string, and return the data as a dictionary.
+
+    :param qs: Percent-encoded query string to be parsed.
+    :type qs: str, unicode
+
+    :return: Returns a dict of key/value pairs with the value as unicode.
+    :rtype: dict
+    """
+    params = {}
+    for key, value in urlparse.parse_qsl(qs.encode("utf8") if isinstance(qs, unicode) else qs):
+        if key not in params:
+            params[key] = unicode(value, encoding="utf8")
+        else:
+            raise ValueError("encountered duplicate param field name: '{}'".format(key))
+
+    return params
+
+
+def keyboard(heading, default="", hidden=False):
     """
     Return User input as a unicode string.
 
-    Parameters
-    ----------
-    default : str, optional(default='')
-        default text entry.
+    :param heading: Keyboard heading.
+    :type heading: str or unicode
 
-    heading : str, optional(default='')
-        keyboard heading.
+    :param default: (Optional) Default text entry.
+    :type default: str or unicode
 
-    hidden : bool, optional(default=False)
-        True for hidden text entry.
+    :param hidden: (Optional) True for hidden text entry.
+    :type hidden: bool
 
-    Returns
-    -------
-    unicode
-        The text that the user entered into text entry box.
-
-    Raises
-    ------
-    UnicodeError
-        If unable to convert keyboard entry from utf8 to unicode.
+    :return: The text that the user entered into text entry box.
+    :rtype: unicode
     """
+    # Convert input from unicode to string if required
+    default = default.encode("utf8") if isinstance(default, unicode) else default
+    heading = heading.encode("utf8") if isinstance(heading, unicode) else heading
+
+    # Show the onscreen keyboard
     kb = xbmc.Keyboard(default, heading, hidden)
     kb.doModal()
     text = kb.getText()
@@ -40,58 +53,3 @@ def keyboard(default="", heading="", hidden=False):
         return unicode(text, "utf8")
     else:
         return u""
-
-
-def notification(heading, message, icon="info", display_time=5000, sound=True):
-    """
-    Send a notification to kodi
-
-    Parameters
-    ----------
-    heading : bytestring
-        Dialog heading.
-
-    message : bytestring
-        Dialog message.
-
-    icon : bytestring, optional(default="info")
-        Icon to use. option are 'error', 'info', 'warning'.
-
-    display_time : bytestring, optional(default=5000)
-        Display_time in milliseconds to show dialog.
-
-    sound : bytestring, optional(default=True)
-        Whether or not to play notification sound.
-    """
-
-    # Convert heading and messegs to UTF8 strings if needed
-    if isinstance(heading, unicode):
-        heading = heading.encode("utf8")
-    if isinstance(message, unicode):
-        message = message.encode("utf8")
-
-    # Send Error Message to Display
-    dialog = xbmcgui.Dialog()
-    dialog.notification(heading, message, icon, display_time, sound)
-
-
-def get_skin_name(skin_id):
-    """
-    Returns the name of given skin ID.
-
-    Parameters
-    ----------
-    skin_id : str
-        Id of the skin in witch to get the name of.
-
-    Returns
-    -------
-    unicode
-        The name of given skin, "Unknown" if failed to fetch proper name.
-    """
-    try:
-        return get_addon_data(skin_id, "name")
-    except (RuntimeError, UnicodeError) as e:
-        logger.debug("Unable to fetch skin name")
-        logger.debug(e)
-        return u"Unknown"

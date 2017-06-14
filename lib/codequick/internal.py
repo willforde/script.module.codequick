@@ -6,236 +6,203 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import strings, logger, params, get_info, set_setting, get_setting, localize
-from .storage import DictStorage, SetStorage
-from .utils import get_skin_name, keyboard
-from .api import ListItem
+from .storage import PersistentDict, PersistentSet
+from .api import Script, route, VirtualFS, dispatcher, custom_route_register
+from .utils import keyboard
 
 # Prerequisites
-strings.update(custom=636, remove=1210, default=571, enter_number=611, enter_search_string=16017)
+ENTER_SEARCH_STRING = 16017
+ENTER_NUMBER = 611
+REMOVE = 1210
+DEFAULT = 571
+CUSTOM = 636
+SEARCH = 137
 
 
-class ViewModeSelecter(object):
+@custom_route_register("SetViewMode")
+class ViewModeSelecter(Script):
     """
     Class for displaying list of available skin view modes on the addon setting screen.
 
     Allowing for the selection of a view mode that will be force when
     displaying listitem content. Works with both video & folder views separately.
-
-    Note
-    ----
-    Must be called from a script only.
     """
+    def __init__(self, func):
+        self.setting_id = ""
+        self.skin_id = xbmc.getSkinDir()
+        self.skin_codes = [(self.localize(DEFAULT).encode("utf8"), "")]
+        super(ViewModeSelecter, self).__init__(func)
 
-    def __init__(self):
-        # Instance variables
-        self.skinID = xbmc.getSkinDir()
-        self.mode = params[u"arg1"]
+    def run(self, mode):
+        self.setting_id = "{}.{}.view".format(self.skin_id, mode)
+        self.populate_skin_codes(mode)
+        selection = self.user_selection()
+        if selection is not None:
+            self.set_mode(selection)
+
+    def populate_skin_codes(self, view):
+        """
+        Populate the list of skin codes based to the selected view e.g. 'folder' or 'video'
+
+        :param unicode view: The selected view to list skin codes for.
+        """
+        # Fetch currently saved setting if it exists
+        current_mode = self.setting[self.setting_id]
 
         # Fetch database of skin codes
-        skincode_path = os.path.join(get_info("path_global"), u"resources", u"data")
+        skincode_path = os.path.join(self.get_info("path_global"), u"resources", u"data")
         try:
-            database = DictStorage(skincode_path, u"skincodes.json")
-        except (IOError, OSError) as e:
-            logger.debug("Was unable to load skincodes databse: %s", repr(e))
-            self.skin_codes = {}
+            database = PersistentDict(u"skincodes.json", data_dir=skincode_path, read_only=True)
+        except EnvironmentError:
+            self.logger.exception("unable to load skincodes database")
         else:
-            # Fetch codes for current skin and mode
-            if self.skinID in database:
-                self.skin_codes = self.filter_codes(database)
+            # Convert the skin codes into a dict of name:mode pairs
+            if self.skin_id in database:
+                base = database[self.skin_id].get(view, [])
+                base.extend(database[self.skin_id].get(u"both", []))
+                for view_data in base:
+                    mode = str(view_data[u"mode"])
+
+                    # Localize the name of the skin view mode and append strextra if given
+                    viewmode_name = self.localize(view_data[u"id"]) if view_data[u"id"] else u""
+                    if u"strextra" in view_data:
+                        viewmode_name = u"{} {}".format(viewmode_name, view_data[u"strextra"])
+
+                    # Bold the viewmode if it's the current selected viewmode
+                    if current_mode == mode:
+                        viewmode_name = u"[B]-{}[/B]".format(viewmode_name)
+                        current_mode = u""
+
+                    # Update skin codes list
+                    data_tuple = (viewmode_name.strip().encode("utf8"), mode)
+                    self.skin_codes.append(data_tuple)
             else:
-                logger.debug("No skin codes found for skin: %s", self.skinID)
-                self.skin_codes = {}
+                self.log("no skin codes found for skin: '%s'", self.skin_id)
 
-    def set_mode(self, new_mode):
-        """ Save new mode to addon setting
+        # Add custom option to skin codes
+        if current_mode:
+            current_mode = current_mode.encode("utf8")
+            data_tuple = (self.localize(CUSTOM).encode("utf8"), current_mode)
+            self.skin_codes.append(("[B]%s (%s)[/B]" % data_tuple, current_mode))
+        else:
+            self.skin_codes.append((self.localize(CUSTOM).encode("utf8"), ""))
 
-        Parameters
-        ----------
-        new_mode : unicode
-            The new skin mode to use.
-        """
-        set_setting("%s.%s.view" % (self.skinID, str(self.mode)), new_mode)
-
-    def filter_codes(self, database):
-        """
-        Filter codes down to current sky and mode
-
-        Parameters
-        ----------
-        database : dict
-            The database of skin ids and related view modes
-
-        Returns
-        -------
-        dict
-            The modes for the current skin
-        """
-        filterd = {}
-        for mode, views in database[self.skinID].iteritems():
-            if mode == self.mode or mode == u"both":
-                for view in views:
-                    key = localize(view[u"id"]) if view[u"id"] is not None else u""
-                    if u"combine" in view:
-                        key = u"%s %s" % (key, view[u"combine"])
-                    filterd[key.strip()] = view[u"mode"]
-
-        return filterd
-
-    def display_modes(self):
+    def user_selection(self):
         """
         Display list of viewmodes that are available and return user selection.
 
-        Returns
-        -------
-        unicode
-            The selected skin mode to use
+        :returns: The selected skin mode to use.
+        :rtype: unicode
         """
-
-        # Fetch currently saved setting if it exists
-        try:
-            current_mode = get_setting("%s.%s.view" % (self.skinID, self.mode))
-        except ValueError:
-            current_mode = ""
-
-        # Create list of item to show to user
-        reference = [None]
-        show_list = [localize("default")]
-        for name, mode in self.skin_codes.iteritems():
-            reference.append(mode)
-            if current_mode and current_mode == mode:
-                show_list.append(u"[B]-%s[/B]" % name)
-            else:
-                show_list.append(name)
-
-        # Append custom option to showlist including current mode if its custom
-        if current_mode and current_mode not in self.skin_codes.values():
-            custom = u"[B]-%s (%i)[/B]" % (localize("custom"), current_mode)
-        else:
-            custom = localize("custom")
-        show_list.append(custom)
+        name_tuple, mode_tuple = zip(*self.skin_codes)
+        skin_name = self.get_info("name", self.skin_id)
 
         # Display List to User
         dialog = xbmcgui.Dialog()
-        ret = dialog.select(get_skin_name(self.skinID), show_list)
-        if ret == 0:
-            logger.debug("Reseting viewmode setting to default")
-            return u""
-        elif ret == len(show_list) - 1:
-            new_mode = self.ask_for_view_id(current_mode)
-            if new_mode:
-                logger.debug("Saving new custom viewmode setting: %s", new_mode)
-            return new_mode
-        elif ret > 0:
-            new_mode = unicode(reference[ret])
-            logger.debug("Saving new viewmode setting: %s", new_mode)
-            return new_mode
+        ret = dialog.select(skin_name, name_tuple)
 
-    def ask_for_view_id(self, current_mode):
+        # Disable custom viewmode if default was selected
+        if ret == 0:
+            self.log("Reseting viewmode setting to default")
+            return ""
+
+        # Ask for custom viewmode if the last item was selected i.e. Custom
+        elif ret == (len(name_tuple) - 1):
+            return self.ask_for_id(mode_tuple[ret])
+
+        # Map the selected result to the related view mode
+        elif ret > 0:
+            return mode_tuple[ret]
+
+    def ask_for_id(self, current_mode):
         """
         Ask the user what custom view mode to use.
 
-        Parameters
-        ----------
-        current_mode : int
-            The current set mode
+        :param str current_mode: The default viewmode custom viewmode if one exists.
 
-        Returns
-        -------
-        unicode, optional
-            The new custom viewmode.
+        :returns: The new custom viewmode.
+        :rtype: unicode
         """
         dialog = xbmcgui.Dialog()
-        ret = dialog.numeric(0, self.localize("enter_number"), str(current_mode))
+        ret = dialog.numeric(0, self.localize(ENTER_NUMBER), current_mode)
         if ret:
             return unicode(ret)
         else:
             return None
 
+    def set_mode(self, new_mode):
+        """
+        Save new mode to addon setting
 
-class SavedSearches(object):
+        :param new_mode: The new skin mode to use.
+        :type new_mode: str or unicode
+        """
+        self.log("Saving new viewmode setting: '%s'", new_mode)
+        self.setting[self.setting_id] = new_mode
+
+
+@route
+class SavedSearches(VirtualFS):
     """
     Class used to list all saved searches for the addon that called it.
     Usefull to add search support to addon that will also keep track of previous searches
     Also contains option via context menu to remove old search terms.
     """
-    searches = None
+    def run(self, remove=None, search=None, **extras):
+        """List all saved searches"""
 
-    def start(self):
-        """
-        List all saved searches
+        # Set update listing to True only when change state of searches
+        if remove or search:
+            self.update_listing = True
 
-        Returns
-        -------
-        gen
-            A generator of (path, listitem, isFolder) tuples
-        """
-        # Fetch list of current saved searches
-        self.searches = searches = SetStorage(get_info("profile"), u"searchterms.json")
+        # List of current saved searches
+        search_db = PersistentSet(u"searchterms.json")
 
         # Remove term from saved searches if remove argument was passed
-        if params.get("remove") in searches:
-            searches.remove(params.pop("remove"))
-            searches.sync()
+        if remove in search_db:
+            search_db.remove(remove)
+            search_db.sync()
 
-        # Show search dialog if search argument was passed or there is not search term saved
-        elif not searches or params.pop("search", None) is not None:
-            self.search_dialog()
+        # Show search dialog if search argument was passed or if there is no search term saved
+        elif not search_db or search:
+            self.search_dialog(search_db)
 
+        search_db.close()
         # List all saved search terms
-        try:
-            return self.list_terms()
-        finally:
-            searches.close()
+        return self.list_terms(search_db, dispatcher[extras["route"]], extras)
 
-    def search_dialog(self):
-        """ Show dialog for user to enter a new search term """
-        ret = Keyboard("", localize("enter_search_string"), False)
+    def search_dialog(self, search_db):
+        """Show dialog for user to enter a new search term."""
+        ret = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
         if ret:
-            # Add searchTerm to database
-            self.searches.add(ret)
-            self.searches.sync()
+            search_db.add(ret)
+            search_db.sync()
 
-    def list_terms(self):
+    def list_terms(self, search_db, callback, extras):
         """
         List all saved search terms.
 
-        Yield
-        -------
-        tuple
-            A listitem tuple of (path, listitem, isFolder).
+        :returns: A listitem object
+        :rtype: :class:`types.GeneratorType`
         """
+        # Add search listitem
+        search_item = self.listItem()
+        search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
+        search_item.set_callback(self, search="true", **extras)
+        yield search_item
 
-        # Create Speed vars
-        base_url = params[u"url"]
-        farwarding_route = params[u"route"]
+        # Create Context Menu item requirements
+        str_remove = self.localize(REMOVE)
 
-        # Add search listitem entry
-        item = ListItem()
-        item.label = u"[B]%s[/B]" % localize("search")
-        query = params.copy()
-        query["search"] = "true"
-        query["updatelisting"] = "true"
-        query["cachetodisc"] = "true"
-        item.url.update(query)
-        yield item.get_tuple(saved_searches)
+        # Add all saved searches to item list
+        for search_term in search_db:
+            item = self.ListItem()
+            item.set_label(search_term.title())
 
-        # Create Context Menu item Params
-        str_remove = localize("remove")
-        query_cx = params.copy()
-        query_li = params.copy()
+            # Creatre Context Menu item for removing search term
+            item.context.container(str_remove, self, remove=search_term, **extras)
 
-        # Loop earch search item
-        for searchTerm in self.searches:
-            # Create listitem of Data
-            item = ListItem()
-            item.label = searchTerm.title()
-            query_li["url"] = base_url % searchTerm
-            item.url.update(query_li)
-
-            # Creatre Context Menu item to remove search item
-            query_cx["remove"] = searchTerm
-            item.context.menu_update(saved_searches, str_remove, **query_cx)
-
-            # Return Listitem data
-            yield item.get(farwarding_route)
+            # Update params with full url and set the callback
+            extras["url"] = extras["url"] % search_term
+            item.set_callback(callback, **extras)
+            yield item

@@ -1,5 +1,2 @@
-TODO:
-- Add code to fetch kodi setting for "Ignore articles when sorting (e.g "the")" So to auto set the sort methods to use "title" sort or "the titte" sort
-
 Version 1.0.0
 - Initial Version
