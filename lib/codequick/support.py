@@ -20,8 +20,8 @@ script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
 
 # The id of the running addon
-addon_id = addon_data.getAddonInfo("id")
-logger_id = addon_id.replace(".", "-")
+plugin_id = addon_data.getAddonInfo("id")
+logger_id = plugin_id.replace(".", "-")
 
 # Base Logger
 base_logger = logging.getLogger(logger_id)
@@ -83,7 +83,7 @@ def build_path(path=None, query=None, **extra_query):
         query = "_json=" + binascii.hexlify(json.dumps(query))
 
     # Build url with new query parameters
-    return urlparse.urlunsplit(("plugin", addon_id, path if path else selector, query, ""))
+    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
 
 
 class Settings(object):
