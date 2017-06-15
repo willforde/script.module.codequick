@@ -1,7 +1,6 @@
 # Standard Library Imports
 from functools import partial
 import logging
-import time
 
 # Kodi imports
 import xbmcplugin
@@ -9,11 +8,11 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import Dispatcher, Base, build_path, handle
+from .support import Dispatcher, Script, build_path, handle, logger_id
 from .listing import ListItem, auto_sort
 
 # Logger specific to this module
-logger = logging.getLogger("codequick.api")
+logger = logging.getLogger("%s.api" % logger_id)
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
@@ -26,31 +25,7 @@ NEXT_PAGE = 33078
 SEARCH = 137
 
 
-def run():
-    try:
-        execute_time = time.time()
-        owner, callback = dispatcher.get()
-        parent = owner(callback)
-    except Exception as e:
-        logger.critical(str(e), exc_info=1)
-        dialog = xbmcgui.Dialog()
-        dialog.notification(e.__class__.__name__, str(e), "error")
-        xbmcplugin.endOfDirectory(handle, succeeded=False)
-    else:
-        from . import start_time
-        logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-        logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-        parent.close()
-
-
-class Script(Base):
-    """Execute the function"""
-    def __init__(self, func):
-        super(Script, self).__init__(func)
-        func(self, **self.params)
-
-
-class VirtualFS(Base):
+class VirtualFS(Script):
     """Add Directory List Items to Kodi"""
 
     # Change listitem type to 'folder'
@@ -59,8 +34,8 @@ class VirtualFS(Base):
     Listitem = ListItem
     """A :class:`codequick.Listitem` class, used for creating directory items in Kodi"""
 
-    def __init__(self, callback):
-        super(VirtualFS, self).__init__(callback)
+    def __init__(self):
+        super(VirtualFS, self).__init__()
         self._nextpagecount = self.params.pop("nextpagecount", 1)
         self._manual_sort = set()
 
@@ -86,6 +61,9 @@ class VirtualFS(Base):
 
         self.autosort = True
         """Boolean - True, auto select sortmethods based on infolabels(Default). False, disable auto sortmethods."""
+
+    def execute_callback(self, callback):
+        """Execute the callback function and process the results."""
 
         # Fetch all listitems from callback function
         listitems = callback(self, **self.params)
@@ -291,15 +269,13 @@ class VirtualFS(Base):
         return item
 
 
-class PlayMedia(Base):
+class PlayMedia(Script):
     # Change listitem type to 'player'
     is_playable = True
 
-    def __init__(self, func):
-        super(PlayMedia, self).__init__(func)
-
-        # Resolve Video Url
-        resolved = func(self, **self.params)
+    def execute_callback(self, callback):
+        """Execute the callback function and process the results."""
+        resolved = callback(self, **self.params)
         self.__send_to_kodi(resolved)
 
     def create_loopback(self, url, **next_params):
@@ -477,6 +453,8 @@ route.__doc__ = """Route decorator used to register VirtualFS callback functions
 
 resolve = partial(dispatcher.register, cls=PlayMedia)
 resolve.__doc__ = """Route decorator used to register PlayMedia callback functions/classes."""
+
+run = dispatcher.dispatch
 
 from .internal import SavedSearches
 from youtube import Playlist as YTPlaylist

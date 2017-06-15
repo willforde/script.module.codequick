@@ -8,15 +8,15 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .support import Base, build_path
+from .support import Script, build_path, logger_id
 
 # Logger specific to this module
-logger = logging.getLogger("codequick.listitem")
+logger = logging.getLogger("%s.listitem" % logger_id)
 
 # Listitem art locations
-local_image = os.path.join(Base.get_info("path"), u"resources", u"media", u"%s").encode("utf8")
-global_image = os.path.join(Base.get_info("path_global"), u"resources", u"media", u"%s").encode("utf8")
-fanart = Base.get_info("fanart").encode("utf8")
+local_image = os.path.join(Script.get_info("path"), u"resources", u"media", u"%s").encode("utf8")
+global_image = os.path.join(Script.get_info("path_global"), u"resources", u"media", u"%s").encode("utf8")
+fanart = Script.get_info("fanart").encode("utf8")
 
 # Stream type map the ensure proper stream value types
 stream_type_map = {"duration": int,
@@ -40,7 +40,7 @@ sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
 auto_sort_add = auto_sort.add
 
 # Context menu requirments
-strRelated = Base.localize(32903)  # 'related_videos'
+strRelated = Script.localize(32903)  # 'related_videos'
 
 # Map quality values to it's related video resolution
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K

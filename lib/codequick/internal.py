@@ -6,8 +6,9 @@ import xbmcgui
 import xbmc
 
 # Package imports
+from .support import Script
 from .storage import PersistentDict, PersistentSet
-from .api import Script, route, VirtualFS, dispatcher, custom_route_register
+from .api import route, VirtualFS, dispatcher, custom_route_register
 from .utils import keyboard
 
 # Prerequisites
@@ -27,11 +28,11 @@ class ViewModeSelecter(Script):
     Allowing for the selection of a view mode that will be force when
     displaying listitem content. Works with both video & folder views separately.
     """
-    def __init__(self, func):
-        self.setting_id = ""
-        self.skin_id = xbmc.getSkinDir()
+    def __init__(self):
+        super(ViewModeSelecter, self).__init__()
         self.skin_codes = [(self.localize(DEFAULT).encode("utf8"), "")]
-        super(ViewModeSelecter, self).__init__(func)
+        self.skin_id = xbmc.getSkinDir()
+        self.setting_id = ""
 
     def run(self, mode):
         self.setting_id = "{}.{}.view".format(self.skin_id, mode)
@@ -148,6 +149,12 @@ class SavedSearches(VirtualFS):
     Usefull to add search support to addon that will also keep track of previous searches
     Also contains option via context menu to remove old search terms.
     """
+    def __init__(self):
+        super(SavedSearches, self).__init__()
+
+        # List of current saved searches
+        self.search_db = PersistentSet(u"searchterms.json")
+
     def run(self, remove=None, search=None, **extras):
         """List all saved searches"""
 
@@ -155,30 +162,26 @@ class SavedSearches(VirtualFS):
         if remove or search:
             self.update_listing = True
 
-        # List of current saved searches
-        search_db = PersistentSet(u"searchterms.json")
-
         # Remove term from saved searches if remove argument was passed
-        if remove in search_db:
-            search_db.remove(remove)
-            search_db.sync()
+        if remove in self.search_db:
+            self.search_db.remove(remove)
+            self.search_db.sync()
 
         # Show search dialog if search argument was passed or if there is no search term saved
-        elif not search_db or search:
-            self.search_dialog(search_db)
+        elif not self.search_db or search:
+            self.search_dialog()
 
-        search_db.close()
         # List all saved search terms
-        return self.list_terms(search_db, dispatcher[extras["route"]], extras)
+        return self.list_terms(dispatcher[extras["route"]], extras)
 
-    def search_dialog(self, search_db):
+    def search_dialog(self):
         """Show dialog for user to enter a new search term."""
         ret = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
         if ret:
-            search_db.add(ret)
-            search_db.sync()
+            self.search_db.add(ret)
+            self.search_db.sync()
 
-    def list_terms(self, search_db, callback, extras):
+    def list_terms(self, callback, extras):
         """
         List all saved search terms.
 
@@ -195,7 +198,7 @@ class SavedSearches(VirtualFS):
         str_remove = self.localize(REMOVE)
 
         # Add all saved searches to item list
-        for search_term in search_db:
+        for search_term in self.search_db:
             item = self.ListItem()
             item.set_label(search_term.title())
 
@@ -206,3 +209,6 @@ class SavedSearches(VirtualFS):
             extras["url"] = extras["url"] % search_term
             item.set_callback(callback, **extras)
             yield item
+
+        # Finished with the search database
+        self.search_db.close()

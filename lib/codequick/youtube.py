@@ -4,6 +4,7 @@ import json
 import os
 
 # Package imports
+from .support import logger_id
 from .storage import PersistentDict, profile_dir
 from .api import route, resolve, VirtualFS
 
@@ -12,7 +13,7 @@ import urlquick
 urlquick.CACHE_LOCATION = profile_dir
 
 # Logger specific to this module
-logger = logging.getLogger("codequick.youtube")
+logger = logging.getLogger("%s.youtube" % logger_id)
 
 # Localized string Constants
 ALL_VIDEOS = 16100
@@ -254,9 +255,9 @@ class APIControl(VirtualFS):
     """Class to control the access to the youtube API."""
     __video_data = __channel_data = __category_data = None
 
-    def __init__(self, func):
+    def __init__(self):
+        super(APIControl, self).__init__()
         self.api = API()
-        super(APIControl, self).__init__(func)
 
     def cache_cleanup(self):
         """Trim down the cache if cache gets too big."""

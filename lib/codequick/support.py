@@ -3,6 +3,7 @@ import urlparse
 import logging
 import inspect
 import binascii
+import time
 import json
 import sys
 
@@ -12,17 +13,24 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .utils import parse_qs
-
-# Logger specific to this module
-logger = logging.getLogger("codequick.support")
+from .utils import KodiLogHandler, parse_qs
 
 # Fetch addon data objects
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
 
 # The id of the running addon
-plugin_id = addon_data.getAddonInfo("id")
+addon_id = addon_data.getAddonInfo("id")
+logger_id = addon_id.replace(".", "-")
+
+# Base Logger
+base_logger = logging.getLogger(logger_id)
+base_logger.addHandler(KodiLogHandler())
+base_logger.propagate = False
+base_logger.setLevel(10)
+
+# Logger specific to this module
+logger = logging.getLogger("%s.support" % logger_id)
 
 # Check if running as a plugin
 if sys.argv[0].startswith("plugin://"):
@@ -75,61 +83,7 @@ def build_path(path=None, query=None, **extra_query):
         query = "_json=" + binascii.hexlify(json.dumps(query))
 
     # Build url with new query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
-
-
-class Dispatcher(object):
-    def __init__(self):
-        # All registered routes go here
-        self.registered_routes = {}
-
-    def __getitem__(self, route):
-        return self.registered_routes[route]
-
-    def get(self):
-        """Fetch the function associated with given route selector"""
-        try:
-            route = self.registered_routes[selector.lower()]
-        except KeyError:
-            raise KeyError("missing required route: '{}'".format(selector))
-        else:
-            logger.debug("Dispatching to route: '%s'", selector)
-            return route
-
-    def register(self, callback, cls=None, custom_route=None):
-        """
-        Register route callback function
-
-        :param callback: The callback function.
-        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
-        :param str custom_route: A custom route used for mapping.
-        :returns: The callback function with extra attributes added, 'is_playable', 'is_folder' and 'route'.
-        """
-        if custom_route:
-            route = custom_route.lower()
-        else:
-            route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
-
-        if route in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(route))
-
-        callback.route = route
-        if inspect.isclass(callback):
-            # Register the callback
-            if hasattr(callback, "run"):
-                self.registered_routes[route] = (callback, callback.run)
-            else:
-                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
-        else:
-            # Add listing type's to callback
-            callback.is_playable = cls.is_playable
-            callback.is_folder = cls.is_folder
-
-            # Register the callback
-            self.registered_routes[route] = (cls, callback)
-
-        # Return original function undecorated
-        return callback
+    return urlparse.urlunsplit(("plugin", addon_id, path if path else selector, query, ""))
 
 
 class Settings(object):
@@ -217,7 +171,7 @@ class Settings(object):
             return addon_data.getSetting(key)
 
 
-class Base(object):
+class Script(object):
     # Set listing type variables
     is_playable = False
     is_folder = False
@@ -228,19 +182,16 @@ class Base(object):
     #: Dictionary like object of add-on settings.
     setting = Settings()
 
-    def __init__(self, func):
+    #: Underlining logger object, for advanced use.
+    logger = base_logger
+
+    def __init__(self):
         self._title = self.params.pop(u"title", u"")
         self._callbacks = []
 
-        # Change logger depending if callback is a function or a method
-        if inspect.isfunction(func):
-            self.route = func.route
-            logger_name = "codequick.{}.{}".format(self.__class__.__name__, func.__name__)
-        else:
-            logger_name = "codequick.{}".format(func.__name__)
-
-        self.logger = logging.getLogger(logger_name)
-        """Underlining logger object, for advanced use."""
+    def execute_callback(self, callback):
+        """Execute the callback function and process the results."""
+        callback(self, **self.params)
 
     def register_callback(self, func, **kwargs):
         """
@@ -253,10 +204,9 @@ class Base(object):
         callback = (func, kwargs)
         self._callbacks.append(callback)
 
-    def close(self):
+    def run_callbacks(self):
         """Execute all callbacks, if any."""
         if self._callbacks:
-            import time
             # Time before executing callbacks
             start_time = time.time()
 
@@ -270,7 +220,8 @@ class Base(object):
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
 
-    def log(self, msg, *args, **kwargs):
+    @staticmethod
+    def log(msg, *args, **kwargs):
         """
         Logs a message with logging level 'lvl'.
 
@@ -292,7 +243,7 @@ class Base(object):
                        If not given, logging level will default to debug.
         """
         lvl = kwargs.pop("lvl", 10)
-        self.logger.log(lvl, msg, *args, **kwargs)
+        base_logger.log(lvl, msg, *args, **kwargs)
 
     @staticmethod
     def notify(heading, message, icon="info", display_time=5000, sound=True):
@@ -379,3 +330,72 @@ class Base(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
+
+
+class Dispatcher(object):
+    def __init__(self):
+        self.registered_routes = {}
+
+    def __getitem__(self, route):
+        return self.registered_routes[route]
+
+    def __missing__(self, route):
+        raise KeyError("missing required route: '{}'".format(route))
+
+    def register(self, callback, cls=None, custom_route=None):
+        """
+        Register route callback function
+
+        :param callback: The callback function.
+        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
+        :param str custom_route: A custom route used for mapping.
+        :returns: The callback function with extra attributes added, 'is_playable', 'is_folder' and 'route'.
+        """
+        if custom_route:
+            route = custom_route.lower()
+        else:
+            route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
+
+        if route in self.registered_routes:
+            raise ValueError("encountered duplicate route: '{}'".format(route))
+
+        callback.route = route
+        if inspect.isclass(callback):
+            # Check for required run method
+            if hasattr(callback, "run"):
+                # Set the callback as the parent and the run method as the function to call
+                self.registered_routes[route] = (callback, callback.run)
+            else:
+                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
+        else:
+            # Add listing type's to callback
+            callback.is_playable = cls.is_playable
+            callback.is_folder = cls.is_folder
+
+            # Register the callback
+            self.registered_routes[route] = (cls, callback)
+
+        # Return original function undecorated
+        return callback
+
+    def dispatch(self):
+        """Dispatch to selected route path."""
+        try:
+            # Fetch the controling class and callback function/method
+            controller, callback = self[selector]
+            logger.debug("Dispatching to route: '%s'", selector)
+            execute_time = time.time()
+
+            # Initialize controller and execute callback
+            controller_ins = controller()
+            controller_ins.execute_callback(callback)
+        except Exception as e:
+            # Log the error in both the gui and the kodi log file
+            dialog = xbmcgui.Dialog()
+            dialog.notification(e.__class__.__name__, str(e), "error")
+            logger.critical(str(e), exc_info=1)
+        else:
+            from . import start_time
+            logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
+            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
+            controller_ins.run_callbacks()

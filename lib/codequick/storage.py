@@ -3,12 +3,10 @@ import json
 import os
 
 # Package imports
-from .support import Base
+from .support import Script
 
 # The addon profile directory
-profile_dir = Base.get_info("profile")
-
-__all__ = ["PersistentDict", "PersistentList", "PersistentSet"]
+profile_dir = Script.get_info("profile")
 
 
 class BaseStorage(object):
