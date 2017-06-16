@@ -434,23 +434,23 @@ class PlayMedia(Script):
 
 def custom_route(path, parent=None):
     """
-    Route decorator used to register callback functions/classes with custom route path.
+    Decorator used to register callback functions/classes with custom route path.
 
-    :param str path: The route path to use when registering callback
-    :param parent: (Optional) The parent control class to set, if decorating a function.
+    :param str path: The route path for registering callback to.
+    :param parent: (Optional) The parent control class, if decorating a function.
     :returns: A preconfigured register decorator.
     """
     return partial(dispatcher.register, cls=parent, custom_route=path)
 
 
 script = partial(dispatcher.register, cls=Script)
-script.__doc__ = """Route decorator used to register Script callback functions/classes."""
+script.__doc__ = """Decorator used to register 'Script' callback function/class."""
 
 route = partial(dispatcher.register, cls=VirtualFS)
-route.__doc__ = """Route decorator used to register VirtualFS callback functions/classes."""
+route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
 
 resolve = partial(dispatcher.register, cls=PlayMedia)
-resolve.__doc__ = """Route decorator used to register PlayMedia callback functions/classes."""
+resolve.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 run = dispatcher.dispatch
 
