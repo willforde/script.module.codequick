@@ -86,6 +86,75 @@ def build_path(path=None, query=None, **extra_query):
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
 
 
+class Dispatcher(object):
+    def __init__(self):
+        self.registered_routes = {}
+
+    def __getitem__(self, route):
+        return self.registered_routes[route]
+
+    def __missing__(self, route):
+        raise KeyError("missing required route: '{}'".format(route))
+
+    def register(self, callback, cls=None, custom_route=None):
+        """
+        Register route callback function
+
+        :param callback: The callback function.
+        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
+        :param str custom_route: A custom route used for mapping.
+        :returns: The callback function with extra attributes added, 'is_playable', 'is_folder' and 'route'.
+        """
+        if custom_route:
+            route = custom_route.lower()
+        else:
+            route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
+
+        if route in self.registered_routes:
+            raise ValueError("encountered duplicate route: '{}'".format(route))
+
+        callback.route = route
+        if inspect.isclass(callback):
+            # Check for required run method
+            if hasattr(callback, "run"):
+                # Set the callback as the parent and the run method as the function to call
+                self.registered_routes[route] = (callback, callback.run)
+            else:
+                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
+        else:
+            # Add listing type's to callback
+            callback.is_playable = cls.is_playable
+            callback.is_folder = cls.is_folder
+
+            # Register the callback
+            self.registered_routes[route] = (cls, callback)
+
+        # Return original function undecorated
+        return callback
+
+    def dispatch(self):
+        """Dispatch to selected route path."""
+        try:
+            # Fetch the controling class and callback function/method
+            controller, callback = self[selector]
+            logger.debug("Dispatching to route: '%s'", selector)
+            execute_time = time.time()
+
+            # Initialize controller and execute callback
+            controller_ins = controller()
+            controller_ins.execute_callback(callback)
+        except Exception as e:
+            # Log the error in both the gui and the kodi log file
+            dialog = xbmcgui.Dialog()
+            dialog.notification(e.__class__.__name__, str(e), "error")
+            logger.critical(str(e), exc_info=1)
+        else:
+            from . import start_time
+            logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
+            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
+            controller_ins.run_callbacks()
+
+
 class Settings(object):
     def __getitem__(self, key):
         """
@@ -330,72 +399,3 @@ class Script(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
-
-
-class Dispatcher(object):
-    def __init__(self):
-        self.registered_routes = {}
-
-    def __getitem__(self, route):
-        return self.registered_routes[route]
-
-    def __missing__(self, route):
-        raise KeyError("missing required route: '{}'".format(route))
-
-    def register(self, callback, cls=None, custom_route=None):
-        """
-        Register route callback function
-
-        :param callback: The callback function.
-        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
-        :param str custom_route: A custom route used for mapping.
-        :returns: The callback function with extra attributes added, 'is_playable', 'is_folder' and 'route'.
-        """
-        if custom_route:
-            route = custom_route.lower()
-        else:
-            route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
-
-        if route in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(route))
-
-        callback.route = route
-        if inspect.isclass(callback):
-            # Check for required run method
-            if hasattr(callback, "run"):
-                # Set the callback as the parent and the run method as the function to call
-                self.registered_routes[route] = (callback, callback.run)
-            else:
-                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
-        else:
-            # Add listing type's to callback
-            callback.is_playable = cls.is_playable
-            callback.is_folder = cls.is_folder
-
-            # Register the callback
-            self.registered_routes[route] = (cls, callback)
-
-        # Return original function undecorated
-        return callback
-
-    def dispatch(self):
-        """Dispatch to selected route path."""
-        try:
-            # Fetch the controling class and callback function/method
-            controller, callback = self[selector]
-            logger.debug("Dispatching to route: '%s'", selector)
-            execute_time = time.time()
-
-            # Initialize controller and execute callback
-            controller_ins = controller()
-            controller_ins.execute_callback(callback)
-        except Exception as e:
-            # Log the error in both the gui and the kodi log file
-            dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), "error")
-            logger.critical(str(e), exc_info=1)
-        else:
-            from . import start_time
-            logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            controller_ins.run_callbacks()
