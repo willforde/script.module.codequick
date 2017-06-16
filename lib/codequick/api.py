@@ -62,7 +62,7 @@ class VirtualFS(Script):
         self.autosort = True
         """Boolean - True, auto select sortmethods based on infolabels(Default). False, disable auto sortmethods."""
 
-    def execute_callback(self, callback):
+    def execute_route(self, callback):
         """Execute the callback function and process the results."""
 
         # Fetch all listitems from callback function
@@ -273,7 +273,7 @@ class PlayMedia(Script):
     # Change listitem type to 'player'
     is_playable = True
 
-    def execute_callback(self, callback):
+    def execute_route(self, callback):
         """Execute the callback function and process the results."""
         resolved = callback(self, **self.params)
         self.__send_to_kodi(resolved)

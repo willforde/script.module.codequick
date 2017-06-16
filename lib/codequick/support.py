@@ -142,7 +142,7 @@ class Dispatcher(object):
 
             # Initialize controller and execute callback
             controller_ins = controller()
-            controller_ins.execute_callback(callback)
+            controller_ins.execute_route(callback)
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
@@ -266,7 +266,7 @@ class Script(object):
         self._title = self.params.pop(u"title", u"")
         self._callbacks = []
 
-    def execute_callback(self, callback):
+    def execute_route(self, callback):
         """Execute the callback function and process the results."""
         callback(self, **self.params)
 
