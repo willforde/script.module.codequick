@@ -37,7 +37,7 @@ class KodiLogHandler(logging.Handler):
             self.debug_msgs.append(formatted_msg)
 
         # If a critical error occurred, log all debug messages as warnings
-        elif log_level == 50 and False:
+        elif log_level == 50:
             xbmc.log("###### debug ######", xbmc.LOGWARNING)
             for msg in self.debug_msgs:
                 xbmc.log(msg, xbmc.LOGWARNING)
