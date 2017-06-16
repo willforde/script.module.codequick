@@ -157,7 +157,6 @@ class Art(CommonDict):
         self.raw_dict["thumb"] = global_image % (image.encode("utf8") if isinstance(image, unicode) else str(image))
 
     def clsoe(self):
-        # Add image data to kodi's listitem object
         self._listitem.setArt(self.raw_dict)
 
 
@@ -239,9 +238,8 @@ class Info(CommonDict):
 
         return duration
 
-    def close(self):
-        # Add infoLabels to kodi's listitem object
-        self._listitem.setInfo("video", self.raw_dict)
+    def close(self, media_type="video"):
+        self._listitem.setInfo(media_type, self.raw_dict)
 
 
 class Property(CommonDict):
@@ -370,7 +368,6 @@ class Stream(CommonDict):
             self.video["aspect"] = 1.78
 
     def close(self):
-        # Add stream details to kodi's listitem object
         if self.audio:
             self._listitem.addStreamInfo("audio", self.audio)
         if self.video:
@@ -409,7 +406,6 @@ class Context(list):
         self.append((label, command))
 
     def close(self):
-        # Add context menu items to kodi's listitem object
         self._listitem.addContextMenuItems(self)
 
 
