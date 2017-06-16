@@ -8,7 +8,7 @@ import xbmc
 # Package imports
 from .support import Script
 from .storage import PersistentDict, PersistentSet
-from .api import route, VirtualFS, dispatcher, custom_route_register
+from .api import route, VirtualFS, dispatcher, custom_route
 from .utils import keyboard
 
 # Prerequisites
@@ -20,7 +20,7 @@ CUSTOM = 636
 SEARCH = 137
 
 
-@custom_route_register("SetViewMode")
+@custom_route("SetViewMode")
 class ViewModeSelecter(Script):
     """
     Class for displaying list of available skin view modes on the addon setting screen.

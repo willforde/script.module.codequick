@@ -434,7 +434,7 @@ class PlayMedia(Script):
         xbmcplugin.setResolvedUrl(handle, True, listitem)
 
 
-def custom_route_register(path, parent=None):
+def custom_route(path, parent=None):
     """
     Route decorator used to register callback functions/classes with custom route path.
 
