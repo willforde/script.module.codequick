@@ -54,8 +54,6 @@ class VirtualFS(Script):
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#gaa30572d1e5d9d589e1cd3bfc1e2318d6
         """
 
-        # Set the default value for update listing, to True or False, based on wether or not
-        # 'refresh' or 'updatelisting' exists within params
         self.update_listing = self.params.pop("updatelisting", False)
         """Boolean - True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
 
