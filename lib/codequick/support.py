@@ -167,9 +167,13 @@ class Settings(object):
         """
         return addon_data.getSetting(key)
 
+    def __getattr__(self, key):
+        """Return setting as an instance attribute."""
+        return self[key]
+
     def __setitem__(self, key, value):
         """
-        Sets an add-on setting.
+        Set an add-on setting.
 
         :param str key: Id of the setting.
         :param value: Value of the setting.
@@ -177,6 +181,10 @@ class Settings(object):
         """
         # noinspection PyTypeChecker
         addon_data.setSetting(key, value if isinstance(value, basestring) else str(value))
+
+    def __setattr__(self, key, value):
+        """Set an add-on setting as instance attribute."""
+        self[key] = value
 
     def get_boolean(self, key, addon_id=None):
         """
