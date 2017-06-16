@@ -68,7 +68,7 @@ class CommonDict(object):
             return value
 
     def __getattr__(self, key):
-        """Return a value from the dictionary as if it was attribute."""
+        """Return a value from the dictionary as if it was instance attribute."""
         try:
             return self[key]
         except KeyError:
