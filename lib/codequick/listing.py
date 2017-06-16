@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Standard Library Imports
 from time import strptime, strftime
 import logging

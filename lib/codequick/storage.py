@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Standard Library Imports
 from hashlib import md5
 import json
