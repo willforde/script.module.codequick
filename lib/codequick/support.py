@@ -180,7 +180,7 @@ class Settings(object):
         :type value: str or unicode
         """
         # noinspection PyTypeChecker
-        addon_data.setSetting(key, value if isinstance(value, basestring) else str(value))
+        addon_data.setSetting(key, value if isinstance(value, basestring) else str(value).lower())
 
     def __setattr__(self, key, value):
         """Set an add-on setting as instance attribute."""
