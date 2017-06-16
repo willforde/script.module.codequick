@@ -293,23 +293,23 @@ class APIControl(VirtualFS):
                 logger.debug("Removing cached video : '%s'", videoid)
                 del video_cache[videoid]
 
-            sync = False
+            flush = False
             # Clean the channel cache of unreferenced channel ids
             channel_cache = self.channel_cache.get(u"channels", {})
             for channelid in channel_cache.keys():
                 if channelid not in valid_channel_refs:
                     del channel_cache[channelid]
-                    sync = True
+                    flush = True
 
             # Clean the chanel ref cache of unreferenced channel ids
             ref_cache = self.channel_cache.get(u"ref", {})
             for key, channelid in ref_cache.iteritems():
                 if channelid not in valid_channel_refs:
                     del ref_cache[key]
-                    sync = True
+                    flush = True
 
             # Close connection to channel cache
-            channel_cache.close(sync)
+            channel_cache.close(flush)
 
         # Close connection to cache database
         video_cache.close()
@@ -476,7 +476,7 @@ class APIControl(VirtualFS):
             logger.debug("Channel ID for channel '%s' is '%s'", for_username, channelid)
 
         # Sync cache to disk
-        channel_cache.sync()
+        channel_cache.flush()
 
     def update_category_cache(self, cat_id=None):
         """
@@ -495,7 +495,7 @@ class APIControl(VirtualFS):
         category_data = self.category_cache
         for item in feed[u"items"]:
             category_data[item[u"id"]] = item[u"snippet"][u"title"]
-        category_data.sync()
+        category_data.flush()
 
     def update_video_cache(self, ids):
         """

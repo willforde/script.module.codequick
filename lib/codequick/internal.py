@@ -165,7 +165,7 @@ class SavedSearches(VirtualFS):
         # Remove term from saved searches if remove argument was passed
         if remove in self.search_db:
             self.search_db.remove(remove)
-            self.search_db.sync()
+            self.search_db.flush()
 
         # Show search dialog if search argument was passed or if there is no search term saved
         elif not self.search_db or search:
@@ -179,7 +179,7 @@ class SavedSearches(VirtualFS):
         ret = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
         if ret:
             self.search_db.add(ret)
-            self.search_db.sync()
+            self.search_db.flush()
 
     def list_terms(self, callback, extras):
         """

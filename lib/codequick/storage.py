@@ -37,7 +37,7 @@ class BaseStorage(object):
         """
         return self
 
-    def sync(self):
+    def flush(self):
         """Syncrnize data to disk"""
 
         # Check if FileObj Needs Creating First
