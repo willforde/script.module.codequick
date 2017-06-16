@@ -44,6 +44,22 @@ class KodiLogHandler(logging.Handler):
             xbmc.log("###### debug ######", xbmc.LOGWARNING)
 
 
+class CacheProperty(object):
+    """Caches the result of a function call on first access. Then saves result as an instance attribute."""
+    def __init__(self, func):
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+        self._func = func
+
+    def __get__(self, instance, owner):
+        if instance:
+            attr = self._func(instance)
+            setattr(instance, self.__name__, attr)
+            return attr
+        else:
+            return self
+
+
 def parse_qs(qs):
     """
     Parse a urlencoded query string, and return the data as a dictionary.
