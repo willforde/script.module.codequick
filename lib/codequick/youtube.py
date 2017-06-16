@@ -293,23 +293,20 @@ class APIControl(VirtualFS):
                 logger.debug("Removing cached video : '%s'", videoid)
                 del video_cache[videoid]
 
-            flush = False
             # Clean the channel cache of unreferenced channel ids
             channel_cache = self.channel_cache.get(u"channels", {})
             for channelid in channel_cache.keys():
                 if channelid not in valid_channel_refs:
                     del channel_cache[channelid]
-                    flush = True
 
             # Clean the chanel ref cache of unreferenced channel ids
             ref_cache = self.channel_cache.get(u"ref", {})
             for key, channelid in ref_cache.iteritems():
                 if channelid not in valid_channel_refs:
                     del ref_cache[key]
-                    flush = True
 
             # Close connection to channel cache
-            channel_cache.close(flush)
+            channel_cache.close()
 
         # Close connection to cache database
         video_cache.close()
