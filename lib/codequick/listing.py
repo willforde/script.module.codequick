@@ -53,7 +53,7 @@ class CommonDict(object):
 
     def __getitem__(self, key):
         """
-        Return a value to the dictionary
+        Return a value from the dictionary.
 
         All string values will be converted to unicode on return.
 
@@ -67,6 +67,13 @@ class CommonDict(object):
         else:
             return value
 
+    def __getattr__(self, key):
+        """Return a value from the dictionary as if it was attribute."""
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, key))
+
     def __setitem__(self, key, value):
         """
         Custom setter that converts unicode values to 'utf8' encoded strings.
@@ -76,6 +83,10 @@ class CommonDict(object):
         :type value: str or unicode
         """
         self.raw_dict[key] = value
+
+    def __setattr__(self, key, value):
+        """Add data to dictionary by setting an attribute"""
+        self[key] = value
 
     def update(self, *args, **kwargs):
         """
