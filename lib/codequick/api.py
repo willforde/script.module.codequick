@@ -43,7 +43,7 @@ class VirtualFS(Script):
 
         self.content_type = None
         """
-        The plugins content type.
+        str: The plugins content type.
         
         Normally this will be set automaticly based on the type of listitem's given.
         e.g. 'files' when listing folders and 'episodes' when listing videos.
@@ -57,10 +57,10 @@ class VirtualFS(Script):
         """
 
         self.update_listing = self.params.pop("updatelisting", False)
-        """Boolean - True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
+        """bool: True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
 
         self.autosort = True
-        """Boolean - True, auto select sortmethods based on infolabels(Default). False, disable auto sortmethods."""
+        """bool: True, auto select sortmethods based on infolabels(Default). False, disable auto sortmethods."""
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
