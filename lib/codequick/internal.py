@@ -9,7 +9,7 @@ import xbmc
 
 # Package imports
 from .support import Script
-from .storage import PersistentDict, PersistentSet
+from .storage import PersistentDict
 from .api import route, VirtualFS, dispatcher, custom_route
 from .utils import keyboard
 
@@ -155,7 +155,7 @@ class SavedSearches(VirtualFS):
         super(SavedSearches, self).__init__()
 
         # List of current saved searches
-        self.search_db = PersistentSet(u"searchterms.json")
+        self.search_db = PersistentDict(u"searches.json")
 
     def run(self, remove=None, search=None, **extras):
         """List all saved searches"""
@@ -166,21 +166,21 @@ class SavedSearches(VirtualFS):
 
         # Remove term from saved searches if remove argument was passed
         if remove in self.search_db:
-            self.search_db.remove(remove)
+            del self.search_db[remove]
             self.search_db.flush()
 
         # Show search dialog if search argument was passed or if there is no search term saved
         elif not self.search_db or search:
-            self.search_dialog()
+            self.search_dialog(extras["url"])
 
         # List all saved search terms
         return self.list_terms(dispatcher[extras["route"]], extras)
 
-    def search_dialog(self):
+    def search_dialog(self, url):
         """Show dialog for user to enter a new search term."""
-        ret = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
-        if ret:
-            self.search_db.add(ret)
+        search_term = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
+        if search_term:
+            self.search_db[search_term] = url % search_term
             self.search_db.flush()
 
     def list_terms(self, callback, extras):
@@ -200,7 +200,7 @@ class SavedSearches(VirtualFS):
         str_remove = self.localize(REMOVE)
 
         # Add all saved searches to item list
-        for search_term in self.search_db:
+        for search_term, url in self.search_db.items():
             item = self.ListItem()
             item.set_label(search_term.title())
 
@@ -208,7 +208,7 @@ class SavedSearches(VirtualFS):
             item.context.container(str_remove, self, remove=search_term, **extras)
 
             # Update params with full url and set the callback
-            extras["url"] = extras["url"] % search_term
+            extras["url"] = url
             item.set_callback(callback, **extras)
             yield item
 
