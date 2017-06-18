@@ -2,11 +2,9 @@
 <addon id="script.module.codequick" name="CodeQuick Addon Framework" provider-name="willforde" version="0.0.1">
     <requires>
         <import addon="xbmc.python" version="2.20.0"/>
-        <import addon="script.module.requests" version="2.9.0"/>
         <import addon="script.module.youtube.dl" version="15.1223.0" optional="true"/>
-        <import addon="plugin.video.youtube" version="5.1.0" optional="true"/>
     </requires>
-    <extension library="lib" point="xbmc.python.module"/>
+    <extension point="xbmc.python.module" library="lib"/>
     <extension point="xbmc.addon.metadata">
         <language>en</language>
         <platform>all</platform>

@@ -3,6 +3,7 @@
 # Standard Library Imports
 from functools import partial
 import logging
+import re
 
 # Kodi imports
 import xbmcplugin
@@ -38,25 +39,10 @@ class VirtualFS(Script):
 
     def __init__(self):
         super(VirtualFS, self).__init__()
-        self._nextpagecount = self.params.pop("nextpagecount", 1)
+        self._nextpagecount = self.params.pop("_nextpagecount_", 1)
         self._manual_sort = set()
 
-        self.content_type = None
-        """
-        str: The plugins content type.
-        
-        Normally this will be set automaticly based on the type of listitem's given.
-        e.g. 'files' when listing folders and 'episodes' when listing videos.
-        
-        Note:
-        Changeing content type to anything other than 'files' or 'episodes', will prevent the view mode from
-        been changed to the preferred view mode, if one was set in settings.
-        
-        The full list of content types can be found here.
-        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#gaa30572d1e5d9d589e1cd3bfc1e2318d6
-        """
-
-        self.update_listing = self.params.pop("updatelisting", False)
+        self.update_listing = self.params.pop("_updatelisting_", False)
         """bool: True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
 
         self.autosort = True
@@ -66,7 +52,7 @@ class VirtualFS(Script):
         """Execute the callback function and process the results."""
 
         # Fetch all listitems from callback function
-        listitems = callback(self, **self.params)
+        listitems = super(VirtualFS, self).execute_route(callback)
 
         # Process listitems and close
         self.__add_listitems(listitems)
@@ -98,13 +84,11 @@ class VirtualFS(Script):
     def __content_type(self, isfolder):
         """Guess content type and set kodi parameters, setContent & SetViewMode"""
 
-        # Guess content type, if it has not been set
-        if self.content_type is None:
-            self.content_type = "files" if isfolder else "episodes"
-
         # Set the add-on content type
-        # xbmcplugin.setContent(handle, self.content_type)
-        # TODO: check for better content_type options
+        xbmcplugin.setContent(handle, "albums")
+
+        # Sets the category for skins to display modes.
+        xbmcplugin.setPluginCategory(handle, re.sub("\(\d+\)$", "", self._title).strip())
 
         # Change preferred view mode if one was set for given content type
         set_key = "{}.{}.view".format(xbmc.getSkinDir(), "folder" if isfolder else "video")
@@ -127,7 +111,7 @@ class VirtualFS(Script):
             xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
 
     def __end_directory(self, success):
-        """Mark the end of directory listings"""
+        """Mark the end of directory listings."""
         xbmcplugin.endOfDirectory(handle, success, self.update_listing, False)
 
     def add_sort_methods(self, *methods, **override):
@@ -205,12 +189,13 @@ class VirtualFS(Script):
         """
         # Fetch current set of callback params and add the extra params if any
         base_params = self.params.copy()
-        base_params["updatelisting"] = True
-        base_params["nextpagecount"] = self._nextpagecount + 1
+        base_params["_updatelisting_"] = True
+        base_params["_nextpagecount_"] = self._nextpagecount + 1
+        base_params["_title_"] = self._title
 
         # Create listitem instance
         item = self.Listitem()
-        label = u"%s %s" % (self.localize(NEXT_PAGE), base_params["nextpagecount"])
+        label = u"%s %s" % (self.localize(NEXT_PAGE), base_params["_nextpagecount_"])
         item.set_label(label, u"[B]%s[/B]")
         item.art.global_thumb(u"next.png")
         item.params.update(base_params)
@@ -235,7 +220,7 @@ class VirtualFS(Script):
 
     def add_search(self, callback, **params):
         """
-        A Listitem constructor to add Saved search Support to addon.
+        A Listitem constructor to add saved search Support to addon.
 
         :param callback: Function that will be called when the listitem is activated.
         :param params: Dictionary containing url querys to combine with search term.
@@ -275,7 +260,7 @@ class PlayMedia(Script):
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
-        resolved = callback(self, **self.params)
+        resolved = super(PlayMedia, self).execute_route(callback)
         self.__send_to_kodi(resolved)
 
     def create_loopback(self, url, **next_params):

@@ -69,13 +69,6 @@ class CommonDict(object):
         else:
             return value
 
-    def __getattr__(self, key):
-        """Return a value from the dictionary as if it was instance attribute."""
-        try:
-            return self[key]
-        except KeyError:
-            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, key))
-
     def __setitem__(self, key, value):
         """
         Custom setter that converts unicode values to 'utf8' encoded strings.
@@ -85,10 +78,6 @@ class CommonDict(object):
         :type value: str or unicode
         """
         self.raw_dict[key] = value
-
-    def __setattr__(self, key, value):
-        """Add data to dictionary by setting an attribute"""
-        self[key] = value
 
     def update(self, *args, **kwargs):
         """
@@ -553,7 +542,7 @@ class ListItem(object):
         :param formating: A % formated string with the label formating to add to label.
         """
         self.listitem.setLabel(formating % label if formating else label)
-        self.params["title"] = label
+        self.params["_title_"] = label
         self.info["title"] = label
 
     def set_callback(self, callback, **kwargs):

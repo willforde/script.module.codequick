@@ -169,10 +169,6 @@ class Settings(object):
         """
         return addon_data.getSetting(key)
 
-    def __getattr__(self, key):
-        """Return setting as an instance attribute."""
-        return self[key]
-
     def __setitem__(self, key, value):
         """
         Set an add-on setting.
@@ -183,10 +179,6 @@ class Settings(object):
         """
         # noinspection PyTypeChecker
         addon_data.setSetting(key, value if isinstance(value, basestring) else str(value).lower())
-
-    def __setattr__(self, key, value):
-        """Set an add-on setting as instance attribute."""
-        self[key] = value
 
     def get_boolean(self, key, addon_id=None):
         """
@@ -265,12 +257,13 @@ class Script(object):
     logger = base_logger
 
     def __init__(self):
-        self._title = self.params.pop(u"title", u"")
+        self._title = self.params.pop(u"_title_", u"")
         self._callbacks = []
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
-        callback(self, **self.params)
+        logger.debug("Callback parameters: '%s'", self.params)
+        return callback(self, **self.params)
 
     def register_callback(self, func, **kwargs):
         """

@@ -592,7 +592,7 @@ class APIControl(VirtualFS):
                 item.info["genre"] = category_cache[cat_id]
 
             # Set Quality and Audio Overlays
-            item.stream.hd(content_details[u"definition"] == u"hd" and ishd)
+            item.stream.hd(bool(content_details[u"definition"] == u"hd" and ishd))
 
             # Fetch Duration
             duration_str = content_details[u"duration"]
@@ -637,7 +637,7 @@ class APIControl(VirtualFS):
 
 @route
 class Playlist(APIControl):
-    def run(self, contentid=None, pagetoken=None, enable_playlists=True):
+    def run(self, contentid, pagetoken=None, enable_playlists=True):
         """
         List all video within youtube playlist
 
@@ -672,7 +672,7 @@ class Playlist(APIControl):
 
 @route
 class Playlists(APIControl):
-    def run(self, content_id=None, show_all=False):
+    def run(self, content_id, show_all=False):
         """
         List all playlist for giving channel
 

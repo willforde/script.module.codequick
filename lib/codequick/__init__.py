@@ -25,7 +25,7 @@ start_time = time.time()
 # Package imports
 from .support import Script
 from .api import VirtualFS, PlayMedia, script, route, resolve, run
-from .storage import PersistentDict, PersistentList, PersistentSet
+from .storage import PersistentDict
 
 # Logging Levels
 CRITICAL = 50
