@@ -35,7 +35,7 @@ class VirtualFS(Script):
     is_folder = True
 
     Listitem = ListItem
-    """A :class:`codequick.Listitem` class, used for creating directory items in Kodi"""
+    """:class:`Listitem`: A :class:`Listitem` class, used for creating directory items in Kodi"""
 
     def __init__(self):
         super(VirtualFS, self).__init__()

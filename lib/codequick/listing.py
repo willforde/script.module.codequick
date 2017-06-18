@@ -50,8 +50,8 @@ quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p,
 
 class CommonDict(object):
     def __init__(self, **kwargs):
-        #: The underlining raw dictionary, for advanced use.
         self.raw_dict = kwargs
+        """dict: The underlining raw dictionary, for advanced use."""
 
     def __getitem__(self, key):
         """
@@ -426,12 +426,12 @@ class ListItem(object):
     def __init__(self):
         self._path = ""
 
-        #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
+        """dict: The underlining kodi listitem object, for advanced use."""
 
         self.params = CommonDict()
         """
-        Dictionary for parameters that will be passed to the callback object.
+        dict: Dictionary for parameters that will be passed to the callback object.
 
         This is a simple dictionary like object that allows you to add callback parameters.
         
@@ -441,7 +441,7 @@ class ListItem(object):
 
         self.info = Info(listitem)
         """
-        Dictionary for listitem infoLabels.
+        dict: Dictionary for listitem infoLabels.
 
         This is a simple dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
         
@@ -467,7 +467,7 @@ class ListItem(object):
 
         self.art = Art(listitem)
         """
-        Dictionary for listitem's art.
+        dict: Dictionary for listitem's art.
 
         This is a simple dictionary like object that allows you to add various image values. e.g. thumb, fanart.
 
@@ -482,7 +482,7 @@ class ListItem(object):
 
         self.stream = Stream(listitem)
         """
-        Dictionary for stream details.
+        dict: Dictionary for stream details.
 
         This is a simple dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
         
@@ -504,7 +504,7 @@ class ListItem(object):
 
         self.property = Property(listitem)
         """
-        Dictionary for listitem property, similar to an infolabel.
+        dict: Dictionary for listitem property, similar to an infolabel.
 
         This is a simple dictionary like object that allows you to add listitem properties.
 
@@ -515,7 +515,7 @@ class ListItem(object):
 
         self.context = Context(listitem)
         """
-        List for context menu item(s).
+        dict: List for context menu item(s).
 
         This is a list containing tuples, consisting of label/function pairs.
         label str or unicode - item's label.
