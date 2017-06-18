@@ -41,12 +41,10 @@ class VirtualFS(Script):
         super(VirtualFS, self).__init__()
         self._nextpagecount = self.params.pop("_nextpagecount_", 1)
         self._manual_sort = set()
+        self._autosort = True
 
         self.update_listing = self.params.pop("_updatelisting_", False)
         """bool: True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
-
-        self.autosort = True
-        """bool: True, auto select sortmethods based on infolabels(Default). False, disable auto sortmethods."""
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
@@ -98,7 +96,7 @@ class VirtualFS(Script):
 
     def __add_sort_methods(self, manual):
         """Add sort methods to kodi"""
-        if self.autosort:
+        if self._autosort:
             manual.update(auto_sort)
 
         if manual:
@@ -122,10 +120,10 @@ class VirtualFS(Script):
         Normally this should not be needed as sort methods are auto detected.
 
         :param int methods: One or more kodi sort mehtods.
-        :param bool override: (Optional) keyword argument to override the auto selected sort methods. (Default: True)
+        :param bool override: (Optional) keyword argument to override the auto selected sort methods. (Default: False)
         """
         # Disable auto sort if override is True, Default
-        self.autosort = self.autosort and not override.get("override", True)
+        self._autosort = self._autosort and not override.get("override", False)
         self._manual_sort.update(methods)
 
     @staticmethod
