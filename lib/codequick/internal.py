@@ -10,7 +10,7 @@ import xbmc
 # Package imports
 from .support import Script
 from .storage import PersistentDict
-from .api import route, VirtualFS, dispatcher, custom_route
+from .api import route, Route, dispatcher, custom_route
 from .utils import keyboard
 
 # Prerequisites
@@ -145,7 +145,7 @@ class ViewModeSelecter(Script):
 
 
 @route
-class SavedSearches(VirtualFS):
+class SavedSearches(Route):
     """
     Class used to list all saved searches for the addon that called it.
     Usefull to add search support to addon that will also keep track of previous searches

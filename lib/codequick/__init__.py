@@ -23,8 +23,7 @@ import time
 start_time = time.time()
 
 # Package imports
-from .support import Script
-from .api import VirtualFS, PlayMedia, script, route, resolve, run
+from .api import Script, Route, Resolver, script, route, resolve, run
 from .storage import PersistentDict
 
 # Logging Levels

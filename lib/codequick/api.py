@@ -28,7 +28,7 @@ NEXT_PAGE = 33078
 SEARCH = 137
 
 
-class VirtualFS(Script):
+class Route(Script):
     """Add Directory List Items to Kodi"""
 
     # Change listitem type to 'folder'
@@ -38,7 +38,7 @@ class VirtualFS(Script):
     """:class:`Listitem`: A :class:`Listitem` class, used for creating directory items in Kodi"""
 
     def __init__(self):
-        super(VirtualFS, self).__init__()
+        super(Route, self).__init__()
         self._nextpagecount = self.params.pop("_nextpagecount_", 1)
         self._manual_sort = set()
         self._autosort = True
@@ -50,7 +50,7 @@ class VirtualFS(Script):
         """Execute the callback function and process the results."""
 
         # Fetch all listitems from callback function
-        listitems = super(VirtualFS, self).execute_route(callback)
+        listitems = super(Route, self).execute_route(callback)
 
         # Process listitems and close
         self.__add_listitems(listitems)
@@ -252,13 +252,13 @@ class VirtualFS(Script):
         return item
 
 
-class PlayMedia(Script):
+class Resolver(Script):
     # Change listitem type to 'player'
     is_playable = True
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
-        resolved = super(PlayMedia, self).execute_route(callback)
+        resolved = super(Resolver, self).execute_route(callback)
         self.__send_to_kodi(resolved)
 
     def create_loopback(self, url, **next_params):
@@ -431,10 +431,10 @@ def custom_route(path, parent=None):
 script = partial(dispatcher.register, cls=Script)
 script.__doc__ = """Decorator used to register 'Script' callback function/class."""
 
-route = partial(dispatcher.register, cls=VirtualFS)
+route = partial(dispatcher.register, cls=Route)
 route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
 
-resolve = partial(dispatcher.register, cls=PlayMedia)
+resolve = partial(dispatcher.register, cls=Resolver)
 resolve.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 run = dispatcher.dispatch

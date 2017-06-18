@@ -8,7 +8,7 @@ import os
 # Package imports
 from .support import logger_id
 from .storage import PersistentDict, profile_dir
-from .api import route, resolve, VirtualFS
+from .api import route, resolve, Route
 from .utils import CacheProperty
 
 # Outer package imports
@@ -238,7 +238,7 @@ class API(object):
         return self._connect_v3("search", query)
 
 
-class APIControl(VirtualFS):
+class APIControl(Route):
     """Class to control the access to the youtube API."""
     def __init__(self):
         super(APIControl, self).__init__()
