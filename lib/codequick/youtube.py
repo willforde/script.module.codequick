@@ -240,11 +240,11 @@ class API(object):
 
 class APIControl(VirtualFS):
     """Class to control the access to the youtube API."""
-    __video_data = __channel_data = __category_data = None
-
     def __init__(self):
         super(APIControl, self).__init__()
+
         self.api = API()
+        """:class:`API`: Class for handling api requests"""
 
     def cache_cleanup(self):
         """Trim down the cache if cache gets too big."""
