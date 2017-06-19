@@ -186,12 +186,7 @@ class SavedSearches(Route):
             self.search_db.flush()
 
     def list_terms(self, callback, extras):
-        """
-        List all saved search terms.
-
-        :returns: A listitem object
-        :rtype: :class:`types.GeneratorType`
-        """
+        """:rtype: :class:`types.GeneratorType`"""
         # Add search listitem
         search_item = self.listItem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)

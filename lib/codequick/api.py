@@ -136,15 +136,15 @@ class Route(Script):
         xbmcplugin.setPluginCategory(handle, category)
 
     @staticmethod
-    def add_item(callback, label, params=None, info=None, art=None, stream=None, properties=None, context=None):
+    def add_item(label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
         """
         Basic constructor to add a simple listitem.
 
-        :param callback: The callback function or playable path.
-        :type callback: :class:`types.FunctionType`
-
         :param label: The listitem's label.
         :type label: str or unicode
+
+        :param callback: The callback function or playable path.
+        :type callback: :class:`types.FunctionType`
 
         :param dict params: Dictionary of parameters that will be passed to the callback object.
         :param dict info: Dictionary of listitem infoLabels.
