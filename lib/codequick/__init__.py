@@ -23,7 +23,7 @@ import time
 start_time = time.time()
 
 # Package imports
-from .api import Script, Route, Resolver, script, route, resolver, run
+from .api import Script, Route, Resolver, register_script, register_route, register_resolver, run
 from .storage import PersistentDict
 from .listing import Listitem
 

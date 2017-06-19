@@ -8,7 +8,7 @@ import os
 # Package imports
 from .support import logger_id
 from .storage import PersistentDict, profile_dir
-from .api import route, resolver, Route
+from .api import register_route, register_resolver, Route
 from .utils import CacheProperty
 from .listing import Listitem
 
@@ -636,7 +636,7 @@ class APIControl(Route):
             yield item
 
 
-@route
+@register_route
 class Playlist(APIControl):
     def run(self, contentid, pagetoken=None, enable_playlists=True):
         """
@@ -671,7 +671,7 @@ class Playlist(APIControl):
         return self.videos(channel_list, video_list, feed.get(u"nextPageToken"), enable_playlists)
 
 
-@route
+@register_route
 class Playlists(APIControl):
     def run(self, content_id, show_all=False):
         """
@@ -730,7 +730,7 @@ class Playlists(APIControl):
             yield item
 
 
-@route
+@register_route
 class Related(APIControl):
     def run(self, video_id, pagetoken=None):
         """
@@ -757,7 +757,7 @@ class Related(APIControl):
         return self.videos(channel_list, video_list, pagetoken=feed.get(u"nextPageToken"))
 
 
-@resolver
+@register_resolver
 def play_video(tools, video_id):
     """
     :type tools: :class:`codequick.PlayMedia`

@@ -426,14 +426,14 @@ def custom_route(path, parent=None):
     return partial(dispatcher.register, cls=parent, custom_route=path)
 
 
-script = partial(dispatcher.register, cls=Script)
-script.__doc__ = """Decorator used to register 'Script' callback function/class."""
+register_script = partial(dispatcher.register, cls=Script)
+register_script.__doc__ = """Decorator used to register 'Script' callback function/class."""
 
-route = partial(dispatcher.register, cls=Route)
-route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
+register_route = partial(dispatcher.register, cls=Route)
+register_route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
 
-resolver = partial(dispatcher.register, cls=Resolver)
-resolver.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
+register_resolver = partial(dispatcher.register, cls=Resolver)
+register_resolver.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 run = dispatcher.dispatch
 
