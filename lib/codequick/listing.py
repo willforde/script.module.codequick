@@ -400,7 +400,7 @@ class Context(list):
         self._listitem.addContextMenuItems(self)
 
 
-class ListItem(object):
+class Listitem(object):
     """
     The list item control is used for creating item lists in Kodi.
 

@@ -22,10 +22,10 @@ class PersistentDict(dict):
     .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
 
     :param filename: Filename of persistence storage file.
-    :type filename: str, unicode
+    :type filename: str or unicode
 
     :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
-    :type data_dir: str, unicode
+    :type data_dir: str or unicode
 
     :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool

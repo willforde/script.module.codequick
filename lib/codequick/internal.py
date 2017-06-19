@@ -11,7 +11,9 @@ import xbmc
 from .support import Script
 from .storage import PersistentDict
 from .api import route, Route, dispatcher, custom_route
+from .listing import Listitem
 from .utils import keyboard
+
 
 # Prerequisites
 ENTER_SEARCH_STRING = 16017
@@ -201,7 +203,7 @@ class SavedSearches(Route):
 
         # Add all saved searches to item list
         for search_term, url in self.search_db.items():
-            item = self.ListItem()
+            item = Listitem()
             item.set_label(search_term.title())
 
             # Creatre Context Menu item for removing search term

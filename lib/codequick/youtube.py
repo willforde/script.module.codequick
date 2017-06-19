@@ -8,8 +8,9 @@ import os
 # Package imports
 from .support import logger_id
 from .storage import PersistentDict, profile_dir
-from .api import route, resolve, Route
+from .api import route, resolver, Route
 from .utils import CacheProperty
+from .listing import Listitem
 
 # Outer package imports
 import urlquick
@@ -558,7 +559,7 @@ class APIControl(Route):
                 continue
 
             # Create listitem object
-            item = self.Listitem()
+            item = Listitem()
 
             # Fetch video snippet & content_details
             snippet = video_data[u"snippet"]
@@ -627,7 +628,7 @@ class APIControl(Route):
 
         # Add playlists item to results
         if enable_playlists and not multi_channel and pagetoken is None:
-            item = self.Listitem()
+            item = Listitem()
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb(u"youtube.png")
@@ -706,7 +707,7 @@ class Playlists(APIControl):
         # Loop Entries
         for playlist_item in feed[u"items"]:
             # Create listitem object
-            item = self.Listitem()
+            item = Listitem()
 
             # Fetch video snippet
             snippet = playlist_item[u"snippet"]
@@ -756,7 +757,7 @@ class Related(APIControl):
         return self.videos(channel_list, video_list, pagetoken=feed.get(u"nextPageToken"))
 
 
-@resolve
+@resolver
 def play_video(tools, video_id):
     """
     :type tools: :class:`codequick.PlayMedia`

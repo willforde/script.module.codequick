@@ -12,7 +12,7 @@ import xbmc
 
 # Package imports
 from .support import Dispatcher, Script, build_path, handle, logger_id
-from .listing import ListItem, auto_sort
+from .listing import Listitem, auto_sort
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -33,9 +33,6 @@ class Route(Script):
 
     # Change listitem type to 'folder'
     is_folder = True
-
-    Listitem = ListItem
-    """:class:`Listitem`: A :class:`Listitem` class, used for creating directory items in Kodi"""
 
     def __init__(self):
         super(Route, self).__init__()
@@ -138,7 +135,8 @@ class Route(Script):
         """
         xbmcplugin.setPluginCategory(handle, category)
 
-    def add_item(self, callback, label, params=None, info=None, art=None, stream=None, properties=None, context=None):
+    @staticmethod
+    def add_item(callback, label, params=None, info=None, art=None, stream=None, properties=None, context=None):
         """
         Basic constructor to add a simple listitem.
 
@@ -159,7 +157,7 @@ class Route(Script):
         :rtype: :class:`codequick.Listitem`
         """
         # Create listitem instance
-        item = self.Listitem()
+        item = Listitem()
         item.set_callback(callback)
         item.set_label(label)
 
@@ -192,7 +190,7 @@ class Route(Script):
         base_params["_title_"] = self._title
 
         # Create listitem instance
-        item = self.Listitem()
+        item = Listitem()
         label = u"%s %s" % (self.localize(NEXT_PAGE), base_params["_nextpagecount_"])
         item.set_label(label, u"[B]%s[/B]")
         item.art.global_thumb(u"next.png")
@@ -210,7 +208,7 @@ class Route(Script):
         :param params: Keyword arguments of parameters that will be passed to the callback function.
         """
         # Create listitem instance
-        listitem = self.Listitem()
+        listitem = Listitem()
         listitem.set_label(self.localize(MOST_RECENT), u"[B]%s[/B]")
         listitem.art.global_thumb(u"recent.png")
         listitem.set_callback(callback, **params)
@@ -223,7 +221,7 @@ class Route(Script):
         :param callback: Function that will be called when the listitem is activated.
         :param params: Dictionary containing url querys to combine with search term.
         """
-        listitem = self.Listitem()
+        listitem = Listitem()
         listitem.set_label(self.localize(SEARCH), u"[B]%s[/B]")
         listitem.art.global_thumb(u"search.png")
         listitem.set_callback(SavedSearches, route=callback.route, **params)
@@ -243,7 +241,7 @@ class Route(Script):
         :param bool wide_thumb: (Optional) True to use a wide thumbnail or False for normal thumbnail image (default).
         """
         # Youtube exists, Creating listitem link
-        item = self.Listitem()
+        item = Listitem()
         item.set_label(label if label else self.localize(YOUTUBE_CHANNEL), "[B]%s[/B]")
         item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
         item.params["contentid"] = content_id
@@ -434,8 +432,8 @@ script.__doc__ = """Decorator used to register 'Script' callback function/class.
 route = partial(dispatcher.register, cls=Route)
 route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
 
-resolve = partial(dispatcher.register, cls=Resolver)
-resolve.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
+resolver = partial(dispatcher.register, cls=Resolver)
+resolver.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 run = dispatcher.dispatch
 
