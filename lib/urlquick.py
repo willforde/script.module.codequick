@@ -115,7 +115,7 @@ __license__ = "MIT"
 __version__ = "0.1.3"
 
 # Cacheable request types
-CACHE_LOCATION = os.getcwd()
+CACHE_LOCATION = __import__("xbmc").translatePath(__import__("xbmcaddon").Addon().getAddonInfo("profile"))
 CACHEABLE_METHODS = (u"GET", u"HEAD", u"POST")
 CACHEABLE_CODES = (200, 203, 204, 300, 301, 302, 303, 307, 308, 410, 414)
 REDIRECT_CODES = (301, 302, 303, 307, 308)
