@@ -7,17 +7,18 @@ import os
 
 # Package imports
 from .support import logger_id
-from .storage import PersistentDict, profile_dir
+from .storage import PersistentDict
 from .api import register_route, register_resolver, Route
 from .utils import CacheProperty
 from .listing import Listitem
 
 # Outer package imports
 import urlquick
-urlquick.CACHE_LOCATION = profile_dir
 
 # Logger specific to this module
 logger = logging.getLogger("%s.youtube" % logger_id)
+
+logger.debug("kdkdl: %s", urlquick.CACHE_LOCATION)
 
 # Localized string Constants
 ALL_VIDEOS = 16100
