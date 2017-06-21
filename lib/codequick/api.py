@@ -117,18 +117,6 @@ class Route(Script):
         self._autosort = self._autosort and not override.get("override", False)
         self._manual_sort.update(methods)
 
-    @staticmethod
-    def set_category(category):
-        """
-        Sets the plugins name for skins to display.
-
-        :param category: Plugins sub category.
-        :type category: str, unicode
-        
-        # Need to test if this function can be more usefull
-        """
-        xbmcplugin.setPluginCategory(handle, category)
-
 
 class Resolver(Script):
     # Change listitem type to 'player'
