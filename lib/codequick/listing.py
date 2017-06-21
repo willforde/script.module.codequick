@@ -553,7 +553,7 @@ class Listitem(object):
         Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
 
         :param label: The label to give to the listitem
-        :param formating: A % formated string with the label formating to add to label.
+        :param formating: A % formated string with the formating to add to label.
         """
         self.listitem.setLabel(formating % label if formating else label)
         self.params["_title_"] = label
@@ -612,49 +612,54 @@ class Listitem(object):
         return path, self.listitem, isfolder
 
     @classmethod
-    def add_item(cls, label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
+    def from_dict(cls, item_dict):
         """
-        Basic constructor to add a simple listitem.
+        Constructor to create listitem.
 
-        :param label: The listitem's label.
-        :type label: str or unicode
+        This method will create and populate a listitem from a dictionary of listitem values.
+        The structure of the dictionary should be as follows.
 
-        :param callback: The callback function or playable path.
-        :type callback: :class:`types.FunctionType`
+        Options::
 
-        :param dict params: Dictionary of parameters that will be passed to the callback object.
-        :param dict info: Dictionary of listitem infoLabels.
-        :param dict art: Dictionary of listitem's art.
-        :param dict stream: Dictionary of stream details.
-        :param dict properties: Dictionary of listitem properties.
-        :param list context: List of context menu item(s) containing tuples of label/command pairs.
+            label:            The listitem's label.
+            label_formatting: A % formated string with the formating to add to label.
+            callback:         The callback function or playable path.
+            params:           Dictionary of parameters that will be passed to the callback function.
+            info:             Dictionary of listitem infoLabels.
+            art:              Dictionary of listitem's art.
+            stream:           Dictionary of stream details.
+            property:         Dictionary of listitem properties.
+            context:          List of context menu item(s) containing tuples of label/command pairs.
+
+        :type item_dict: dict
+        :param item_dict: Dictionary of listitem values.
 
         :return: A listitem object.
         :rtype: :class:`codequick.Listitem`
         """
-        # Create listitem instance
         item = cls()
-        item.set_callback(callback)
-        item.set_label(label)
+        item.set_callback(item_dict["callback"])
+        item.set_label(item_dict["label"], formating=item_dict.get("label_formatting"))
 
         # Update listitem data
-        if params:
-            item.params.update(params)
-        if info:
-            item.info.update(info)
-        if art:
-            item.art.update(art)
-        if stream:
-            item.stream.update(stream)
-        if properties:
-            item.property.update(properties)
-        if context:
-            item.context.extend(context)
+        if "params" in item_dict:
+            item.params.update(item_dict["params"])
+        if "info" in item_dict:
+            item.info.update(item_dict["info"])
+        if "art" in item_dict:
+            item.art.update(item_dict["art"])
+        if "stream" in item_dict:
+            item.stream.update(item_dict["stream"])
+        if "property" in item_dict:
+            item.property.update(item_dict["property"])
+        if "context" in item_dict:
+            item.context.extend(item_dict["context"])
 
+        # Return the populated listitem
         return item
 
     @classmethod
-    def add_next(cls, **params):
+    def next_page(cls, **params):
         """
         A Listitem constructor for adding Next Page item.
 
@@ -675,7 +680,7 @@ class Listitem(object):
         return item
 
     @classmethod
-    def add_recent(cls, callback, **params):
+    def recent(cls, callback, **params):
         """
         A Listitem constructor for adding Recent Folder item.
 
@@ -692,7 +697,7 @@ class Listitem(object):
         return listitem
 
     @classmethod
-    def add_search(cls, callback, **params):
+    def search(cls, callback, **params):
         """
         A Listitem constructor to add saved search Support to addon.
 
@@ -706,7 +711,7 @@ class Listitem(object):
         return listitem
 
     @classmethod
-    def add_youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
+    def youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
         """
         A Listitem constructor to add a youtube channel to addon.
 
