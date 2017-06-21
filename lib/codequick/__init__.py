@@ -16,11 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Standard Library Imports
-import time
-
 # Execution start time
-start_time = time.time()
+start_time = __import__("time").time()
 
 # Package imports
 from .api import Script, Route, Resolver, register_script, register_route, register_resolver, run
