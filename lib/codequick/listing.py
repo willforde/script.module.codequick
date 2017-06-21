@@ -727,6 +727,6 @@ class Listitem(object):
         item.set_callback(YTPlaylist)
         return item
 
-
-from youtube import Playlist as YTPlaylist
+# Import callback functions required for listitem constructs
+from .youtube import Playlist as YTPlaylist
 from .internal import SavedSearches
