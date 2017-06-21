@@ -111,7 +111,7 @@ class CommonDict(object):
             self[key] = value
 
     def __repr__(self):
-        return repr(self.raw_dict)
+        return "%s(%r)" % (self.__class__, self.raw_dict)
 
     def __str__(self):
         return str(self.raw_dict)
@@ -249,18 +249,8 @@ class Info(CommonDict):
 class Property(CommonDict):
     # noinspection PyMissingConstructor
     def __init__(self, listitem):
-        self._setter = listitem.setProperty
-        self._getter = listitem.getProperty
-
-    def __getitem__(self, key):
-        """
-        Returns a listitem property as unicode, similar to an infolabel.
-
-        :param str key: The key required for requested value.
-        :return: The property value.
-        :rtype: unicode
-        """
-        return self._getter(key).decode("utf8")
+        super(Property, self).__init__()
+        self._listitem = listitem
 
     def __setitem__(self, key, value):
         """
@@ -271,9 +261,13 @@ class Property(CommonDict):
         :type value: str or unicode
         """
         if value:
-            self._setter(key, value)
+            self.raw_dict[key] = value
         else:
             logger.debug("Ignoring empty property value for: '%s'", key)
+
+    def close(self):
+        for key, value in self.raw_dict:
+            self._listitem.setProperty(key, value)
 
 
 class Stream(CommonDict):
@@ -380,8 +374,7 @@ class Stream(CommonDict):
             self._listitem.addStreamInfo("subtitle", self.subtitle)
 
     def __repr__(self):
-        data = {"audio": self.audio, "video": self.video, "subtitle": self.subtitle}
-        return repr(data)
+        return "%s(audio=%r, video=%r, subtitle=%r)" % (self.__class__, self.audio, self.video, self.subtitle)
 
     def __str__(self):
         data = {"audio": self.audio, "video": self.video, "subtitle": self.subtitle}
