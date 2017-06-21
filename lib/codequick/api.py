@@ -12,7 +12,6 @@ import xbmc
 
 # Package imports
 from .support import Dispatcher, Script, build_path, handle, logger_id
-from .listing import Listitem, auto_sort
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -22,10 +21,6 @@ dispatcher = Dispatcher()
 
 # Localized string Constants
 SELECT_PLAYBACK_ITEM = 25006
-YOUTUBE_CHANNEL = 32901
-MOST_RECENT = 32902
-NEXT_PAGE = 33078
-SEARCH = 137
 
 
 class Route(Script):
@@ -36,11 +31,10 @@ class Route(Script):
 
     def __init__(self):
         super(Route, self).__init__()
-        self._nextpagecount = self.params.pop("_nextpagecount_", 1)
         self._manual_sort = set()
         self._autosort = True
 
-        self.update_listing = self.params.pop("_updatelisting_", False)
+        self.update_listing = self.params.get("_updatelisting_", False)
         """bool: True, this folder should update the current listing. False, this folder is a subfolder(Default)."""
 
     def execute_route(self, callback):
@@ -134,120 +128,6 @@ class Route(Script):
         # Need to test if this function can be more usefull
         """
         xbmcplugin.setPluginCategory(handle, category)
-
-    @staticmethod
-    def add_item(label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
-        """
-        Basic constructor to add a simple listitem.
-
-        :param label: The listitem's label.
-        :type label: str or unicode
-
-        :param callback: The callback function or playable path.
-        :type callback: :class:`types.FunctionType`
-
-        :param dict params: Dictionary of parameters that will be passed to the callback object.
-        :param dict info: Dictionary of listitem infoLabels.
-        :param dict art: Dictionary of listitem's art.
-        :param dict stream: Dictionary of stream details.
-        :param dict properties: Dictionary of listitem properties.
-        :param list context: List of context menu item(s) containing tuples of label/command pairs.
-
-        :return: A listitem object.
-        :rtype: :class:`codequick.Listitem`
-        """
-        # Create listitem instance
-        item = Listitem()
-        item.set_callback(callback)
-        item.set_label(label)
-
-        # Update listitem data
-        if params:
-            item.params.update(params)
-        if info:
-            item.params.update(info)
-        if art:
-            item.params.update(art)
-        if stream:
-            item.params.update(stream)
-        if properties:
-            item.params.update(properties)
-        if context:
-            item.params.extend(context)
-
-        return item
-
-    def add_next(self, **params):
-        """
-        A Listitem constructor for adding Next Page item.
-
-        :param params: (Optional) Keyword arguments of params that will be added to the current set of callback params.
-        """
-        # Fetch current set of callback params and add the extra params if any
-        base_params = self.params.copy()
-        base_params["_updatelisting_"] = True
-        base_params["_nextpagecount_"] = self._nextpagecount + 1
-        base_params["_title_"] = self._title
-
-        # Create listitem instance
-        item = Listitem()
-        label = u"%s %s" % (self.localize(NEXT_PAGE), base_params["_nextpagecount_"])
-        item.set_label(label, u"[B]%s[/B]")
-        item.art.global_thumb(u"next.png")
-        item.params.update(base_params)
-        item.set_callback(self, **params)
-        return item
-
-    def add_recent(self, callback, **params):
-        """
-        A Listitem constructor for adding Recent Folder item.
-
-        :param callback: The callback function.
-        :type callback: :class:`types.FunctionType`
-
-        :param params: Keyword arguments of parameters that will be passed to the callback function.
-        """
-        # Create listitem instance
-        listitem = Listitem()
-        listitem.set_label(self.localize(MOST_RECENT), u"[B]%s[/B]")
-        listitem.art.global_thumb(u"recent.png")
-        listitem.set_callback(callback, **params)
-        return listitem
-
-    def add_search(self, callback, **params):
-        """
-        A Listitem constructor to add saved search Support to addon.
-
-        :param callback: Function that will be called when the listitem is activated.
-        :param params: Dictionary containing url querys to combine with search term.
-        """
-        listitem = Listitem()
-        listitem.set_label(self.localize(SEARCH), u"[B]%s[/B]")
-        listitem.art.global_thumb(u"search.png")
-        listitem.set_callback(SavedSearches, route=callback.route, **params)
-        return listitem
-
-    def add_youtube(self, content_id, label=None, enable_playlists=True, wide_thumb=False):
-        """
-        A Listitem constructor to add a youtube channel to addon.
-        
-        :param content_id: Channel name, channel id or playlist id to list videos from.
-        :type content_id: str or unicode
-        
-        :param label: (Optional) Label of listitem. (default: '-Youtube Channel').
-        :type label: str or unicode
-        
-        :param bool enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
-        :param bool wide_thumb: (Optional) True to use a wide thumbnail or False for normal thumbnail image (default).
-        """
-        # Youtube exists, Creating listitem link
-        item = Listitem()
-        item.set_label(label if label else self.localize(YOUTUBE_CHANNEL), "[B]%s[/B]")
-        item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
-        item.params["contentid"] = content_id
-        item.params["enable_playlists"] = enable_playlists
-        item.set_callback(YTPlaylist)
-        return item
 
 
 class Resolver(Script):
@@ -437,5 +317,4 @@ register_resolver.__doc__ = """Decorator used to register 'PlayMedia' callback f
 
 run = dispatcher.dispatch
 
-from .internal import SavedSearches
-from youtube import Playlist as YTPlaylist
+from .listing import auto_sort

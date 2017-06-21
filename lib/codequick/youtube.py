@@ -18,8 +18,6 @@ import urlquick
 # Logger specific to this module
 logger = logging.getLogger("%s.youtube" % logger_id)
 
-logger.debug("kdkdl: %s", urlquick.CACHE_LOCATION)
-
 # Localized string Constants
 ALL_VIDEOS = 16100
 PLAYLISTS = 136
@@ -625,7 +623,7 @@ class APIControl(Route):
 
         # Add next Page entry if pagetoken is giving
         if pagetoken:
-            yield self.add_next(pagetoken=pagetoken)
+            yield Listitem.add_next(pagetoken=pagetoken)
 
         # Add playlists item to results
         if enable_playlists and not multi_channel and pagetoken is None:
@@ -703,7 +701,7 @@ class Playlists(APIControl):
         # Display a link for listing all channel videos
         if show_all:
             title = self.localize(ALL_VIDEOS)
-            yield self.add_youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
+            yield Listitem.add_youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
 
         # Loop Entries
         for playlist_item in feed[u"items"]:

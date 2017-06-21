@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
+from collections import namedtuple
+from binascii import hexlify
 import urlparse
 import logging
 import inspect
-import binascii
 import time
 import json
 import sys
@@ -15,7 +16,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .utils import KodiLogHandler, parse_qs
+from .utils import KodiLogHandler, Params
 
 # Fetch addon data objects
 script_data = xbmcaddon.Addon("script.module.codequick")
@@ -33,6 +34,9 @@ base_logger.setLevel(10)
 
 # Logger specific to this module
 logger = logging.getLogger("%s.support" % logger_id)
+
+# Named tuple for registered routes
+Route = namedtuple("Route", ["controller", "callback", "source"])
 
 # Check if running as a plugin
 if sys.argv[0].startswith("plugin://"):
@@ -54,12 +58,7 @@ elif selector.startswith("/"):
     selector = selector[1:]
 
 # Parse parms using json or urlencoding
-if _params.startswith("_json="):
-    params = json.loads(binascii.unhexlify(_params[6:]))
-elif _params:
-    params = parse_qs(_params)
-else:
-    params = {}
+params = Params(_params)
 
 
 def build_path(path=None, query=None, **extra_query):
@@ -82,7 +81,7 @@ def build_path(path=None, query=None, **extra_query):
     # Urlencode the query parameters
     # Note: Look into a custom urlencode, with better unicode support
     if query:
-        query = "_json=" + binascii.hexlify(json.dumps(query))
+        query = "_json=" + hexlify(json.dumps(query))
 
     # Build url with new query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
@@ -91,6 +90,7 @@ def build_path(path=None, query=None, **extra_query):
 class Dispatcher(object):
     def __init__(self):
         self.registered_routes = {}
+        self.callback = None
 
     def __getitem__(self, route):
         return self.registered_routes[route]
@@ -120,7 +120,7 @@ class Dispatcher(object):
             # Check for required run method
             if hasattr(callback, "run"):
                 # Set the callback as the parent and the run method as the function to call
-                self.registered_routes[route] = (callback, callback.run)
+                self.registered_routes[route] = Route(callback, callback.run, callback)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
@@ -129,7 +129,7 @@ class Dispatcher(object):
             callback.is_folder = cls.is_folder
 
             # Register the callback
-            self.registered_routes[route] = (cls, callback)
+            self.registered_routes[route] = Route(cls, callback, callback)
 
         # Return original function undecorated
         return callback
@@ -138,13 +138,14 @@ class Dispatcher(object):
         """Dispatch to selected route path."""
         try:
             # Fetch the controling class and callback function/method
-            controller, callback = self[selector]
+            route = self[selector]
             logger.debug("Dispatching to route: '%s'", selector)
             execute_time = time.time()
+            self.callback = route.source
 
             # Initialize controller and execute callback
-            controller_ins = controller()
-            controller_ins.execute_route(callback)
+            controller_ins = route.controller()
+            controller_ins.execute_route(route.callback)
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
@@ -257,13 +258,13 @@ class Script(object):
     logger = base_logger
 
     def __init__(self):
-        self._title = self.params.pop(u"_title_", u"")
+        self._title = self.params.get(u"_title_", u"")
         self._callbacks = []
 
     def execute_route(self, callback):
         """Execute the callback function and process the results."""
-        logger.debug("Callback parameters: '%s'", self.params)
-        return callback(self, **self.params)
+        logger.debug("Callback parameters: '%s'", params.callback_params)
+        return callback(self, **params.callback_params)
 
     def register_callback(self, func, **kwargs):
         """

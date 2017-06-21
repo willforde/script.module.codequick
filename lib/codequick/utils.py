@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
+from binascii import unhexlify
 import urlparse
 import logging
+import json
 
 # Kodi imports
 import xbmc
@@ -44,6 +46,30 @@ class KodiLogHandler(logging.Handler):
             for msg in self.debug_msgs:
                 xbmc.log(msg, xbmc.LOGWARNING)
             xbmc.log("###### debug ######", xbmc.LOGWARNING)
+
+
+class Params(dict):
+    def __init__(self, _params):
+        super(Params, self).__init__()
+        self.callback_params = {}
+        self.support_params = {}
+        if _params:
+            # Decode params using json & binascii
+            if _params.startswith("_json="):
+                params = json.loads(unhexlify(_params[6:]))
+            else:
+                # Decode params using urlparse.parse_qs
+                params = parse_qs(_params)
+
+            # Initialize dict of params
+            super(Params, self).__init__(params)
+
+            # Construct separate dictionaries for callback and support params"""
+            for key, value in self.iteritems():
+                if key.startswith("_") and key.endswith("_"):
+                    self.support_params[key] = value
+                else:
+                    self.callback_params[key] = value
 
 
 class CacheProperty(object):

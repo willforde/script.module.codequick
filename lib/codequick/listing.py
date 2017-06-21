@@ -11,6 +11,7 @@ import xbmcgui
 
 # Package imports
 from .support import Script, build_path, logger_id
+from .api import dispatcher
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -46,6 +47,12 @@ strRelated = Script.localize(32903)  # 'related_videos'
 
 # Map quality values to it's related video resolution
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
+
+# Localized string Constants
+YOUTUBE_CHANNEL = 32901
+MOST_RECENT = 32902
+NEXT_PAGE = 33078
+SEARCH = 137
 
 
 class CommonDict(object):
@@ -102,6 +109,12 @@ class CommonDict(object):
         # Add keyword arguments to raw_dict
         for key, value in kwargs.items():
             self[key] = value
+
+    def __repr__(self):
+        return repr(self.raw_dict)
+
+    def __str__(self):
+        return str(self.raw_dict)
 
 
 class Art(CommonDict):
@@ -366,6 +379,14 @@ class Stream(CommonDict):
         if self.subtitle:
             self._listitem.addStreamInfo("subtitle", self.subtitle)
 
+    def __repr__(self):
+        data = {"audio": self.audio, "video": self.video, "subtitle": self.subtitle}
+        return repr(data)
+
+    def __str__(self):
+        data = {"audio": self.audio, "video": self.video, "subtitle": self.subtitle}
+        return str(data)
+
 
 class Context(list):
     def __init__(self, listitem):
@@ -567,7 +588,7 @@ class Listitem(object):
             path = build_path(path.route, self.params.raw_dict)
             isfolder = self._path.is_folder
         else:
-            path = path.encode("utf8") if isinstance(path, unicode) else path
+            path = path.encode("utf8") if isinstance(path, unicode) else str(path)
             self.listitem.setProperty("isplayable", "true" if path else "false")
             self.listitem.setProperty("folder", "false")
             isfolder = False
@@ -595,3 +616,124 @@ class Listitem(object):
 
         # Return a tuple compatible with 'xbmcplugin.addDirectoryItems'
         return path, self.listitem, isfolder
+
+    @classmethod
+    def add_item(cls, label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
+        """
+        Basic constructor to add a simple listitem.
+
+        :param label: The listitem's label.
+        :type label: str or unicode
+
+        :param callback: The callback function or playable path.
+        :type callback: :class:`types.FunctionType`
+
+        :param dict params: Dictionary of parameters that will be passed to the callback object.
+        :param dict info: Dictionary of listitem infoLabels.
+        :param dict art: Dictionary of listitem's art.
+        :param dict stream: Dictionary of stream details.
+        :param dict properties: Dictionary of listitem properties.
+        :param list context: List of context menu item(s) containing tuples of label/command pairs.
+
+        :return: A listitem object.
+        :rtype: :class:`codequick.Listitem`
+        """
+        # Create listitem instance
+        item = cls()
+        item.set_callback(callback)
+        item.set_label(label)
+
+        # Update listitem data
+        if params:
+            item.params.update(params)
+        if info:
+            item.info.update(info)
+        if art:
+            item.art.update(art)
+        if stream:
+            item.stream.update(stream)
+        if properties:
+            item.property.update(properties)
+        if context:
+            item.context.extend(context)
+
+        return item
+
+    @classmethod
+    def add_next(cls, **params):
+        """
+        A Listitem constructor for adding Next Page item.
+
+        :param params: (Optional) Keyword arguments of params that will be added to the current set of callback params.
+        """
+        # Fetch current set of callback params and add the extra params if any
+        base_params = Script.params.copy()
+        base_params["_updatelisting_"] = True
+        base_params["_nextpagecount_"] = Script.params.get("_nextpagecount_", 1) + 1
+
+        # Create listitem instance
+        item = cls()
+        label = u"%s %i" % (Script.localize(NEXT_PAGE), base_params["_nextpagecount_"])
+        item.set_label(label, u"[B]%s[/B]")
+        item.art.global_thumb(u"next.png")
+        item.params.update(base_params)
+        item.set_callback(dispatcher.callback, **params)
+        return item
+
+    @classmethod
+    def add_recent(cls, callback, **params):
+        """
+        A Listitem constructor for adding Recent Folder item.
+
+        :param callback: The callback function.
+        :type callback: :class:`types.FunctionType`
+
+        :param params: Keyword arguments of parameters that will be passed to the callback function.
+        """
+        # Create listitem instance
+        listitem = cls()
+        listitem.set_label(Script.localize(MOST_RECENT), u"[B]%s[/B]")
+        listitem.art.global_thumb(u"recent.png")
+        listitem.set_callback(callback, **params)
+        return listitem
+
+    @classmethod
+    def add_search(cls, callback, **params):
+        """
+        A Listitem constructor to add saved search Support to addon.
+
+        :param callback: Function that will be called when the listitem is activated.
+        :param params: Dictionary containing url querys to combine with search term.
+        """
+        listitem = cls()
+        listitem.set_label(Script.localize(SEARCH), u"[B]%s[/B]")
+        listitem.art.global_thumb(u"search.png")
+        listitem.set_callback(SavedSearches, route=callback.route, **params)
+        return listitem
+
+    @classmethod
+    def add_youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
+        """
+        A Listitem constructor to add a youtube channel to addon.
+
+        :param content_id: Channel name, channel id or playlist id to list videos from.
+        :type content_id: str or unicode
+
+        :param label: (Optional) Label of listitem. (default: '-Youtube Channel').
+        :type label: str or unicode
+
+        :param bool enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
+        :param bool wide_thumb: (Optional) True to use a wide thumbnail or False for normal thumbnail image (default).
+        """
+        # Youtube exists, Creating listitem link
+        item = cls()
+        item.set_label(label if label else Script.localize(YOUTUBE_CHANNEL), "[B]%s[/B]")
+        item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
+        item.params["contentid"] = content_id
+        item.params["enable_playlists"] = enable_playlists
+        item.set_callback(YTPlaylist)
+        return item
+
+
+from youtube import Playlist as YTPlaylist
+from .internal import SavedSearches
