@@ -37,6 +37,7 @@ logger = logging.getLogger("%s.support" % logger_id)
 # Named tuple for registered routes
 Route = namedtuple("Route", ["controller", "callback", "source"])
 
+# Extract calling arguments from sys args
 selector, handle, params = parse_sysargs()
 
 

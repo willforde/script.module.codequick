@@ -110,6 +110,12 @@ def parse_qs(qs):
 
 
 def parse_sysargs():
+    """
+    Extract calling arguments from system arguments.
+
+    :return: A tuple of (selector, handle, params)
+    :rtype: tuple
+    """
     # Check if running as a plugin
     if sys.argv[0].startswith("plugin://"):
         _, _, selector, _params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
