@@ -637,7 +637,7 @@ class APIControl(Route):
 
 @register_route
 class Playlist(APIControl):
-    def run(self, contentid, pagetoken=None, enable_playlists=True):
+    def run(self, contentid, pagetoken=None, enable_playlists=True, loop=False):
         """
         List all video within youtube playlist
 
@@ -650,24 +650,38 @@ class Playlist(APIControl):
         :param enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
         :type enable_playlists: bool
 
+        :param loop: (Optional) Return all the videos within playlist. (Default => False)
+        :type loop: bool
+
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
         """
         # Fetch channel uploads uuid
         playlist_id = self.validate_uuid(contentid, require_playlist=True)
+        all_listitems = []
 
-        # Fetch playlist feed
-        feed = self.api.playlist_items(playlist_id, pagetoken)
-        channel_list = []
-        video_list = []
+        while True:
+            # Fetch playlist feed
+            feed = self.api.playlist_items(playlist_id, pagetoken)
+            pagetoken = feed.get(u"nextPageToken")
+            channel_list = []
+            video_list = []
 
-        # Fetch video ids for all public videos
-        for item in feed[u"items"]:
-            channel_list.append(item[u"snippet"][u"channelId"])
-            video_list.append(item[u"snippet"][u"resourceId"][u"videoId"].encode("utf8"))
+            # Fetch video ids for all public videos
+            for item in feed[u"items"]:
+                channel_list.append(item[u"snippet"][u"channelId"])
+                video_list.append(item[u"snippet"][u"resourceId"][u"videoId"].encode("utf8"))
 
-        # Return the list of video listitems
-        return self.videos(channel_list, video_list, feed.get(u"nextPageToken"), enable_playlists)
+            if loop:
+                # Fetch the list of video listitems
+                listitems = self.videos(channel_list, video_list, enable_playlists=False)
+                all_listitems.extend(listitems)
+                # Return all listitems when no more page tokens are found
+                if not pagetoken:
+                    return all_listitems
+            else:
+                # Return the list of video listitems
+                return self.videos(channel_list, video_list, pagetoken, enable_playlists)
 
 
 @register_route
@@ -757,11 +771,10 @@ class Related(APIControl):
 
 
 @register_resolver
-def play_video(tools, video_id):
+def play_video(plugin, video_id):
     """
-    :type tools: :class:`codequick.PlayMedia`
-    :param tools: sdfsdf
-    :param unicode video_id: sdfasdf
+    :type plugin: :class:`codequick.PlayMedia`
+    :type video_id: unicode
     """
     url = "https://www.youtube.com/watch?v=%s" % video_id
-    return tools.extract_source(url)
+    return plugin.extract_source(url)
