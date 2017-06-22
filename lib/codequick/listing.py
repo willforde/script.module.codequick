@@ -621,15 +621,15 @@ class Listitem(object):
 
         Options::
 
-            label:            The listitem's label.
-            label_formatting: A % formated string with the formating to add to label.
-            callback:         The callback function or playable path.
-            params:           Dictionary of parameters that will be passed to the callback function.
-            info:             Dictionary of listitem infoLabels.
-            art:              Dictionary of listitem's art.
-            stream:           Dictionary of stream details.
-            property:         Dictionary of listitem properties.
-            context:          List of context menu item(s) containing tuples of label/command pairs.
+            label:      The listitem's label.
+            formatting: A % formated string with the formating to add to label.
+            callback:   The callback function or playable path.
+            params:     Dictionary of parameters that will be passed to the callback function.
+            info:       Dictionary of listitem infoLabels.
+            art:        Dictionary of listitem's art.
+            stream:     Dictionary of stream details.
+            property:   Dictionary of listitem properties.
+            context:    List of context menu item(s) containing tuples of label/command pairs.
 
         :type item_dict: dict
         :param item_dict: Dictionary of listitem values.

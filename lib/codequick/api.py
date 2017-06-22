@@ -224,6 +224,7 @@ class Resolver(Script):
         Create playlist for kodi and return back the first item of that playlist to play.
 
         :param list urls: Set of urls that will be used in the creation of the playlist.
+                          List may consist of url or listitem object.
 
         :returns The first listitem of the playlist.
         :rtype: :class:`xbmcgui.ListItem`:
@@ -234,18 +235,23 @@ class Resolver(Script):
 
         # Loop each item to create playlist
         for count, url in enumerate(urls, 1):
-            listitem = xbmcgui.ListItem()
-            if isinstance(url, (list, tuple)):
-                url, title = url
-                if isinstance(title, unicode):
-                    title = title.encode("utf8")
+            if isinstance(url, xbmcgui.ListItem):
+                listitem = url
+            elif isinstance(url, Listitem):
+                listitem = url.close()[1]
+            else:
+                listitem = xbmcgui.ListItem()
+                if isinstance(url, (list, tuple)):
+                    url, title = url
+                    if isinstance(title, unicode):
+                        title = title.encode("utf8")
 
-            # Create listitem with new title
-            listitem.setLabel("%s Part %i" % (title, count))
-            listitem.setPath(url)
+                # Create listitem with new title
+                listitem.setLabel("%s Part %i" % (title, count))
+                listitem.setPath(url)
 
             # Populate Playlis
-            playlist.add(url, listitem)
+            playlist.add(listitem.getPath(), listitem)
 
         # Return first playlist item to send to kodi
         return playlist[0]
@@ -254,7 +260,7 @@ class Resolver(Script):
         """ Construct playable listitem and send to kodi
 
         :param resolved: The resolved url to send back to kodi
-        :type resolved: str or unicode or :class:`xbmcgui.ListItem`
+        :type resolved: str or unicode or :class:`xbmcgui.ListItem` or :class:`codequick.Listitem`
         """
 
         # Create listitem object if resolved object is a string or unicode
@@ -269,6 +275,9 @@ class Resolver(Script):
         # Use resoleved as is if its already a listitem
         elif isinstance(resolved, xbmcgui.ListItem):
             listitem = resolved
+
+        elif isinstance(resolved, Listitem):
+            listitem = resolved.close()[1]
 
         # Invalid or No url was found
         elif resolved:
@@ -310,4 +319,4 @@ register_resolver = partial(dispatcher.register, cls=Resolver)
 register_resolver.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 # Now we can import the listing module
-from .listing import auto_sort
+from .listing import Listitem, auto_sort
