@@ -30,3 +30,8 @@ WARNING = 30
 ERROR = 40
 DEBUG = 10
 INFO = 20
+
+# Notification icon options
+NOTIFICATION_WARNING = 'warning'
+NOTIFICATION_ERROR = 'error'
+NOTIFICATION_INFO = 'info'
