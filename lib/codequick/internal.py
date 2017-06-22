@@ -31,6 +31,7 @@ class ViewModeSelecter(Script):
     Allowing for the selection of a view mode that will be force when
     displaying listitem content. Works with both video & folder views separately.
     """
+
     def __init__(self):
         super(ViewModeSelecter, self).__init__()
         self.skin_codes = [(self.localize(DEFAULT).encode("utf8"), "")]
@@ -152,6 +153,7 @@ class SavedSearches(Route):
     Usefull to add search support to addon that will also keep track of previous searches
     Also contains option via context menu to remove old search terms.
     """
+
     def __init__(self):
         super(SavedSearches, self).__init__()
 

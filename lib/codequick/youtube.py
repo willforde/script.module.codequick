@@ -240,6 +240,7 @@ class API(object):
 
 class APIControl(Route):
     """Class to control the access to the youtube API."""
+
     def __init__(self):
         super(APIControl, self).__init__()
 

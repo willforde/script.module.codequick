@@ -437,6 +437,7 @@ class Listitem(object):
         # Return the listitem object
         yield item
     """
+
     def __init__(self):
         self._path = ""
 
@@ -732,6 +733,7 @@ class Listitem(object):
         item.params["enable_playlists"] = enable_playlists
         item.set_callback(YTPlaylist)
         return item
+
 
 # Import callback functions required for listitem constructs
 from .youtube import Playlist as YTPlaylist

@@ -30,6 +30,7 @@ class PersistentDict(dict):
     :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool
     """
+
     def __init__(self, filename, data_dir=None, read_only=False):
         super(PersistentDict, self).__init__()
         self._filepath = os.path.join(data_dir if data_dir else profile_dir, filename)

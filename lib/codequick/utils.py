@@ -11,11 +11,11 @@ import sys
 import xbmc
 
 # Level mapper to convert logger levels to kodi logger levels
-log_level_map = {10: xbmc.LOGWARNING,    # logger.debug
-                 20: xbmc.LOGNOTICE,   # logger.info
+log_level_map = {10: xbmc.LOGWARNING,  # logger.debug
+                 20: xbmc.LOGNOTICE,  # logger.info
                  30: xbmc.LOGWARNING,  # logger.warning
-                 40: xbmc.LOGERROR,    # logger.error
-                 50: xbmc.LOGFATAL}    # logger.critical
+                 40: xbmc.LOGERROR,  # logger.error
+                 50: xbmc.LOGFATAL}  # logger.critical
 
 
 class KodiLogHandler(logging.Handler):
@@ -51,6 +51,7 @@ class KodiLogHandler(logging.Handler):
 
 class CacheProperty(object):
     """Caches the result of a function call on first access. Then saves result as an instance attribute."""
+
     def __init__(self, func):
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
