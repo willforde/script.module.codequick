@@ -5,6 +5,7 @@ from binascii import unhexlify
 import urlparse
 import logging
 import json
+import sys
 
 # Kodi imports
 import xbmc
@@ -48,6 +49,22 @@ class KodiLogHandler(logging.Handler):
             xbmc.log("###### debug ######", xbmc.LOGWARNING)
 
 
+class CacheProperty(object):
+    """Caches the result of a function call on first access. Then saves result as an instance attribute."""
+    def __init__(self, func):
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+        self._func = func
+
+    def __get__(self, instance, owner):
+        if instance:
+            attr = self._func(instance)
+            setattr(instance, self.__name__, attr)
+            return attr
+        else:
+            return self
+
+
 class Params(dict):
     def __init__(self, _params):
         super(Params, self).__init__()
@@ -72,22 +89,6 @@ class Params(dict):
                     self.callback_params[key] = value
 
 
-class CacheProperty(object):
-    """Caches the result of a function call on first access. Then saves result as an instance attribute."""
-    def __init__(self, func):
-        self.__name__ = func.__name__
-        self.__doc__ = func.__doc__
-        self._func = func
-
-    def __get__(self, instance, owner):
-        if instance:
-            attr = self._func(instance)
-            setattr(instance, self.__name__, attr)
-            return attr
-        else:
-            return self
-
-
 def parse_qs(qs):
     """
     Parse a urlencoded query string, and return the data as a dictionary.
@@ -106,6 +107,30 @@ def parse_qs(qs):
             raise ValueError("encountered duplicate param field name: '{}'".format(key))
 
     return params
+
+
+def parse_sysargs():
+    # Check if running as a plugin
+    if sys.argv[0].startswith("plugin://"):
+        _, _, selector, _params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
+        handle = int(sys.argv[1])
+
+    # Check if running as a script
+    elif len(sys.argv) == 2:
+        selector, _, _params = sys.argv[1].partition("?")
+        handle = -1
+    else:
+        # Only designed to work with parameters and no parameters are given
+        raise RuntimeError("No parameters found, unable to execute script")
+
+    # Set default selector if non is found
+    if not selector or selector == "/":
+        selector = "main.root"
+    elif selector.startswith("/"):
+        selector = selector[1:]
+
+    # Return parsed data
+    return selector, handle, Params(_params)
 
 
 def keyboard(heading, default="", hidden=False):

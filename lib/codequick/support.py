@@ -8,7 +8,6 @@ import logging
 import inspect
 import time
 import json
-import sys
 
 # Kodi imports
 import xbmcaddon
@@ -16,7 +15,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .utils import KodiLogHandler, Params
+from .utils import KodiLogHandler, parse_sysargs
 
 # Fetch addon data objects
 script_data = xbmcaddon.Addon("script.module.codequick")
@@ -38,27 +37,7 @@ logger = logging.getLogger("%s.support" % logger_id)
 # Named tuple for registered routes
 Route = namedtuple("Route", ["controller", "callback", "source"])
 
-# Check if running as a plugin
-if sys.argv[0].startswith("plugin://"):
-    _, _, selector, _params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
-    handle = int(sys.argv[1])
-
-# Check if running as a script
-elif len(sys.argv) == 2:
-    selector, _, _params = sys.argv[1].partition("?")
-    handle = -1
-else:
-    # Only designed to work with parameters and no parameters are given
-    raise RuntimeError("No parameters found, unable to execute script")
-
-# Set default selector if non is found
-if not selector or selector == "/":
-    selector = "main.root"
-elif selector.startswith("/"):
-    selector = selector[1:]
-
-# Parse parms using json or urlencoding
-params = Params(_params)
+selector, handle, params = parse_sysargs()
 
 
 def build_path(path=None, query=None, **extra_query):
