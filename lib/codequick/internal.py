@@ -14,7 +14,6 @@ from .api import register_route, Route, dispatcher, custom_route
 from .listing import Listitem
 from .utils import keyboard
 
-
 # Prerequisites
 ENTER_SEARCH_STRING = 16017
 ENTER_NUMBER = 611
