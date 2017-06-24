@@ -359,7 +359,7 @@ class Script(object):
 
         # Check if path needs to be translated first
         if resp[:10] == "special://":
-            return xbmc.translatePath(resp)
+            resp = xbmc.translatePath(resp)
 
         # Convert property into unicode
         return unicode(resp, "utf8")
