@@ -72,11 +72,10 @@ class Params(dict):
         self.callback_params = {}
         self.support_params = {}
         if _params:
-            # Decode params using json & binascii
+            # Decode params using json & binascii or urlparse.parse_qs
             if _params.startswith("_json="):
                 params = json.loads(unhexlify(_params[6:]))
             else:
-                # Decode params using urlparse.parse_qs
                 params = parse_qs(_params)
 
             # Initialize dict of params
