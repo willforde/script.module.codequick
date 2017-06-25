@@ -29,7 +29,7 @@ logger_id = plugin_id.replace(".", "-")
 base_logger = logging.getLogger(logger_id)
 base_logger.addHandler(KodiLogHandler())
 base_logger.propagate = False
-base_logger.setLevel(10)
+base_logger.setLevel(logging.DEBUG)
 
 # Logger specific to this module
 logger = logging.getLogger("%s.support" % logger_id)
