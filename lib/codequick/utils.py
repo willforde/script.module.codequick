@@ -132,7 +132,7 @@ def parse_sysargs():
 
     # Set default selector if non is found
     if not selector or selector == "/":
-        selector = "main.root"
+        selector = "root"
     elif selector.startswith("/"):
         selector = selector[1:]
 

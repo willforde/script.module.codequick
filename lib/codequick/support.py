@@ -89,6 +89,8 @@ class Dispatcher(object):
         """
         if custom_route:
             route = custom_route.lower()
+        elif callback.__name__.lower() == "root":
+            route = callback.__name__.lower()
         else:
             route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
 
