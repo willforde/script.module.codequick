@@ -8,6 +8,7 @@ import logging
 import inspect
 import time
 import json
+import re
 
 # Kodi imports
 import xbmcaddon
@@ -23,10 +24,10 @@ addon_data = xbmcaddon.Addon()
 
 # The id of the running addon
 plugin_id = addon_data.getAddonInfo("id")
-logger_id = plugin_id.replace(".", "-")
+logger_id = re.sub("[ .]", "-", addon_data.getAddonInfo("name"))
 
 # Base Logger
-base_logger = logging.getLogger(logger_id)
+base_logger = logging.getLogger()
 base_logger.addHandler(KodiLogHandler())
 base_logger.propagate = False
 base_logger.setLevel(logging.DEBUG)
