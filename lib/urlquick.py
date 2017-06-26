@@ -123,6 +123,9 @@ REDIRECT_CODES = (301, 302, 303, 307, 308)
 #: The default max age of the cache in seconds is used when no max age is given in request.
 MAX_AGE = 14400
 
+# Unique logger for this module
+logger = logging.getLogger("urlquick")
+
 
 class UrlError(IOError):
     """Base exception. All exceptions and errors will subclass from this."""
@@ -258,7 +261,7 @@ class CacheHandler(object):
         except OSError:
             pass
         else:
-            logging.debug("Removed cache: %s", cache_path)
+            logger.debug("Removed cache: %s", cache_path)
 
     @staticmethod
     def isfilefresh(cache_path, max_age):
@@ -285,11 +288,11 @@ class CacheHandler(object):
 
         # Check for conditional headers
         if u"Etag" in cached_headers:
-            logging.debug("Found conditional header: ETag = %s", cached_headers[u"ETag"])
+            logger.debug("Found conditional header: ETag = %s", cached_headers[u"ETag"])
             headers[u"If-none-match"] = cached_headers[u"ETag"]
 
         if u"Last-modified" in cached_headers:
-            logging.debug("Found conditional header: Last-Modified = %s", cached_headers[u"Last-modified"])
+            logger.debug("Found conditional header: Last-Modified = %s", cached_headers[u"Last-modified"])
             headers[u"If-modified-since"] = cached_headers[u"Last-Modified"]
 
     def update(self, headers, body, status, reason, version=11, strict=True):
@@ -318,11 +321,11 @@ class CacheHandler(object):
                 json_data = _json.load(stream)
 
         except (IOError, OSError):
-            logging.exception("Cache Error: Failed to read cached response.")
+            logger.exception("Cache Error: Failed to read cached response.")
             return None
 
         except TypeError:
-            logging.exception("Cache Error: Failed to deserialize cached response.")
+            logger.exception("Cache Error: Failed to deserialize cached response.")
             return None
 
         # Decode body content using base64
@@ -340,11 +343,11 @@ class CacheHandler(object):
                 _json.dump(response, stream, indent=4, separators=(",", ":"))
 
         except (IOError, OSError):
-            logging.exception("Cache Error: Failed to write response to cache.")
+            logger.exception("Cache Error: Failed to write response to cache.")
             self.delete(self.cache_path)
 
         except TypeError:
-            logging.exception("Cache Error: Failed to serialize response.")
+            logger.exception("Cache Error: Failed to serialize response.")
             self.delete(self.cache_path)
 
     def __bool__(self):
@@ -409,20 +412,20 @@ class CacheAdapter(object):
         self.__cache = cache = CacheHandler(url_hash, max_age)
         if cache:
             if method in ("PUT", "DELETE"):
-                logging.debug("Cache purged, %s request invalidates cache", method)
+                logger.debug("Cache purged, %s request invalidates cache", method)
                 cache.delete(cache.cache_path)
 
             elif cache.isfresh():
-                logging.debug("Cache is fresh, returning cached response")
+                logger.debug("Cache is fresh, returning cached response")
                 return cache.response
 
             else:
-                logging.debug("Cache is stale, checking for conditional headers")
+                logger.debug("Cache is stale, checking for conditional headers")
                 cache.add_conditional_headers(headers)
 
     def handle_response(self, method, status, callback):
         if status == 304:
-            logging.debug("Server return 304 Not Modified response, using cached response")
+            logger.debug("Server return 304 Not Modified response, using cached response")
             callback()
             self.__cache.reset_timestamp()
             return self.__cache.response
@@ -430,7 +433,7 @@ class CacheAdapter(object):
         # Cache any cachable response
         elif status in CACHEABLE_CODES and method.upper() in CACHEABLE_METHODS:
             response = callback()
-            logging.debug("Caching %s %s response", status, response[3])
+            logger.debug("Caching %s %s response", status, response[3])
 
             # Save response to cache and return the cached response
             self.__cache.update(*response)
@@ -977,6 +980,18 @@ class Session(ConnectionManager):
         # Fetch max age of cache
         max_age = (-1 if self.max_age is None else self.max_age) if max_age is None else max_age
 
+        logger.debug("Requesting resource: %s", url)
+        if req_params:
+            logger.debug("Request params: %s", req_params)
+        if req_headers:
+            logger.debug("Request headers: %s", req_headers)
+        if req_cookies:
+            logger.debug("Request cookies: %s", req_cookies)
+        if json:
+            logger.debug("Request json: %s", req_cookies)
+        if data:
+            logger.debug("Request data: %s", data)
+
         # Parse url into it's individual components including params if given
         req = Request(method, url, req_headers, data, json, req_params, req_cookies)
 
@@ -1011,7 +1026,7 @@ class Session(ConnectionManager):
                     req = Request(req.method, location, req_headers, req.data, referer=req.url)
                 else:
                     req = Request(u"GET", location, req_headers, referer=req.url)
-                logging.debug("Redirecting to = %s", unquote(req.url))
+                logger.debug("Redirecting to = %s", unquote(req.url))
 
             # And Authorization Credentials if needed
             elif auth and resp.status_code == 401 and u"Authorization" not in req.headers:
