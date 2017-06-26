@@ -53,12 +53,6 @@ class API(object):
         if "id" in query and hasattr(query["id"], '__iter__'):
             query["id"] = u",".join(query["id"])
 
-        # Log the query debug log
-        logger.debug("Youtube API Params for resource: '%s'", api_type)
-        for key, value in query.iteritems():
-            if key != "key":
-                logger.debug("--- %-11s = %s", key, value)
-
         # Download the resource from the youtube v3 api
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
         source = self.req_session.get(url, params=query)
