@@ -238,7 +238,7 @@ class Script(object):
     setting = Settings()
 
     #: Underlining logger object, for advanced use.
-    logger = base_logger
+    logger = logging.getLogger(logger_id)
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
@@ -276,8 +276,7 @@ class Script(object):
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
 
-    @staticmethod
-    def log(msg, *args, **kwargs):
+    def log(self, msg, *args, **kwargs):
         """
         Logs a message with logging level 'lvl'.
 
@@ -299,7 +298,7 @@ class Script(object):
                        If not given, logging level will default to debug.
         """
         lvl = kwargs.pop("lvl", 10)
-        base_logger.log(lvl, msg, *args, **kwargs)
+        self.logger.log(lvl, msg, *args, **kwargs)
 
     @staticmethod
     def notify(heading, message, icon="info", display_time=5000, sound=True):
