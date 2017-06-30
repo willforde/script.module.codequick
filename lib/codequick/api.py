@@ -41,9 +41,9 @@ class Route(Script):
         listitems = super(Route, self).execute_route(callback)
 
         # Process listitems and close
-        self.__add_listitems(listitems)
+        success = self.__add_listitems(listitems)
         self.__add_sort_methods(self._manual_sort)
-        self.__end_directory(True)
+        self.__end_directory(success)
 
     def __add_listitems(self, raw_listitems):
         if not raw_listitems:
@@ -59,13 +59,13 @@ class Route(Script):
                 if listitem_tuple[2]:
                     folder_counter += 1
 
-        # Pass the listitems and relevant data to kodi
-        xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
-
         # Guess if this directory listing is primarily a folder or a video listing.
         # Listings will be considered to be a folder if more that half the listitems are folder items.
         isfolder = folder_counter > (len(listitems) / 2)
         self.__content_type(isfolder)
+
+        # Pass the listitems and relevant data to kodi
+        return xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
 
     def __content_type(self, isfolder):
         """Guess content type and set kodi parameters, setContent & SetViewMode"""
