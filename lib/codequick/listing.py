@@ -612,6 +612,7 @@ class Listitem(object):
             self.stream.close()
 
         # Close common datasets
+        self.listitem.setPath(path)
         self.property.close()
         self.context.close()
         self.info.close()
