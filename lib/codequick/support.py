@@ -93,7 +93,7 @@ class Dispatcher(object):
         elif callback.__name__.lower() == "root":
             route = callback.__name__.lower()
         else:
-            route = "{}.{}".format(callback.__module__.strip("_"), callback.__name__).lower()
+            route = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
         if route in self.registered_routes:
             raise ValueError("encountered duplicate route: '{}'".format(route))
