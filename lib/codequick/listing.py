@@ -19,7 +19,10 @@ logger = logging.getLogger("%s.listitem" % logger_id)
 # Listitem art locations
 local_image = os.path.join(Script.get_info("path"), u"resources", u"media", u"%s").encode("utf8")
 global_image = os.path.join(Script.get_info("path_global"), u"resources", u"media", u"%s").encode("utf8")
-fanart = Script.get_info("fanart").encode("utf8")
+
+# Fanart image location if exists
+_fanart = Script.get_info("fanart")
+fanart = _fanart if os.path.exists(_fanart) else None
 
 # Stream type map the ensure proper stream value types
 stream_type_map = {"duration": int,
@@ -56,8 +59,8 @@ SEARCH = 137
 
 
 class CommonDict(object):
-    def __init__(self, **kwargs):
-        self.raw_dict = kwargs
+    def __init__(self):
+        self.raw_dict = {}
         """dict: The underlining raw dictionary, for advanced use."""
 
     def __getitem__(self, key):
@@ -119,7 +122,7 @@ class CommonDict(object):
 
 class Art(CommonDict):
     def __init__(self, listitem):
-        super(Art, self).__init__(fanart=fanart)
+        super(Art, self).__init__()
         self._listitem = listitem
 
     def __setitem__(self, key, value):
@@ -161,6 +164,10 @@ class Art(CommonDict):
         self.raw_dict["thumb"] = global_image % (image.encode("utf8") if isinstance(image, unicode) else str(image))
 
     def clsoe(self):
+        # Add fanart if don't already exists
+        if fanart and "fanart" not in self.raw_dict:
+            self.raw_dict["fanart"] = fanart.encode("utf8")
+
         self._listitem.setArt(self.raw_dict)
 
 
