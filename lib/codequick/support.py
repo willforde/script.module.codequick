@@ -62,7 +62,7 @@ def build_path(path=None, query=None, **extra_query):
     # Urlencode the query parameters
     # Note: Look into a custom urlencode, with better unicode support
     if query:
-        query = "_json=" + hexlify(json.dumps(query))
+        query = "_json_=" + hexlify(json.dumps(query))
 
     # Build url with new query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))

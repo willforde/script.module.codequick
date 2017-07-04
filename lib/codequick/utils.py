@@ -73,8 +73,8 @@ class Params(dict):
         self.support_params = {}
         if _params:
             # Decode params using json & binascii or urlparse.parse_qs
-            if _params.startswith("_json="):
-                params = json.loads(unhexlify(_params[6:]))
+            if _params.startswith("_json_="):
+                params = json.loads(unhexlify(_params[7:]))
             else:
                 params = parse_qs(_params)
 
