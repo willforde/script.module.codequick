@@ -418,7 +418,8 @@ class Context(list):
         self.append((label, command))
 
     def close(self):
-        self._listitem.addContextMenuItems(self)
+        if self:
+            self._listitem.addContextMenuItems(self)
 
 
 class Listitem(object):
