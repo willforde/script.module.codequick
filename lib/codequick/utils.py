@@ -11,7 +11,7 @@ import sys
 import xbmc
 
 # Level mapper to convert logger levels to kodi logger levels
-log_level_map = {10: xbmc.LOGWARNING,  # logger.debug
+log_level_map = {10: xbmc.LOGDEBUG,  # logger.debug
                  20: xbmc.LOGNOTICE,  # logger.info
                  30: xbmc.LOGWARNING,  # logger.warning
                  40: xbmc.LOGERROR,  # logger.error
