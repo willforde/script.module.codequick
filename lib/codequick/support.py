@@ -36,7 +36,7 @@ base_logger.setLevel(logging.DEBUG)
 logger = logging.getLogger("%s.support" % logger_id)
 
 # Named tuple for registered routes
-Route = namedtuple("Route", ["controller", "callback", "source"])
+Route = namedtuple("Route", ["controller", "callback", "org_callback"])
 
 # Extract calling arguments from sys args
 selector, handle, params = parse_sysargs()
@@ -124,7 +124,9 @@ class Dispatcher(object):
             route = self[selector]
             logger.debug("Dispatching to route: '%s'", selector)
             execute_time = time.time()
-            self.callback = route.source
+
+            # The original callback function/class, primarily used by the 'Listitem.next_page' constructor
+            self.callback = route.org_callback
 
             # Initialize controller and execute callback
             controller_ins = route.controller()
