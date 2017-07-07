@@ -626,7 +626,7 @@ class APIControl(Route):
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb(u"youtube.png")
-            item.set_callback(Playlists, contentid=channel_ids[0])
+            item.set_callback(Playlists, contentid=channel_ids[0], show_all=False)
             yield item
 
 
@@ -681,14 +681,14 @@ class Playlist(APIControl):
 
 @register_route
 class Playlists(APIControl):
-    def run(self, content_id, show_all=False):
+    def run(self, content_id, show_all=True):
         """
         List all playlist for giving channel
 
         :param content_id: Channel uuid or channel name to list playlists for
         :type content_id: unicode
 
-        :param show_all: (Optional) Add link to all of the channels videos if True. (default => False)
+        :param show_all: (Optional) Add link to all of the channels videos if True. (default => True)
         :type show_all: bool
 
         :returns: A generator of listitems.
