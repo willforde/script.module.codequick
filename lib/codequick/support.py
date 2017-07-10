@@ -42,7 +42,7 @@ Route = namedtuple("Route", ["controller", "callback", "org_callback"])
 selector, handle, params = parse_sysargs()
 
 
-def build_path(path=selector, query=None, **extra_query):
+def build_path(path=None, query=None, **extra_query):
     """
     Build addon url that can be parsed to kodi for kodi to call the next set of listings.
     
@@ -65,7 +65,7 @@ def build_path(path=selector, query=None, **extra_query):
         query = "_json_=" + hexlify(json.dumps(query))
 
     # Build url with new query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path, query, ""))
+    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
 
 
 class Dispatcher(object):
@@ -118,6 +118,7 @@ class Dispatcher(object):
             # Add listing type's to callback
             callback.is_playable = cls.is_playable
             callback.is_folder = cls.is_folder
+            callback.controller = cls
 
             # Register the callback
             self.registered_routes[route] = Route(cls, callback, callback)
