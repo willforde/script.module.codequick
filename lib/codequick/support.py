@@ -42,7 +42,7 @@ Route = namedtuple("Route", ["controller", "callback", "org_callback"])
 selector, handle, params = parse_sysargs()
 
 
-def build_path(path=None, query=None, **extra_query):
+def build_path(path=selector, query=None, **extra_query):
     """
     Build addon url that can be parsed to kodi for kodi to call the next set of listings.
     
@@ -65,19 +65,27 @@ def build_path(path=None, query=None, **extra_query):
         query = "_json_=" + hexlify(json.dumps(query))
 
     # Build url with new query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
+    return urlparse.urlunsplit(("plugin", plugin_id, path, query, ""))
 
 
 class Dispatcher(object):
     def __init__(self):
         self.registered_routes = {}
-        self.callback = None
 
     def __getitem__(self, route):
         return self.registered_routes[route]
 
     def __missing__(self, route):
         raise KeyError("missing required route: '{}'".format(route))
+
+    @property
+    def callback(self):
+        """
+        The original callback function/class.
+
+        Primarily used by 'Listitem.next_page' constructor.
+        """
+        return self[selector].org_callback
 
     def register(self, callback, cls=None, custom_route=None):
         """
@@ -124,9 +132,6 @@ class Dispatcher(object):
             route = self[selector]
             logger.debug("Dispatching to route: '%s'", selector)
             execute_time = time.time()
-
-            # The original callback function/class, primarily used by the 'Listitem.next_page' constructor
-            self.callback = route.org_callback
 
             # Initialize controller and execute callback
             controller_ins = route.controller()
@@ -241,6 +246,9 @@ class Script(object):
 
     #: Underlining logger object, for advanced use.
     logger = logging.getLogger(logger_id)
+
+    #: Handle the add-on was started with, for advanced use.
+    handle = handle
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")

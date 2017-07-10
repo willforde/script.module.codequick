@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import Dispatcher, Script, build_path, handle, logger_id
+from .support import Dispatcher, Script, build_path, logger_id
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -65,16 +65,16 @@ class Route(Script):
         self.__content_type(isfolder)
 
         # Pass the listitems and relevant data to kodi
-        return xbmcplugin.addDirectoryItems(handle, listitems, len(listitems))
+        return xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
 
     def __content_type(self, isfolder):
         """Guess content type and set kodi parameters, setContent & SetViewMode"""
 
         # Set the add-on content type
-        xbmcplugin.setContent(handle, "albums")
+        xbmcplugin.setContent(self.handle, "albums")
 
         # Sets the category for skins to display modes.
-        xbmcplugin.setPluginCategory(handle, re.sub("\(\d+\)$", "", self._title).strip())
+        xbmcplugin.setPluginCategory(self.handle, re.sub("\(\d+\)$", "", self._title).strip())
 
         # Change preferred view mode if one was set for given content type
         set_key = "{}.{}.view".format(xbmc.getSkinDir(), "folder" if isfolder else "video")
@@ -91,14 +91,14 @@ class Route(Script):
             # Sort the list of sort methods before adding to kodi
             _addSortMethod = xbmcplugin.addSortMethod
             for sortMethod in sorted(manual):
-                _addSortMethod(handle, sortMethod)
+                _addSortMethod(self.handle, sortMethod)
         else:
             # If no sortmethods are given then set sort mehtod to unsorted
-            xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_UNSORTED)
+            xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_UNSORTED)
 
     def __end_directory(self, success):
         """Mark the end of directory listings."""
-        xbmcplugin.endOfDirectory(handle, success, self.update_listing, False)
+        xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, False)
 
     def add_sort_methods(self, *methods, **override):
         """
@@ -286,7 +286,7 @@ class Resolver(Script):
             raise ValueError("resolver failed to return url")
 
         # Send playable listitem to kodi
-        xbmcplugin.setResolvedUrl(handle, True, listitem)
+        xbmcplugin.setResolvedUrl(self.handle, True, listitem)
 
 
 def custom_route(path, parent=None):
