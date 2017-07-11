@@ -106,19 +106,33 @@ class Dispatcher(object):
         if route in self.registered_routes:
             raise ValueError("encountered duplicate route: '{}'".format(route))
 
+        # Method to allow callbacks to be easily called from unittests
+        # Parent argument will be auto instantiated and passed to callback
+        def test_call(*args, **kwargs):
+            # Change the selector to match callback route
+            # This will ensure that the plugin paths are currect
+            global selector
+            selector = route
+
+            # Instantiate the parent
+            test_route = self[selector]
+            controller_ins = test_route.controller()
+            return test_route.callback(controller_ins, *args, **kwargs)
+
         callback.route = route
         if inspect.isclass(callback):
             # Check for required run method
             if hasattr(callback, "run"):
                 # Set the callback as the parent and the run method as the function to call
                 self.registered_routes[route] = Route(callback, callback.run, callback)
+                callback.testcall = staticmethod(test_call)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Add listing type's to callback
             callback.is_playable = cls.is_playable
             callback.is_folder = cls.is_folder
-            callback.controller = cls
+            callback.testcall = test_call
 
             # Register the callback
             self.registered_routes[route] = Route(cls, callback, callback)
