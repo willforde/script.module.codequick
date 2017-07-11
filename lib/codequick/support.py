@@ -112,12 +112,16 @@ class Dispatcher(object):
             # Change the selector to match callback route
             # This will ensure that the plugin paths are currect
             global selector
+            org_selector = selector
             selector = route
 
             # Instantiate the parent
             test_route = self[selector]
             controller_ins = test_route.controller()
-            return test_route.callback(controller_ins, *args, **kwargs)
+            try:
+                return test_route.callback(controller_ins, *args, **kwargs)
+            finally:
+                selector = org_selector
 
         callback.route = route
         if inspect.isclass(callback):
