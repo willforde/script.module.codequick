@@ -10,7 +10,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .support import Script, build_path, logger_id, dispatcher
+from .support import Script, build_path, logger_id, dispatcher, auto_sort
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -31,8 +31,8 @@ stream_type_map = {"duration": int,
                    "width": int}
 
 # Listing sort methods & sort mappings
-auto_sort = {xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE}
-sort_map = {"size": (xbmcplugin.SORT_METHOD_SIZE, long),
+sort_map = {"title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
+            "size": (xbmcplugin.SORT_METHOD_SIZE, long),
             "date": (xbmcplugin.SORT_METHOD_DATE, None),
             "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
             "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),

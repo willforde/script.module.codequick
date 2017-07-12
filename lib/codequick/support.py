@@ -11,6 +11,7 @@ import json
 import re
 
 # Kodi imports
+import xbmcplugin
 import xbmcaddon
 import xbmcgui
 import xbmc
@@ -40,6 +41,9 @@ Route = namedtuple("Route", ["controller", "callback", "org_callback"])
 
 # Extract calling arguments from sys args
 selector, handle, params = parse_sysargs()
+
+# Listing auto sort methods
+auto_sort = set()
 
 
 def build_path(path=None, query=None, **extra_query):
@@ -115,6 +119,15 @@ class Dispatcher(object):
             org_selector = selector
             selector = route
 
+            # Update support params with the params
+            # that are to be passed to callback
+            params.update(kwargs)
+            if args:
+                # Maps the callback arg names to positional arguments
+                callback_args = inspect.getargspec(callback).args
+                arg_map = zip(callback_args, args)
+                params.update(arg_map)
+
             # Instantiate the parent
             test_route = self[selector]
             controller_ins = test_route.controller()
@@ -122,6 +135,8 @@ class Dispatcher(object):
                 return test_route.callback(controller_ins, *args, **kwargs)
             finally:
                 selector = org_selector
+                auto_sort.clear()
+                params.clear()
 
         callback.route = route
         if inspect.isclass(callback):
