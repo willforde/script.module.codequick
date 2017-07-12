@@ -11,7 +11,6 @@ import json
 import re
 
 # Kodi imports
-import xbmcplugin
 import xbmcaddon
 import xbmcgui
 import xbmc
@@ -112,6 +111,7 @@ class Dispatcher(object):
 
         # Method to allow callbacks to be easily called from unittests
         # Parent argument will be auto instantiated and passed to callback
+        # This basically acts as a constructor to callback
         def test_call(*args, **kwargs):
             # Change the selector to match callback route
             # This will ensure that the plugin paths are currect
@@ -132,8 +132,10 @@ class Dispatcher(object):
             test_route = self[selector]
             controller_ins = test_route.controller()
             try:
+                # Now we are ready to call the callback and return its results
                 return test_route.callback(controller_ins, *args, **kwargs)
             finally:
+                # Reset global datasets
                 selector = org_selector
                 auto_sort.clear()
                 params.clear()
