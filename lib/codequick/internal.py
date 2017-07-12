@@ -8,9 +8,9 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import Script
+from .support import Script, dispatcher
 from .storage import PersistentDict
-from .api import register_route, Route, dispatcher, custom_route
+from .api import register_route, Route, custom_route
 from .listing import Listitem
 from .utils import keyboard
 

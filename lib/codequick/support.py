@@ -414,3 +414,6 @@ class Script(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
+
+# Dispatcher to manage route callbacks
+dispatcher = Dispatcher()

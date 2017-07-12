@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import Dispatcher, Script, build_path, logger_id
+from .support import dispatcher, Script, build_path, logger_id
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -298,10 +298,6 @@ def custom_route(path, parent=None):
     :returns: A preconfigured register decorator.
     """
     return partial(dispatcher.register, cls=parent, custom_route=path)
-
-
-# Dispatcher to manage route callbacks
-dispatcher = Dispatcher()
 
 # Convenience function to call dispatcher
 run = dispatcher.dispatch
