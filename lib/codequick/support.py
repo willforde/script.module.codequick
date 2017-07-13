@@ -46,10 +46,16 @@ selector, handle, params = parse_sysargs()
 auto_sort = set()
 
 
-# Function to allow callbacks to be easily called from unittests
-# Parent argument will be auto instantiated and passed to callback
-# This basically acts as a constructor to callback
 def unittest_caller(route, *args, **kwargs):
+    """
+    Function to allow callbacks to be easily called from unittests.
+    Parent argument will be auto instantiated and passed to callback.
+    This basically acts as a constructor to callback.
+
+    :param str route: The route path to callback.
+    :param args: Positional arguments to pass to callback.
+    :param kwargs: Keyword arguments to pass to callback.
+    """
     # Change the selector to match callback route
     # This will ensure that the plugin paths are currect
     global selector
