@@ -106,14 +106,15 @@ def build_path(path=None, query=None, **extra_query):
 
 
 class Route(object):
-    __slots__ = ("parent", "callback", "org_callback", "is_playable", "is_folder", "path")
+    """Handle callback route data like is_playable and path."""
+    __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
 
     def __init__(self, parent, callback, org_callback, path):
-        self.parent = parent
-        self.callback = callback
-        self.org_callback = org_callback
         self.is_playable = parent.is_playable
         self.is_folder = parent.is_folder
+        self.org_callback = org_callback
+        self.callback = callback
+        self.parent = parent
         self.path = path
 
     def args_to_kwargs(self, args):
