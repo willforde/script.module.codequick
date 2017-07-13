@@ -10,7 +10,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .support import Script, build_path, logger_id, dispatcher, auto_sort, args_to_kwargs
+from .support import Script, build_path, logger_id, dispatcher, auto_sort
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -413,7 +413,7 @@ class Context(list):
         :param callback: The function that will be called when menu item is activated.
         :param query: (Optional) Keyword arguments that will be passed on to callback function.
         """
-        command = "XBMC.Container.Update(%s)" % build_path(callback.route, query)
+        command = "XBMC.Container.Update(%s)" % build_path(callback.route.path, query)
         self.append((label, command))
 
     def close(self):
@@ -580,7 +580,7 @@ class Listitem(object):
         """
         if args:
             # Convert positional arguments to keyword arguments
-            args_map = args_to_kwargs(callback, args)
+            args_map = callback.route.args_to_kwargs(args)
             kwargs.update(args_map)
 
         self._path = callback
@@ -590,10 +590,10 @@ class Listitem(object):
     def close(self):
         path = self._path
         if hasattr(path, "route"):
-            self.listitem.setProperty("isplayable", str(path.is_playable).lower())
-            self.listitem.setProperty("folder", str(path.is_folder).lower())
-            path = build_path(path.route, self.params.raw_dict)
-            isfolder = self._path.is_folder
+            self.listitem.setProperty("isplayable", str(path.route.is_playable).lower())
+            self.listitem.setProperty("folder", str(path.route.is_folder).lower())
+            path = build_path(path.route.path, self.params.raw_dict)
+            isfolder = self._path.route.is_folder
         else:
             path = path.encode("utf8") if isinstance(path, unicode) else str(path)
             self.listitem.setProperty("isplayable", "true" if path else "false")

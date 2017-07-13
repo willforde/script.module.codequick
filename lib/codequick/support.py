@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
-from collections import namedtuple
 from functools import partial
 from binascii import hexlify
 import urlparse
@@ -36,28 +35,11 @@ base_logger.setLevel(logging.DEBUG)
 # Logger specific to this module
 logger = logging.getLogger("%s.support" % logger_id)
 
-# Named tuple for registered routes
-Route = namedtuple("Route", ["controller", "callback", "org_callback"])
-
 # Extract calling arguments from sys args
 selector, handle, params = parse_sysargs()
 
 # Listing auto sort methods
 auto_sort = set()
-
-
-def args_to_kwargs(callback, args):
-    """
-    Convert positional arguments to keyword arguments.
-
-    :param callback: Callback object to extract positional arguments names from.
-    :param tuple args: List of positional arguments to extract names for.
-
-    :returns: A list of tuples consisten of ('arg name', 'arg value)'.
-    :rtype: list
-    """
-    callback_args = inspect.getargspec(callback).args[1:]
-    return zip(callback_args, args)
 
 
 def unittest_caller(route, *args, **kwargs):
@@ -66,7 +48,8 @@ def unittest_caller(route, *args, **kwargs):
     Parent argument will be auto instantiated and passed to callback.
     This basically acts as a constructor to callback.
 
-    :param str route: The route path to callback.
+    :type route: Route
+    :param route: The route path to callback.
     :param args: Positional arguments to pass to callback.
     :param kwargs: Keyword arguments to pass to callback.
     """
@@ -74,22 +57,21 @@ def unittest_caller(route, *args, **kwargs):
     # This will ensure that the plugin paths are currect
     global selector
     org_selector = selector
-    selector = route
+    selector = route.path
 
     # Instantiate the parent
-    test_route = dispatcher[route]
-    controller_ins = test_route.controller()
+    controller_ins = route.parent()
 
     # Update support params with the params
     # that are to be passed to callback
     params.update(kwargs)
     if args:
-        arg_map = args_to_kwargs(test_route.callback, args)
+        arg_map = route.args_to_kwargs(args)
         params.update(arg_map)
 
     try:
         # Now we are ready to call the callback and return its results
-        return test_route.callback(controller_ins, *args, **kwargs)
+        return route.callback(controller_ins, *args, **kwargs)
     finally:
         # Reset global datasets
         selector = org_selector
@@ -123,11 +105,35 @@ def build_path(path=None, query=None, **extra_query):
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
 
 
+class Route(object):
+    __slots__ = ("parent", "callback", "org_callback", "is_playable", "is_folder", "path")
+
+    def __init__(self, parent, callback, org_callback, path):
+        self.parent = parent
+        self.callback = callback
+        self.org_callback = org_callback
+        self.is_playable = parent.is_playable
+        self.is_folder = parent.is_folder
+        self.path = path
+
+    def args_to_kwargs(self, args):
+        """
+        Convert positional arguments to keyword arguments.
+
+        :param tuple args: List of positional arguments to extract names for.
+        :returns: A list of tuples consisten of ('arg name', 'arg value)'.
+        :rtype: list
+        """
+        callback_args = inspect.getargspec(self.callback).args[1:]
+        return zip(callback_args, args)
+
+
 class Dispatcher(object):
     def __init__(self):
         self.registered_routes = {}
 
     def __getitem__(self, route):
+        """:rtype: Route"""
         return self.registered_routes[route]
 
     def __missing__(self, route):
@@ -149,39 +155,34 @@ class Dispatcher(object):
         :param callback: The callback function.
         :param cls: (Optional) Parent class that will handle the callback, if registering a function.
         :param str custom_route: A custom route used for mapping.
-        :returns: The callback function with extra attributes added, 'is_playable', 'is_folder' and 'route'.
+        :returns: The callback function with extra attributes added, 'route', 'testcall'.
         """
         if custom_route:
-            route = custom_route.lower()
+            path = custom_route.lower()
         elif callback.__name__.lower() == "root":
-            route = callback.__name__.lower()
+            path = callback.__name__.lower()
         else:
-            route = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
+            path = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
-        if route in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(route))
+        if path in self.registered_routes:
+            raise ValueError("encountered duplicate route: '{}'".format(path))
 
-        callback.route = route
-        unittester = partial(unittest_caller, route)
-
-        if inspect.isclass(callback):
-            # Check for required run method
+        # Register a class callback
+        elif inspect.isclass(callback):
             if hasattr(callback, "run"):
                 # Set the callback as the parent and the run method as the function to call
-                self.registered_routes[route] = Route(callback, callback.run, callback)
-                callback.testcall = staticmethod(unittester)
+                route = Route(callback, callback.run, callback, path)
+                callback.testcall = staticmethod(partial(unittest_caller, route))
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
-            # Add listing type's to callback
-            callback.is_playable = cls.is_playable
-            callback.is_folder = cls.is_folder
-            callback.testcall = unittester
-
-            # Register the callback
-            self.registered_routes[route] = Route(cls, callback, callback)
+            # Register a function callback
+            route = Route(cls, callback, callback, path)
+            callback.testcall = partial(unittest_caller, route)
 
         # Return original function undecorated
+        self.registered_routes[path] = route
+        callback.route = route
         return callback
 
     def dispatch(self):
@@ -193,7 +194,7 @@ class Dispatcher(object):
             execute_time = time.time()
 
             # Initialize controller and execute callback
-            controller_ins = route.controller()
+            controller_ins = route.parent()
             controller_ins.execute_route(route.callback)
         except Exception as e:
             # Log the error in both the gui and the kodi log file
@@ -454,6 +455,7 @@ class Script(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
+
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
