@@ -4,6 +4,7 @@
 from time import strptime, strftime
 import logging
 import os
+import re
 
 # Kodi imports
 import xbmcplugin
@@ -547,25 +548,24 @@ class Listitem(object):
         http://kodi.wiki/view/List_of_Built_In_Functions
         """
 
-    def set_label(self, label, formating=None):
+    @property
+    def label(self):
+        """The listitem label."""
+        return self.listitem.getLabel()
+
+    @label.setter
+    def label(self, label):
         """
         Sets the listitem's label.
 
-        Formating is used to change format of the lable e.g. bold, italic or color.
-
-        Exampls:
-        Bold = item.set_label("label", "[B]%s[/B]")
-        Italic = item.set_label("label", "[I]%s[/I]")
-        Color = item.set_label("label", "[COLOR red]%s[/COLOR]")
-
         Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
 
-        :param label: The label to give to the listitem
-        :param formating: A % formated string with the formating to add to label.
+        :param label: The label of the listitem.
         """
-        self.listitem.setLabel(formating % label if formating else label)
-        self.params["_title_"] = label
-        self.info["title"] = label
+        self.listitem.setLabel(label)
+        clean_label = re.sub("\[[^\]]+?\]", "", label)
+        self.params["_title_"] = clean_label
+        self.info["title"] = clean_label
 
     def set_callback(self, callback, *args, **kwargs):
         """
