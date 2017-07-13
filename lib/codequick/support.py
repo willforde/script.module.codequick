@@ -2,6 +2,7 @@
 
 # Standard Library Imports
 from collections import namedtuple
+from functools import partial
 from binascii import hexlify
 import urlparse
 import logging
@@ -43,6 +44,39 @@ selector, handle, params = parse_sysargs()
 
 # Listing auto sort methods
 auto_sort = set()
+
+
+# Function to allow callbacks to be easily called from unittests
+# Parent argument will be auto instantiated and passed to callback
+# This basically acts as a constructor to callback
+def unittest_caller(route, *args, **kwargs):
+    # Change the selector to match callback route
+    # This will ensure that the plugin paths are currect
+    global selector
+    org_selector = selector
+    selector = route
+
+    # Instantiate the parent
+    test_route = dispatcher[route]
+    controller_ins = test_route.controller()
+
+    # Update support params with the params
+    # that are to be passed to callback
+    params.update(kwargs)
+    if args:
+        # Maps the callback arg names to positional arguments
+        callback_args = inspect.getargspec(test_route.callback).args[1:]
+        arg_map = zip(callback_args, args)
+        params.update(arg_map)
+
+    try:
+        # Now we are ready to call the callback and return its results
+        return test_route.callback(controller_ins, *args, **kwargs)
+    finally:
+        # Reset global datasets
+        selector = org_selector
+        auto_sort.clear()
+        params.clear()
 
 
 def build_path(path=None, query=None, **extra_query):
@@ -109,51 +143,22 @@ class Dispatcher(object):
         if route in self.registered_routes:
             raise ValueError("encountered duplicate route: '{}'".format(route))
 
-        # Method to allow callbacks to be easily called from unittests
-        # Parent argument will be auto instantiated and passed to callback
-        # This basically acts as a constructor to callback
-        def test_call(*args, **kwargs):
-            # Change the selector to match callback route
-            # This will ensure that the plugin paths are currect
-            global selector
-            org_selector = selector
-            selector = route
-
-            # Update support params with the params
-            # that are to be passed to callback
-            params.update(kwargs)
-            if args:
-                # Maps the callback arg names to positional arguments
-                callback_args = inspect.getargspec(callback).args
-                arg_map = zip(callback_args, args)
-                params.update(arg_map)
-
-            # Instantiate the parent
-            test_route = self[selector]
-            controller_ins = test_route.controller()
-            try:
-                # Now we are ready to call the callback and return its results
-                return test_route.callback(controller_ins, *args, **kwargs)
-            finally:
-                # Reset global datasets
-                selector = org_selector
-                auto_sort.clear()
-                params.clear()
-
         callback.route = route
+        unittester = partial(unittest_caller, route)
+
         if inspect.isclass(callback):
             # Check for required run method
             if hasattr(callback, "run"):
                 # Set the callback as the parent and the run method as the function to call
                 self.registered_routes[route] = Route(callback, callback.run, callback)
-                callback.testcall = staticmethod(test_call)
+                callback.testcall = staticmethod(unittester)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Add listing type's to callback
             callback.is_playable = cls.is_playable
             callback.is_folder = cls.is_folder
-            callback.testcall = test_call
+            callback.testcall = unittester
 
             # Register the callback
             self.registered_routes[route] = Route(cls, callback, callback)
