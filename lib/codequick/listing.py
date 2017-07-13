@@ -10,7 +10,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .support import Script, build_path, logger_id, dispatcher, auto_sort
+from .support import Script, build_path, logger_id, dispatcher, auto_sort, args_to_kwargs
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -567,7 +567,7 @@ class Listitem(object):
         self.params["_title_"] = label
         self.info["title"] = label
 
-    def set_callback(self, callback, **kwargs):
+    def set_callback(self, callback, *args, **kwargs):
         """
         Sets the callback function or playable path.
 
@@ -575,8 +575,14 @@ class Listitem(object):
         
         :param callback: The function to callback or a playable path to a video.
         :type callback: :class:`types.FunctionType` or :class:`codequick.Base` or str or unicode
-        :param kwargs: Keyword arguments that will be passed to callback function.
+        :param args: Positional arguments that will be passed to callback.
+        :param kwargs: Keyword arguments that will be passed to callback.
         """
+        if args:
+            # Convert positional arguments to keyword arguments
+            args_map = args_to_kwargs(callback, args)
+            kwargs.update(args_map)
+
         self._path = callback
         self.params.update(kwargs)
 

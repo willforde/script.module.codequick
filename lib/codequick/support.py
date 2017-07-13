@@ -46,6 +46,20 @@ selector, handle, params = parse_sysargs()
 auto_sort = set()
 
 
+def args_to_kwargs(callback, args):
+    """
+    Convert positional arguments to keyword arguments.
+
+    :param callback: Callback object to extract positional arguments names from.
+    :param tuple args: List of positional arguments to extract names for.
+
+    :returns: A list of tuples consisten of ('arg name', 'arg value)'.
+    :rtype: list
+    """
+    callback_args = inspect.getargspec(callback).args[1:]
+    return zip(callback_args, args)
+
+
 def unittest_caller(route, *args, **kwargs):
     """
     Function to allow callbacks to be easily called from unittests.
@@ -70,9 +84,7 @@ def unittest_caller(route, *args, **kwargs):
     # that are to be passed to callback
     params.update(kwargs)
     if args:
-        # Maps the callback arg names to positional arguments
-        callback_args = inspect.getargspec(test_route.callback).args[1:]
-        arg_map = zip(callback_args, args)
+        arg_map = args_to_kwargs(test_route.callback, args)
         params.update(arg_map)
 
     try:
