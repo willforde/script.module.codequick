@@ -23,6 +23,7 @@ start_time = __import__("time").time()
 from .api import Script, Route, Resolver, register_script, register_route, register_resolver, run
 from .storage import PersistentDict
 from .listing import Listitem
+from . import utils
 
 # Logging Levels
 CRITICAL = 50
