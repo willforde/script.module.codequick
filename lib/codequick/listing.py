@@ -51,6 +51,9 @@ strRelated = Script.localize(32903)  # 'related_videos'
 # Map quality values to it's related video resolution
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
 
+# Re.sub to remove formatting from label strings
+strip_formatting = re.compile("\[[^\]]+?\]").sub
+
 # Localized string Constants
 YOUTUBE_CHANNEL = 32901
 MOST_RECENT = 32902
@@ -561,9 +564,10 @@ class Listitem(object):
         Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
 
         :param label: The label of the listitem.
+        :type label: str or unicode
         """
         self.listitem.setLabel(label)
-        clean_label = re.sub("\[[^\]]+?\]", "", label)
+        clean_label = strip_formatting("", label)
         self.params["_title_"] = clean_label
         self.info["title"] = clean_label
 
