@@ -621,12 +621,13 @@ class APIControl(Route):
             yield Listitem.next_page(pagetoken=pagetoken)
 
         # Add playlists item to results
-        if enable_playlists and not multi_channel and pagetoken is None:
+        print enable_playlists, multi_channel
+        if enable_playlists and not multi_channel:
             item = Listitem()
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb(u"youtube.png")
-            item.set_callback(Playlists, contentid=channel_ids[0], show_all=False)
+            item.set_callback(Playlists, content_id=channel_ids[0], show_all=False)
             yield item
 
 
@@ -657,6 +658,7 @@ class Playlist(APIControl):
 
         while True:
             # Fetch playlist feed
+            enable_playlists = False if pagetoken else enable_playlists
             feed = self.api.playlist_items(playlist_id, pagetoken)
             pagetoken = feed.get(u"nextPageToken")
             channel_list = []
