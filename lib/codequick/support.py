@@ -1,462 +1,169 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
-from functools import partial
-from binascii import hexlify
+from binascii import unhexlify
 import urlparse
 import logging
-import inspect
-import time
 import json
-import re
+import sys
 
 # Kodi imports
-import xbmcaddon
-import xbmcgui
 import xbmc
 
-# Package imports
-from .utils import KodiLogHandler, parse_sysargs
-
-# Fetch addon data objects
-script_data = xbmcaddon.Addon("script.module.codequick")
-addon_data = xbmcaddon.Addon()
-
-# The id of the running addon
-plugin_id = addon_data.getAddonInfo("id")
-logger_id = re.sub("[ .]", "-", addon_data.getAddonInfo("name"))
-
-# Base Logger
-base_logger = logging.getLogger()
-base_logger.addHandler(KodiLogHandler())
-base_logger.propagate = False
-base_logger.setLevel(logging.DEBUG)
-
-# Logger specific to this module
-logger = logging.getLogger("%s.support" % logger_id)
-
-# Extract calling arguments from sys args
-selector, handle, params = parse_sysargs()
-
-# Listing auto sort methods
-auto_sort = set()
+# Level mapper to convert logger levels to kodi logger levels
+log_level_map = {10: xbmc.LOGDEBUG,  # logger.debug
+                 20: xbmc.LOGNOTICE,  # logger.info
+                 30: xbmc.LOGWARNING,  # logger.warning
+                 40: xbmc.LOGERROR,  # logger.error
+                 50: xbmc.LOGFATAL}  # logger.critical
 
 
-def unittest_caller(route, *args, **kwargs):
-    """
-    Function to allow callbacks to be easily called from unittests.
-    Parent argument will be auto instantiated and passed to callback.
-    This basically acts as a constructor to callback.
+class KodiLogHandler(logging.Handler):
+    """Custom Logger Handler to forward logs to Kodi"""
 
-    :type route: Route
-    :param route: The route path to callback.
-    :param args: Positional arguments to pass to callback.
-    :param kwargs: Keyword arguments to pass to callback.
-    """
-    # Change the selector to match callback route
-    # This will ensure that the plugin paths are currect
-    global selector
-    org_selector = selector
-    selector = route.path
-
-    # Instantiate the parent
-    controller_ins = route.parent()
-
-    # Update support params with the params
-    # that are to be passed to callback
-    params.update(kwargs)
-    if args:
-        arg_map = route.args_to_kwargs(args)
-        params.update(arg_map)
-
-    try:
-        # Now we are ready to call the callback and return its results
-        return route.callback(controller_ins, *args, **kwargs)
-    finally:
-        # Reset global datasets
-        selector = org_selector
-        auto_sort.clear()
-        params.clear()
-
-
-def build_path(path=None, query=None, **extra_query):
-    """
-    Build addon url that can be parsed to kodi for kodi to call the next set of listings.
-    
-    :param path: (Optional) The route selector path referencing the callback object. (default: current route selector)
-    :param query: (Optional) A set of query key/value pairs to add to plugin path.
-    :param extra_query: (Optional) Keyword arguments if given will be added to the current set of querys.
-
-    :return: Plugin url used by kodi.
-    :rtype: str
-    """
-
-    # If extra querys are given then append to current set of querys
-    if extra_query:
-        query = params.copy()
-        query.update(extra_query)
-
-    # Urlencode the query parameters
-    # Note: Look into a custom urlencode, with better unicode support
-    if query:
-        query = "_json_=" + hexlify(json.dumps(query))
-
-    # Build url with new query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
-
-
-class Route(object):
-    """Handle callback route data like is_playable and path."""
-    __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
-
-    def __init__(self, parent, callback, org_callback, path):
-        self.is_playable = parent.is_playable
-        self.is_folder = parent.is_folder
-        self.org_callback = org_callback
-        self.callback = callback
-        self.parent = parent
-        self.path = path
-
-    def args_to_kwargs(self, args):
-        """
-        Convert positional arguments to keyword arguments.
-
-        :param tuple args: List of positional arguments to extract names for.
-        :returns: A list of tuples consisten of ('arg name', 'arg value)'.
-        :rtype: list
-        """
-        callback_args = inspect.getargspec(self.callback).args[1:]
-        return zip(callback_args, args)
-
-
-class Dispatcher(object):
     def __init__(self):
-        self.registered_routes = {}
+        super(KodiLogHandler, self).__init__()
+        self.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
+        self.debug_msgs = []
 
-    def __getitem__(self, route):
-        """:rtype: Route"""
-        return self.registered_routes[route]
+    def emit(self, record):
+        """Forward the log record to kodi, lets kodi handle the logging"""
+        log_level = record.levelno
+        formatted_msg = self.format(record)
+        if isinstance(formatted_msg, unicode):
+            formatted_msg = formatted_msg.encode("utf8")
 
-    def __missing__(self, route):
-        raise KeyError("missing required route: '{}'".format(route))
+        # Forward the log record to kodi
+        xbmc.log(formatted_msg, log_level_map[log_level])
 
-    @property
-    def callback(self):
-        """
-        The original callback function/class.
+        # Keep a history of all debug records so they can be logged later if a critical error occurred
+        # Kodi by default, won't show debug messages unless debug logging is enabled
+        if log_level == 10:
+            self.debug_msgs.append(formatted_msg)
 
-        Primarily used by 'Listitem.next_page' constructor.
-        """
-        return self[selector].org_callback
+        # If a critical error occurred, log all debug messages as warnings
+        elif log_level == 50 and self.debug_msgs:
+            xbmc.log("###### debug ######", xbmc.LOGWARNING)
+            for msg in self.debug_msgs:
+                xbmc.log(msg, xbmc.LOGWARNING)
+            xbmc.log("###### debug ######", xbmc.LOGWARNING)
 
-    def register(self, callback, cls=None, custom_route=None):
-        """
-        Register route callback function
 
-        :param callback: The callback function.
-        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
-        :param str custom_route: A custom route used for mapping.
-        :returns: The callback function with extra attributes added, 'route', 'testcall'.
-        """
-        if custom_route:
-            path = custom_route.lower()
-        elif callback.__name__.lower() == "root":
-            path = callback.__name__.lower()
+class CacheProperty(object):
+    """Caches the result of a function call on first access. Then saves result as an instance attribute."""
+
+    def __init__(self, func):
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+        self._func = func
+
+    def __get__(self, instance, owner):
+        if instance:
+            attr = self._func(instance)
+            setattr(instance, self.__name__, attr)
+            return attr
         else:
-            path = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
+            return self
 
-        if path in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(path))
 
-        # Register a class callback
-        elif inspect.isclass(callback):
-            if hasattr(callback, "run"):
-                # Set the callback as the parent and the run method as the function to call
-                route = Route(callback, callback.run, callback, path)
-                callback.testcall = staticmethod(partial(unittest_caller, route))
+class Params(dict):
+    def __init__(self, _params):
+        super(Params, self).__init__()
+        self.callback_params = {}
+        self.support_params = {}
+        if _params:
+            # Decode params using json & binascii or urlparse.parse_qs
+            if _params.startswith("_json_="):
+                params = json.loads(unhexlify(_params[7:]))
             else:
-                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
+                params = parse_qs(_params)
+
+            # Initialize dict of params
+            super(Params, self).__init__(params)
+
+            # Construct separate dictionaries for callback and support params"""
+            for key, value in self.iteritems():
+                if key.startswith("_") and key.endswith("_"):
+                    self.support_params[key] = value
+                else:
+                    self.callback_params[key] = value
+
+
+def parse_sysargs():
+    """
+    Extract calling arguments from system arguments.
+
+    :return: A tuple of (selector, handle, params)
+    :rtype: tuple
+    """
+    # Check if running as a plugin
+    if sys.argv[0].startswith("plugin://"):
+        _, _, selector, _params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
+        handle = int(sys.argv[1])
+
+    # Check if running as a script
+    elif len(sys.argv) == 2:
+        selector, _, _params = sys.argv[1].partition("?")
+        handle = -1
+    else:
+        # Only designed to work with parameters and no parameters are given
+        raise RuntimeError("No parameters found, unable to execute script")
+
+    # Set default selector if non is found
+    if not selector or selector == "/":
+        selector = "root"
+    elif selector.startswith("/"):
+        selector = selector[1:]
+
+    # Return parsed data
+    return selector, handle, Params(_params)
+
+
+def keyboard(heading, default="", hidden=False):
+    """
+    Return User input as a unicode string.
+
+    :param heading: Keyboard heading.
+    :type heading: str or unicode
+
+    :param default: (Optional) Default text entry.
+    :type default: str or unicode
+
+    :param hidden: (Optional) True for hidden text entry.
+    :type hidden: bool
+
+    :return: The text that the user entered into text entry box.
+    :rtype: unicode
+    """
+    # Convert input from unicode to string if required
+    default = default.encode("utf8") if isinstance(default, unicode) else default
+    heading = heading.encode("utf8") if isinstance(heading, unicode) else heading
+
+    # Show the onscreen keyboard
+    kb = xbmc.Keyboard(default, heading, hidden)
+    kb.doModal()
+    text = kb.getText()
+    if kb.isConfirmed() and text:
+        return unicode(text, "utf8")
+    else:
+        return u""
+
+
+def parse_qs(qs):
+    """
+    Parse a urlencoded query string, and return the data as a dictionary.
+
+    :param qs: Percent-encoded query string to be parsed.
+    :type qs: str, unicode
+
+    :return: Returns a dict of key/value pairs with the value as unicode.
+    :rtype: dict
+    """
+    params = {}
+    for key, value in urlparse.parse_qsl(qs.encode("utf8") if isinstance(qs, unicode) else qs):
+        if key not in params:
+            params[key] = unicode(value, encoding="utf8")
         else:
-            # Register a function callback
-            route = Route(cls, callback, callback, path)
-            callback.testcall = partial(unittest_caller, route)
+            raise ValueError("encountered duplicate param field name: '{}'".format(key))
 
-        # Return original function undecorated
-        self.registered_routes[path] = route
-        callback.route = route
-        return callback
-
-    def dispatch(self):
-        """Dispatch to selected route path."""
-        try:
-            # Fetch the controling class and callback function/method
-            route = self[selector]
-            logger.debug("Dispatching to route: '%s'", selector)
-            execute_time = time.time()
-
-            # Initialize controller and execute callback
-            controller_ins = route.parent()
-            controller_ins.execute_route(route.callback)
-        except Exception as e:
-            # Log the error in both the gui and the kodi log file
-            dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), "error")
-            logger.critical(str(e), exc_info=1)
-        else:
-            from . import start_time
-            logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            controller_ins.run_callbacks()
-
-
-class Settings(object):
-    def __getitem__(self, key):
-        """
-        Returns the value of a setting as a unicode string.
-
-        :param str key: Id of the setting to access.
-
-        :return: Setting as a unicode string.
-        :rtype: unicode
-        """
-        return addon_data.getSetting(key)
-
-    def __setitem__(self, key, value):
-        """
-        Set an add-on setting.
-
-        :param str key: Id of the setting.
-        :param value: Value of the setting.
-        :type value: str or unicode
-        """
-        # noinspection PyTypeChecker
-        addon_data.setSetting(key, value if isinstance(value, basestring) else str(value).lower())
-
-    def get_boolean(self, key, addon_id=None):
-        """
-        Returns the value of a setting as a boolean.
-
-        :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
-
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
-
-        :return: Setting as a boolean.
-        :rtype: bool
-        """
-        setting = self.get(key, addon_id).lower()
-        return setting == u"true" or setting == u"1"
-
-    def get_int(self, key, addon_id=None):
-        """
-        Returns the value of a setting as a integer.
-
-        :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
-
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
-
-        :return: Setting as a integer.
-        :rtype: int
-        """
-        return int(self.get(key, addon_id))
-
-    def get_number(self, key, addon_id=None):
-        """
-        Returns the value of a setting as a float.
-
-        :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
-
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
-
-        :return: Setting as a float.
-        :rtype: float
-        """
-        return float(self.get(key, addon_id))
-
-    @staticmethod
-    def get(key, addon_id=None):
-        """
-        Returns the value of a setting as a unicode string.
-
-        :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
-
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
-
-        :return: Setting as a unicode string.
-        :rtype: unicode
-        """
-        if addon_id:
-            return xbmcaddon.Addon(addon_id).getSetting(key)
-        else:
-            return addon_data.getSetting(key)
-
-
-class Script(object):
-    # Set listing type variables
-    is_playable = False
-    is_folder = False
-
-    #: Dictionary of params passed to callback
-    params = params
-
-    #: Dictionary like object of add-on settings.
-    setting = Settings()
-
-    #: Underlining logger object, for advanced use.
-    logger = logging.getLogger(logger_id)
-
-    #: Handle the add-on was started with, for advanced use.
-    handle = handle
-
-    def __init__(self):
-        self._title = self.params.get(u"_title_", u"")
-        self._callbacks = []
-
-    def execute_route(self, callback):
-        """Execute the callback function and process the results."""
-        logger.debug("Callback parameters: '%s'", params.callback_params)
-        return callback(self, **params.callback_params)
-
-    def register_callback(self, func, **kwargs):
-        """
-        Register a callback function that will be executed after kodi's endOfDirectory is called.
-        Very useful for fetching extra metadata without slowing down the lising of listitems.
-
-        :param func: Function that will be called of endOfDirectory.
-        :param kwargs: Keyword arguments that will be passed to callback function.
-        """
-        callback = (func, kwargs)
-        self._callbacks.append(callback)
-
-    def run_callbacks(self):
-        """Execute all callbacks, if any."""
-        if self._callbacks:
-            # Time before executing callbacks
-            start_time = time.time()
-
-            # Execute each callback one by one
-            for func, kwargs in self._callbacks:
-                try:
-                    func(**kwargs)
-                except Exception as e:
-                    logger.exception(str(e))
-
-            # Log execution time of callbacks
-            logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
-
-    def log(self, msg, *args, **kwargs):
-        """
-        Logs a message with logging level 'lvl'.
-
-        Logging Levels:
-        DEBUG 	    10
-        INFO 	    20
-        WARNING 	30
-        ERROR 	    40
-        CRITICAL 	50
-
-        Note:
-        When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
-        will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
-        log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
-
-        :param msg: The message format string.
-        :param args: Arguments which are merged into msg using the string formatting operator.
-        :param kwargs: Only one keyword argument is inspected: 'lvl', the logging level of the logger.
-                       If not given, logging level will default to debug.
-        """
-        lvl = kwargs.pop("lvl", 10)
-        self.logger.log(lvl, msg, *args, **kwargs)
-
-    @staticmethod
-    def notify(heading, message, icon="info", display_time=5000, sound=True):
-        """
-        Send a notification to kodi.
-
-        :param str heading: Dialog heading label.
-        :param str message: Dialog message label.
-        :param str icon: (Optional) Icon to use. option are 'error', 'info', 'warning'. (default => 'info')
-        :param int display_time: (Optional) Display_time in milliseconds to show dialog. (default => 5000)
-        :param bool sound: (Optional) Whether or not to play notification sound. (default => True)
-        """
-        if isinstance(heading, unicode):
-            heading = heading.encode("utf8")
-
-        if isinstance(message, unicode):
-            message = message.encode("utf8")
-
-        # Send Error Message to Display
-        dialog = xbmcgui.Dialog()
-        dialog.notification(heading, message, icon, display_time, sound)
-
-    @staticmethod
-    def localize(string_id):
-        """
-        Returns an addon's localized 'unicode string'.
-
-        :param int string_id: The id or reference string to be localized.
-
-        :returns: Localized 'unicode string'.
-        :rtype: unicode
-        """
-        if 30000 <= string_id <= 30999:
-            return addon_data.getLocalizedString(string_id)
-        elif 32000 <= string_id <= 32999:
-            return script_data.getLocalizedString(string_id)
-        else:
-            return xbmc.getLocalizedString(string_id)
-
-    @staticmethod
-    def get_info(key, addon_id=None):
-        """
-        Returns the value of an addon property as a 'unicode string'.
-
-        :param key: Id of the property to access.
-        :param str addon_id: (Optional) Id of another addon to extract properties from.
-
-        :return: Add-on property as a 'unicode string'.
-        :rtype: unicode
-
-        :raises RuntimeError: IF no add-on for given id was found.
-        """
-        # Check if we are extracting data from another add-on
-        if addon_id:
-            resp = xbmcaddon.Addon(addon_id).getAddonInfo(key)
-        elif key == "path_global" or key == "profile_global":
-            resp = script_data.getAddonInfo(key[:key.find("_")])
-        else:
-            resp = addon_data.getAddonInfo(key)
-
-        # Check if path needs to be translated first
-        if resp[:10] == "special://":
-            resp = xbmc.translatePath(resp)
-
-        # Convert property into unicode
-        return unicode(resp, "utf8")
-
-    @property
-    def icon(self):
-        """The add-on's icon image path."""
-        return self.get_info("icon")
-
-    @property
-    def fanart(self):
-        """The add-on's fanart image path."""
-        return self.get_info("fanart")
-
-    @property
-    def profile(self):
-        """The add-on's profile data directory path."""
-        return self.get_info("profile")
-
-    @property
-    def path(self):
-        """The add-on's directory path."""
-        return self.get_info("path")
-
-
-# Dispatcher to manage route callbacks
-dispatcher = Dispatcher()
+    return params

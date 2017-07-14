@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import dispatcher, Script, build_path, logger_id
+from .base import dispatcher, Script, build_path, logger_id
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)

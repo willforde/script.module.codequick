@@ -11,7 +11,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .support import Script, build_path, logger_id, dispatcher, auto_sort
+from .base import Script, build_path, logger_id, dispatcher, auto_sort
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)

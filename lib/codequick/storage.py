@@ -6,7 +6,7 @@ import json
 import os
 
 # Package imports
-from .support import Script
+from .base import Script
 
 # The addon profile directory
 profile_dir = Script.get_info("profile")

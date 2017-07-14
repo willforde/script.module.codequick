@@ -8,11 +8,11 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import Script, dispatcher
+from .base import Script, dispatcher
 from .storage import PersistentDict
 from .api import register_route, Route, custom_route
 from .listing import Listitem
-from .utils import keyboard
+from .support import keyboard
 
 # Prerequisites
 ENTER_SEARCH_STRING = 16017

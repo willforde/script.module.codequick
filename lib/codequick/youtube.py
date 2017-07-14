@@ -6,10 +6,10 @@ import json
 import os
 
 # Package imports
-from .support import logger_id
+from .base import logger_id
 from .storage import PersistentDict
 from .api import register_route, register_resolver, Route
-from .utils import CacheProperty
+from .support import CacheProperty
 from .listing import Listitem
 
 # Outer package imports
