@@ -42,7 +42,6 @@ class Route(Script):
 
         # Process listitems and close
         success = self.__add_listitems(listitems)
-        self.__add_sort_methods(self._manual_sort)
         self.__end_directory(success)
 
     def __add_listitems(self, raw_listitems):
@@ -63,6 +62,8 @@ class Route(Script):
         # Listings will be considered to be a folder if more that half the listitems are folder items.
         isfolder = folder_counter > (len(listitems) / 2)
         self.__content_type(isfolder)
+        if isfolder is False:
+            self.__add_sort_methods(self._manual_sort)
 
         # Pass the listitems and relevant data to kodi
         return xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
