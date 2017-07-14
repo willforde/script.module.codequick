@@ -12,7 +12,7 @@ from .base import Script, dispatcher
 from .storage import PersistentDict
 from .api import register_route, Route, custom_route
 from .listing import Listitem
-from .support import keyboard
+from .utils import keyboard
 
 # Prerequisites
 ENTER_SEARCH_STRING = 16017
