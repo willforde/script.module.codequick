@@ -200,7 +200,7 @@ class SavedSearches(Route):
         # Add all saved searches to item list
         for search_term, url in self.search_db.items():
             item = Listitem()
-            item.set_label(search_term.title())
+            item.label = search_term.title()
 
             # Creatre Context Menu item for removing search term
             item.context.container(str_remove, self, remove=search_term, **extras)
