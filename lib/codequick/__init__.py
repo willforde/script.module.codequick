@@ -20,7 +20,7 @@
 start_time = __import__("time").time()
 
 # Package imports
-from .api import Script, Route, Resolver, register_script, register_route, register_resolver, run
+from .api import Script, Route, Resolver, run
 from .storage import PersistentDict
 from .listing import Listitem
 from . import utils

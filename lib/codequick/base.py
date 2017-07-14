@@ -311,6 +311,11 @@ class Script(object):
     #: Handle the add-on was started with, for advanced use.
     handle = handle
 
+    @classmethod
+    def register(cls, callback):
+        """Decorator used to register callback function/class."""
+        return dispatcher.register(callback, cls=cls)
+
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
         self._callbacks = []
@@ -320,10 +325,10 @@ class Script(object):
         logger.debug("Callback parameters: '%s'", params.callback_params)
         return callback(self, **params.callback_params)
 
-    def register_callback(self, func, **kwargs):
+    def register_metacall(self, func, **kwargs):
         """
-        Register a callback function that will be executed after kodi's endOfDirectory is called.
-        Very useful for fetching extra metadata without slowing down the lising of listitems.
+        Register a callback function that will be executed after kodi's 'endOfDirectory' or 'setResolvedUrl' is called.
+        Very useful for fetching extra metadata without slowing down the lising of content.
 
         :param func: Function that will be called of endOfDirectory.
         :param kwargs: Keyword arguments that will be passed to callback function.

@@ -8,7 +8,7 @@ import os
 # Package imports
 from .base import logger_id
 from .storage import PersistentDict
-from .api import register_route, register_resolver, Route
+from .api import Route, Resolver
 from .support import CacheProperty
 from .listing import Listitem
 
@@ -329,7 +329,7 @@ class APIControl(Route):
 
         # Mark the video_cache for cleanup when video count is greater than 2000
         if len(video_cache) > 2000:
-            self.register_callback(self.cache_cleanup)
+            self.register_metacall(self.cache_cleanup)
 
         return video_cache
 
@@ -631,7 +631,7 @@ class APIControl(Route):
             yield item
 
 
-@register_route
+@Route.register
 class Playlist(APIControl):
     def run(self, contentid, pagetoken=None, enable_playlists=True, loop=False):
         """
@@ -681,7 +681,7 @@ class Playlist(APIControl):
                 return self.videos(channel_list, video_list, pagetoken, enable_playlists)
 
 
-@register_route
+@Route.register
 class Playlists(APIControl):
     def run(self, content_id, show_all=True):
         """
@@ -740,7 +740,7 @@ class Playlists(APIControl):
             yield item
 
 
-@register_route
+@Route.register
 class Related(APIControl):
     def run(self, video_id, pagetoken=None):
         """
@@ -767,7 +767,7 @@ class Related(APIControl):
         return self.videos(channel_list, video_list, pagetoken=feed.get(u"nextPageToken"))
 
 
-@register_resolver
+@Resolver.register
 def play_video(plugin, video_id):
     """
     :type plugin: :class:`codequick.PlayMedia`

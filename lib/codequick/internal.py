@@ -10,7 +10,7 @@ import xbmc
 # Package imports
 from .base import Script, dispatcher
 from .storage import PersistentDict
-from .api import register_route, Route, custom_route
+from .api import Route, custom_route
 from .listing import Listitem
 from .utils import keyboard
 
@@ -146,7 +146,7 @@ class ViewModeSelecter(Script):
         self.setting[self.setting_id] = new_mode
 
 
-@register_route
+@Route.register
 class SavedSearches(Route):
     """
     Class used to list all saved searches for the addon that called it.

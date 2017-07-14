@@ -16,6 +16,9 @@ from .base import dispatcher, Script, build_path, logger_id
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
 
+# Convenience function to call dispatcher
+run = dispatcher.dispatch
+
 # Localized string Constants
 SELECT_PLAYBACK_ITEM = 25006
 
@@ -300,20 +303,6 @@ def custom_route(path, parent=None):
     """
     return partial(dispatcher.register, cls=parent, custom_route=path)
 
-# Convenience function to call dispatcher
-run = dispatcher.dispatch
-
-# Convenience decorator for registering scripts
-register_script = partial(dispatcher.register, cls=Script)
-register_script.__doc__ = """Decorator used to register 'Script' callback function/class."""
-
-# Convenience decorator for registering routes
-register_route = partial(dispatcher.register, cls=Route)
-register_route.__doc__ = """Decorator used to register 'VirtualFS' callback function/class."""
-
-# Convenience decorator for registering resolvers
-register_resolver = partial(dispatcher.register, cls=Resolver)
-register_resolver.__doc__ = """Decorator used to register 'PlayMedia' callback function/class."""
 
 # Now we can import the listing module
 from .listing import Listitem, auto_sort
