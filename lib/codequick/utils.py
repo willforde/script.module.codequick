@@ -1,4 +1,5 @@
 # Standard Library Imports
+from functools import partial
 import urlparse
 
 # Kodi imports
@@ -55,3 +56,15 @@ def parse_qs(qs):
             raise ValueError("encountered duplicate param field name: '{}'".format(key))
 
     return params
+
+
+def urljoin(base_url):
+    """
+    Join a base URL and a possibly relative URL to form an absolute
+    interpretation of the latter.
+
+    :type base_url: str or unicode
+    :param base_url: The base url.
+    :returns: A function that accepts a relative or absolute url and returns a full absolute url.
+    """
+    return partial(urlparse.urljoin, base_url)
