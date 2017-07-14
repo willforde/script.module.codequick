@@ -586,16 +586,15 @@ class Listitem(object):
         self._path = callback
         self.params.update(kwargs)
 
-    # noinspection PyUnresolvedReferences
     def close(self):
-        path = self._path
-        if hasattr(path, "route"):
-            self.listitem.setProperty("isplayable", str(path.route.is_playable).lower())
-            self.listitem.setProperty("folder", str(path.route.is_folder).lower())
-            path = build_path(path.route.path, self.params.raw_dict)
-            isfolder = self._path.route.is_folder
+        callback = self._path
+        if hasattr(callback, "route"):
+            self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
+            self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
+            path = build_path(callback.route.path, self.params.raw_dict)
+            isfolder = callback.route.is_folder
         else:
-            path = path.encode("utf8") if isinstance(path, unicode) else str(path)
+            path = callback.encode("utf8") if isinstance(callback, unicode) else str(callback)
             self.listitem.setProperty("isplayable", "true" if path else "false")
             self.listitem.setProperty("folder", "false")
             isfolder = False
@@ -627,50 +626,42 @@ class Listitem(object):
         return path, self.listitem, isfolder
 
     @classmethod
-    def from_dict(cls, item_dict):
+    def from_dict(cls, label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
         """
         Constructor to create listitem.
 
-        This method will create and populate a listitem from a dictionary of listitem values.
-        The structure of the dictionary should be as follows.
+        This method will create and populate a listitem from a set of listitem values.
 
-        Options::
-
-            label:      The listitem's label.
-            formatting: A % formated string with the formating to add to label.
-            callback:   The callback function or playable path.
-            params:     Dictionary of parameters that will be passed to the callback function.
-            info:       Dictionary of listitem infoLabels.
-            art:        Dictionary of listitem's art.
-            stream:     Dictionary of stream details.
-            property:   Dictionary of listitem properties.
-            context:    List of context menu item(s) containing tuples of label/command pairs.
-
-        :type item_dict: dict
-        :param item_dict: Dictionary of listitem values.
+        :type label: str or unicode
+        :param label: The listitem's label.
+        :param callback: The callback function or playable path.
+        :param dict params: Dictionary of parameters that will be passed to the callback function.
+        :param dict info: Dictionary of listitem infoLabels.
+        :param dict art: Dictionary of listitem's art.
+        :param dict stream: Dictionary of stream details.
+        :param dict properties: Dictionary of listitem properties.
+        :param list context: List of context menu item(s) containing tuples of label/command pairs.
 
         :return: A listitem object.
-        :rtype: :class:`codequick.Listitem`
+        :rtype: Listitem
         """
         item = cls()
-        item.set_callback(item_dict["callback"])
-        item.set_label(item_dict["label"], formating=item_dict.get("label_formatting"))
+        item.set_callback(callback)
+        item.label = label
 
-        # Update listitem data
-        if "params" in item_dict:
-            item.params.update(item_dict["params"])
-        if "info" in item_dict:
-            item.info.update(item_dict["info"])
-        if "art" in item_dict:
-            item.art.update(item_dict["art"])
-        if "stream" in item_dict:
-            item.stream.update(item_dict["stream"])
-        if "property" in item_dict:
-            item.property.update(item_dict["property"])
-        if "context" in item_dict:
-            item.context.extend(item_dict["context"])
+        if params:
+            item.params.update(params)
+        if info:
+            item.info.update(info)
+        if art:
+            item.art.update(art)
+        if stream:
+            item.stream.update(stream)
+        if properties:
+            item.property.update(properties)
+        if context:
+            item.context.extend(context)
 
-        # Return the populated listitem
         return item
 
     @classmethod
@@ -688,7 +679,7 @@ class Listitem(object):
         # Create listitem instance
         item = cls()
         label = u"%s %i" % (Script.localize(NEXT_PAGE), base_params["_nextpagecount_"])
-        item.set_label(label, u"[B]%s[/B]")
+        item.label = "[B]%s[/B]" % label
         item.art.global_thumb(u"next.png")
         item.params.update(base_params)
         item.set_callback(dispatcher.callback, **params)
@@ -706,7 +697,7 @@ class Listitem(object):
         """
         # Create listitem instance
         listitem = cls()
-        listitem.set_label(Script.localize(MOST_RECENT), u"[B]%s[/B]")
+        listitem.label = u"[B]%s[/B]" % Script.localize(MOST_RECENT)
         listitem.art.global_thumb(u"recent.png")
         listitem.set_callback(callback, **params)
         return listitem
@@ -720,7 +711,7 @@ class Listitem(object):
         :param params: Dictionary containing url querys to combine with search term.
         """
         listitem = cls()
-        listitem.set_label(Script.localize(SEARCH), u"[B]%s[/B]")
+        listitem.label = u"[B]%s[/B]" % Script.localize(SEARCH)
         listitem.art.global_thumb(u"search.png")
         listitem.set_callback(SavedSearches, route=callback.route, **params)
         return listitem
@@ -741,7 +732,7 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.set_label(label if label else Script.localize(YOUTUBE_CHANNEL), "[B]%s[/B]")
+        item.label = "[B]%s[/B]" % (label if label else Script.localize(YOUTUBE_CHANNEL))
         item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = enable_playlists

@@ -560,7 +560,7 @@ class APIControl(Route):
             content_details = video_data[u"contentDetails"]
 
             # Fetch Title
-            item.set_label(snippet[u"localized"][u"title"])
+            item.label = snippet[u"localized"][u"title"]
 
             # Add channel Fanart
             item.art["fanart"] = channel_cache[channel_id][u"fanart"]
@@ -722,7 +722,7 @@ class Playlists(APIControl):
 
             # Fetch Title and Video Cound for combining Title
             label = u"%s (%s)" % (snippet[u"localized"][u"title"], playlist_item[u"contentDetails"][u"itemCount"])
-            item.set_label(label)
+            item.label = label
 
             # Fetch Image Url
             item.art["thumb"] = snippet[u"thumbnails"][u"medium"][u"url"]
