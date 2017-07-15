@@ -58,6 +58,34 @@ def parse_qs(qs):
     return params
 
 
+def extract_qs(qs, key):
+    """
+    Parse a urlencoded query string, and extract specified key.
+
+    .. note:: qs can be either a query string or an absolute url with a query string.
+
+    :type qs: str or unicode
+    :param qs: Percent-encoded query string or absolute url to be parsed.
+    :type key: str or unicode
+    :param key: The key for the value to extract.
+
+    :return: The requested value.
+    :rtype: unicode
+
+    :raises ValueError: If duplicate query field names exists.
+
+    Example::
+
+        vid = extract_qs("videoid=d26e5s8e&topic=video&page=1", "videoid")
+        vid = extract_qs("http://example.com/playvideo?videoid=d26e5s8e&topic=video&page=1", "videoid")
+    """
+    if qs.startswith("http://") or qs.startswith("https://"):
+        qs = urlparse.urlsplit(qs).query
+
+    data = parse_qs(qs)
+    return data[key]
+
+
 def urljoin(base_url):
     """
     Join a base URL and a possibly relative URL to form an absolute
