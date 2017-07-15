@@ -206,8 +206,8 @@ class SavedSearches(Route):
             item.context.container(str_remove, self, remove=search_term, **extras)
 
             # Update params with full url and set the callback
-            extras["url"] = url
-            item.set_callback(callback, **extras)
+            item.params.update(extras, url=url)
+            item.set_callback(callback)
             yield item
 
         # Finished with the search database
