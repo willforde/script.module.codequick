@@ -16,7 +16,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import KodiLogHandler, parse_sysargs
+from .support import KodiLogHandler, parse_sysargs, CacheProperty
 
 # Fetch addon data objects
 script_data = xbmcaddon.Addon("script.module.codequick")
@@ -442,22 +442,22 @@ class Script(object):
         # Convert property into unicode
         return unicode(resp, "utf8")
 
-    @property
+    @CacheProperty
     def icon(self):
         """The add-on's icon image path."""
         return self.get_info("icon")
 
-    @property
+    @CacheProperty
     def fanart(self):
         """The add-on's fanart image path."""
         return self.get_info("fanart")
 
-    @property
+    @CacheProperty
     def profile(self):
         """The add-on's profile data directory path."""
         return self.get_info("profile")
 
-    @property
+    @CacheProperty
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
