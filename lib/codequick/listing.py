@@ -723,7 +723,7 @@ class Listitem(object):
         listitem = cls()
         listitem.label = u"[B]%s[/B]" % Script.localize(SEARCH)
         listitem.art.global_thumb(u"search.png")
-        listitem.set_callback(SavedSearches, route=callback.route, **params)
+        listitem.set_callback(SavedSearches, route=callback.route.path, **params)
         return listitem
 
     @classmethod
