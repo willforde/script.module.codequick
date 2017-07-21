@@ -181,7 +181,7 @@ class SavedSearches(Route):
 
     def search_dialog(self):
         """Show dialog for user to enter a new search term."""
-        search_term = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
+        search_term = keyboard(self.localize(ENTER_SEARCH_STRING))
         if search_term:
             self.search_db.append(search_term)
             self.search_db.flush()
@@ -206,7 +206,7 @@ class SavedSearches(Route):
             item.context.container(str_remove, self, remove=search_term, **extras)
 
             # Update params with full url and set the callback
-            item.params.update(extras, search=search_term)
+            item.params.update(extras, search_query=search_term)
             item.set_callback(callback)
             yield item
 
