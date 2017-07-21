@@ -707,19 +707,17 @@ class Listitem(object):
         return listitem
 
     @classmethod
-    def search(cls, callback, url, **params):
+    def search(cls, callback, **params):
         """
         A Listitem constructor to add saved search Support to addon.
 
         :param callback: Function that will be called when the listitem is activated.
-        :param url: The search url with the search term as a percent stirng('%s').
         :param params: Keyword arguments that will be farwarded on to callback.
 
         Example::
 
             Listitem.search(video_search, "https://www.google.com/?q=%s")
         """
-        params[u"url"] = url
         listitem = cls()
         listitem.label = u"[B]%s[/B]" % Script.localize(SEARCH)
         listitem.art.global_thumb(u"search.png")

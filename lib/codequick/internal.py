@@ -9,7 +9,7 @@ import xbmc
 
 # Package imports
 from .base import Script, dispatcher
-from .storage import PersistentDict
+from .storage import PersistentList, PersistentDict
 from .api import Route, custom_route
 from .listing import Listitem
 from .utils import keyboard
@@ -158,9 +158,9 @@ class SavedSearches(Route):
         super(SavedSearches, self).__init__()
 
         # List of current saved searches
-        self.search_db = PersistentDict(u"searches.json")
+        self.search_db = PersistentList(u"searches.json")
 
-    def run(self, remove=None, search=None, **extras):
+    def run(self, remove=None, search=False, **extras):
         """List all saved searches"""
 
         # Set update listing to True only when change state of searches
@@ -174,16 +174,16 @@ class SavedSearches(Route):
 
         # Show search dialog if search argument was passed or if there is no search term saved
         elif not self.search_db or search:
-            self.search_dialog(extras["url"])
+            self.search_dialog()
 
         # List all saved search terms
         return self.list_terms(dispatcher[extras["route"]], extras)
 
-    def search_dialog(self, url):
+    def search_dialog(self):
         """Show dialog for user to enter a new search term."""
         search_term = keyboard("", self.localize(ENTER_SEARCH_STRING), False)
         if search_term:
-            self.search_db[search_term] = url % search_term
+            self.search_db.append(search_term)
             self.search_db.flush()
 
     def list_terms(self, callback, extras):
@@ -191,14 +191,14 @@ class SavedSearches(Route):
         # Add search listitem
         search_item = self.listItem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
-        search_item.set_callback(self, search="true", **extras)
+        search_item.set_callback(self, search=True, **extras)
         yield search_item
 
         # Create Context Menu item requirements
         str_remove = self.localize(REMOVE)
 
         # Add all saved searches to item list
-        for search_term, url in self.search_db.items():
+        for search_term in self.search_db:
             item = Listitem()
             item.label = search_term.title()
 
@@ -206,7 +206,7 @@ class SavedSearches(Route):
             item.context.container(str_remove, self, remove=search_term, **extras)
 
             # Update params with full url and set the callback
-            item.params.update(extras, url=url)
+            item.params.update(extras, search=search_term)
             item.set_callback(callback)
             yield item
 
