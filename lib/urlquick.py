@@ -43,7 +43,7 @@ requests: http://docs.python-requests.org/en/master/
 # Standard library imports
 from collections import MutableMapping, defaultdict
 from base64 import b64encode, b64decode
-from codecs import open as _open
+from codecs import open as _open, getencoder
 from datetime import datetime
 import json as _json
 import logging
@@ -1150,12 +1150,22 @@ class Response(object):
         if no encoding was given within headers.
         """
         if self.encoding:
-            return self.content.decode(self.encoding)
-        else:
+            try:
+                return self.content.decode(self.encoding)
+            except UnicodeDecodeError:
+                logger.debug("Failed to decode content with given encoding: '%s'", self.encoding)
+
+        if not (self.encoding and getencoder(self.encoding) == getencoder(self.apparent_encoding)):
             try:
                 return self.content.decode(self.apparent_encoding)
             except UnicodeDecodeError:
-                return self.content.decode("iso-8859-1")
+                logger.debug("Failed to decode content with default encoding: '%s'", self.apparent_encoding)
+
+        try:
+            return self.content.decode("iso-8859-1")
+        except UnicodeDecodeError:
+            logger.debug("Failed to decode content with fallback encoding: 'iso-8859-1'")
+            raise
 
     @CachedProperty
     def cookies(self):
@@ -1320,6 +1330,16 @@ class Response(object):
         parser = HTMLement(unicode(tag), attrs)
         parser.feed(self.text)
         return parser.close()
+
+    def xml(self):
+        """
+        Parse's "XML" document into a element tree.
+
+        :return: The root element of the element tree.
+        :rtype: xml.etree.ElementTree.Element
+        """
+        from xml.etree import ElementTree
+        return ElementTree.fromstring(self.text)
 
     def close(self):
         pass
