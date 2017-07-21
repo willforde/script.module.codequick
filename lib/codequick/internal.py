@@ -189,7 +189,7 @@ class SavedSearches(Route):
     def list_terms(self, callback, extras):
         """:rtype: :class:`types.GeneratorType`"""
         # Add search listitem
-        search_item = self.listItem()
+        search_item = Listitem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
         search_item.set_callback(self, search=True, **extras)
         yield search_item
