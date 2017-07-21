@@ -1162,6 +1162,8 @@ class Response(object):
             except UnicodeDecodeError:
                 logger.debug("Failed to decode content with default encoding, "
                              "switching to fallback encoding: 'iso-8859-1'")
+        else:
+            logger.debug("Attempting to decode with fallback encoding: 'iso-8859-1'")
 
         try:
             return self.content.decode("iso-8859-1")
