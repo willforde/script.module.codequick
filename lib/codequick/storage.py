@@ -12,14 +12,9 @@ from .base import Script
 profile_dir = Script.get_info("profile")
 
 
-class PersistentDict(dict):
+class PersistentBase(object):
     """
-    Persistent storage with a dictionary-like interface.
-
-    It is designed as a context manager.
-    Uses json for the backend.
-
-    .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
+    Base class to handle persistent file handling.
 
     :param filename: Filename of persistence storage file.
     :type filename: str or unicode
@@ -30,36 +25,40 @@ class PersistentDict(dict):
     :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool
     """
-
     def __init__(self, filename, data_dir=None, read_only=False):
-        super(PersistentDict, self).__init__()
-        self._filepath = os.path.join(data_dir if data_dir else profile_dir, filename)
+        super(PersistentBase, self).__init__()
+        data_dir = data_dir if data_dir else profile_dir
+        self._filepath = os.path.join(data_dir, filename)
+        self._read_only = read_only
         self._stream = None
         self._hash = None
 
+        # Create any missing data directory
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
+    def _load(self):
+        """Load in existing data from disk."""
         # Load storage file if exists
         if os.path.exists(self._filepath):
-            self._stream = file_obj = open(self._filepath, "rb" if read_only else "rb+")
-            content = file_obj.read()
+            if self._read_only:
+                file_obj = open(self._filepath, "rb")
+                content = file_obj.read()
+                file_obj.close()
+            else:
+                self._stream = file_obj = open(self._filepath, "rb+")
+                content = file_obj.read()
 
             # Calculate hash of file content
             self._hash = md5(content).hexdigest()
 
             # Load content and update storage
-            data = json.loads(content)
-            self.update(data)
-
-        # Create missing data directory
-        elif not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-
-        # Disable sync if in read only mode
-        if read_only:
-            self.flush = object
-            self.close()
+            return json.loads(content)
 
     def flush(self):
-        """Syncrnize data to disk"""
+        """Syncrnize data to disk."""
+        if self._read_only:
+            return None
 
         # Serialize the storage data
         content = json.dumps(self, indent=4, separators=(",", ":"))
@@ -91,3 +90,55 @@ class PersistentDict(dict):
 
     def __exit__(self, *_):
         self.close()
+
+
+class PersistentDict(PersistentBase, dict):
+    """
+    Persistent storage with a dictionary interface.
+
+    It is designed as a context manager.
+    Uses json for the backend.
+
+    .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
+
+    :param filename: Filename of persistence storage file.
+    :type filename: str or unicode
+
+    :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
+    :type data_dir: str or unicode
+
+    :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
+    :type read_only: bool
+    """
+
+    def __init__(self, filename, data_dir=None, read_only=False):
+        super(PersistentDict, self).__init__(filename, data_dir, read_only)
+        current_data = self._load()
+        if current_data:
+            self.update(current_data)
+
+
+class PersistentList(PersistentBase, list):
+    """
+    Persistent storage with a list interface.
+
+    It is designed as a context manager.
+    Uses json for the backend.
+
+    .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
+
+    :param filename: Filename of persistence storage file.
+    :type filename: str or unicode
+
+    :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
+    :type data_dir: str or unicode
+
+    :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
+    :type read_only: bool
+    """
+
+    def __init__(self, filename, data_dir=None, read_only=False):
+        super(PersistentList, self).__init__(filename, data_dir, read_only)
+        current_data = self._load()
+        if current_data:
+            self.extend(current_data)
