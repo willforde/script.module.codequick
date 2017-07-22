@@ -675,17 +675,17 @@ class Listitem(object):
 
         :param params: (Optional) Keyword arguments of params that will be added to the current set of callback params.
         """
-        # Fetch current set of callback params and add the extra params if any
-        base_params = Script.params.copy()
-        base_params["_updatelisting_"] = True
-        base_params["_nextpagecount_"] = Script.params.get("_nextpagecount_", 1) + 1
+        # Add support params to callback params
+        params["_updatelisting_"] = True
+        params["_title_"] = Script.params.get(u"_title_", u"")
+        params["_nextpagecount_"] = Script.params.get(u"_nextpagecount_", 1) + 1
 
         # Create listitem instance
         item = cls()
-        label = u"%s %i" % (Script.localize(NEXT_PAGE), base_params["_nextpagecount_"])
+        label = u"%s %i" % (Script.localize(NEXT_PAGE), params["_nextpagecount_"])
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb(u"next.png")
-        item.params.update(base_params)
+        item.params.update(params)
         item.set_callback(dispatcher.callback, **params)
         return item
 
