@@ -193,9 +193,6 @@ class Resolver(Script):
             self.log("YoutubeDL module not installed. Please install to enable 'extract_source'", lvl=40)
             raise ImportError("Missing YoutubeDL module")
         else:
-            # Disable DASH videos, until youtubeDL supports it
-            disableDASHVideo(True)
-
             # If there is more than one stream found then ask for selection
             video_info = getVideoInfo(url, quality)
             if video_info.hasMultipleStreams():
