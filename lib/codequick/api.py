@@ -149,17 +149,17 @@ class Resolver(Script):
 
         if self._title.startswith(u"_loopback_"):
             main_listitem.setLabel(self._title.split(u" - ", 1)[1])
-            next_params["title"] = self._title
+            next_params["_title_"] = self._title
         else:
             # Add playable listitem as the first playlist item
             main_listitem.setLabel(self._title)
-            next_params["title"] = u"_loopback_ - %s" % self._title
+            next_params["_title_"] = u"_loopback_ - %s" % self._title
             playlist.clear()
             playlist.add(url, main_listitem)
 
         # Create Loopback listitem
         loop_listitem = xbmcgui.ListItem()
-        loop_listitem.setLabel(next_params["title"])
+        loop_listitem.setLabel(next_params["_title_"])
 
         # Build a loopback url that callback to the addon to fetch the next video
         loopback_url = build_path(**next_params)
