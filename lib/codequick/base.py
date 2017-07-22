@@ -206,7 +206,7 @@ class Dispatcher(object):
             from . import start_time
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
             logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            controller_ins.run_callbacks()
+            controller_ins.run_metacalls()
 
 
 class Settings(object):
@@ -311,6 +311,13 @@ class Script(object):
     #: Handle the add-on was started with, for advanced use.
     handle = handle
 
+    # Logging Levels
+    CRITICAL = 50
+    WARNING = 30
+    ERROR = 40
+    DEBUG = 10
+    INFO = 20
+
     @classmethod
     def register(cls, callback):
         """Decorator used to register callback function/class."""
@@ -325,7 +332,7 @@ class Script(object):
         logger.debug("Callback parameters: '%s'", params.callback_params)
         return callback(self, **params.callback_params)
 
-    def register_metacall(self, func, **kwargs):
+    def register_metacall(self, func, *args, **kwargs):
         """
         Register a callback function that will be executed after kodi's 'endOfDirectory' or 'setResolvedUrl' is called.
         Very useful for fetching extra metadata without slowing down the lising of content.
@@ -333,19 +340,19 @@ class Script(object):
         :param func: Function that will be called of endOfDirectory.
         :param kwargs: Keyword arguments that will be passed to callback function.
         """
-        callback = (func, kwargs)
+        callback = (func, args, kwargs)
         self._callbacks.append(callback)
 
-    def run_callbacks(self):
+    def run_metacalls(self):
         """Execute all callbacks, if any."""
         if self._callbacks:
             # Time before executing callbacks
             start_time = time.time()
 
             # Execute each callback one by one
-            for func, kwargs in self._callbacks:
+            for func, args, kwargs in self._callbacks:
                 try:
-                    func(**kwargs)
+                    func(*args, **kwargs)
                 except Exception as e:
                     logger.exception(str(e))
 
