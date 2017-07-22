@@ -177,12 +177,12 @@ class SavedSearches(Route):
             self.search_dialog()
 
         # List all saved search terms
-        return self.list_terms(dispatcher[extras["route"]], extras)
+        return self.list_terms(dispatcher[extras.pop("route")].callback, extras)
 
     def search_dialog(self):
         """Show dialog for user to enter a new search term."""
         search_term = keyboard(self.localize(ENTER_SEARCH_STRING))
-        if search_term:
+        if search_term and search_term not in self.search_db:
             self.search_db.append(search_term)
             self.search_db.flush()
 
