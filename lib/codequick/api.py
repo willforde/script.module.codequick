@@ -188,18 +188,19 @@ class Resolver(Script):
         """
         try:
             # noinspection PyUnresolvedReferences
-            from YDStreamExtractor import getVideoInfo, disableDASHVideo
+            from YDStreamExtractor import getVideoInfo
         except ImportError:
             self.log("YoutubeDL module not installed. Please install to enable 'extract_source'", lvl=40)
             raise ImportError("Missing YoutubeDL module")
         else:
             # If there is more than one stream found then ask for selection
             video_info = getVideoInfo(url, quality)
-            if video_info.hasMultipleStreams():
-                # Ask the user to select a stream
-                return self.__source_selection(video_info)
-            else:
-                return video_info.streamURL()
+            if video_info:
+                if video_info.hasMultipleStreams():
+                    # Ask the user to select a stream
+                    return self.__source_selection(video_info)
+                else:
+                    return video_info.streamURL()
 
     def __source_selection(self, video_info):
         """
