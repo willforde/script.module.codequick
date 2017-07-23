@@ -514,6 +514,7 @@ class ConnectionManager(CacheAdapter):
     def send_request(conn, req):
         try:
             # Setup request
+            logger.debug(req.selector)
             conn.putrequest(str(req.method), str(req.selector), skip_host=1, skip_accept_encoding=1)
 
             # Add all headers to request
@@ -616,7 +617,7 @@ class Request(object):
                 url = url[1:]
 
         # Parse the url into each element
-        scheme, netloc, path, query, _ = urlsplit(url, scheme=scheme)
+        scheme, netloc, path, query, _ = urlsplit(url.replace(u" ", u"%20"), scheme=scheme)
         if scheme not in ("http", "https"):
             raise ValueError("Unsupported scheme: {}".format(scheme))
 
@@ -980,20 +981,13 @@ class Session(ConnectionManager):
         # Fetch max age of cache
         max_age = (-1 if self.max_age is None else self.max_age) if max_age is None else max_age
 
-        logger.debug("Requesting resource: %s", url)
-        if req_params:
-            logger.debug("Request params: %s", req_params)
-        if req_headers:
-            logger.debug("Request headers: %s", req_headers)
-        if req_cookies:
-            logger.debug("Request cookies: %s", req_cookies)
-        if json:
-            logger.debug("Request json: %s", req_cookies)
-        if data:
-            logger.debug("Request data: %s", data)
-
         # Parse url into it's individual components including params if given
-        req = Request(method, url, req_headers, data, json, req_params, req_cookies)
+        req = Request(method, url, req_headers, data, json, req_params)
+        logger.debug("Requesting resource: %s", req.url)
+        if req_headers:
+            logger.debug("Request headers: %s", req.headers)
+        if data:
+            logger.debug("Request data: %s", req.data)
 
         # Add Authorization header if needed
         auth = auth or req.auth or self._auth
