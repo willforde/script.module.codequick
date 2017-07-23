@@ -19,7 +19,7 @@ import urlquick
 logger = logging.getLogger("%s.youtube" % logger_id)
 
 # Localized string Constants
-ALL_VIDEOS = 16100
+ALLVIDEOS = 32903
 PLAYLISTS = 136
 
 
@@ -147,8 +147,8 @@ class API(object):
         :rtype: dict
         """
         # Set parameters
-        query = {"fields": u"nextPageToken,items(snippet(channelId,resourceId/videoId))", "part": u"snippet",
-                 "playlistId": playlist_id}
+        query = {"fields": u"nextPageToken,items(snippet(channelId,resourceId/videoId))",
+                 "playlistId": playlist_id, "part": u"snippet"}
 
         # Add pageToken if exists
         if pagetoken:
@@ -178,7 +178,7 @@ class API(object):
         # Connect to server and return json response
         return self._connect_v3("videos", query)
 
-    def playlists(self, channel_id):
+    def playlists(self, channel_id, pagetoken=None):
         """
         Return all playlist for a giving channel_id.
 
@@ -186,6 +186,9 @@ class API(object):
 
         :param channel_id: Id of the channel to fetch playlists for.
         :type channel_id: str or unicode
+
+        :param pagetoken: The token for the next page of results
+        :type pagetoken: str or unicode
 
         :returns: Dictionary of playlists.
         :rtype: dict
@@ -195,20 +198,12 @@ class API(object):
                  "fields": u"nextPageToken,items(id,contentDetails/itemCount,snippet"
                            u"(publishedAt,localized,thumbnails/medium/url))"}
 
-        # Connect to server and return json response
-        feed = self._connect_v3("playlists", query)
-        pagetoken = feed.get(u"nextPageToken")
-
-        # Loop all pages
-        while pagetoken:
+        # Add pageToken if exists
+        if pagetoken:
             query["pageToken"] = pagetoken
-            next_feed = self._connect_v3("playlists", query)
-            feed[u"items"].extend(next_feed[u"items"])
-            pagetoken = next_feed.get(u"nextPageToken")
 
-        # Return all playlists
-        feed[u"nextPageToken"] = None
-        return feed
+        # Connect to server and return json response
+        return self._connect_v3("playlists", query)
 
     def search(self, **search_params):
         """
@@ -496,7 +491,7 @@ class APIControl(Route):
                 self.update_category_cache()
                 check_categories = False
 
-    def videos(self, channel_ids, video_ids, pagetoken=None, enable_playlists=True):
+    def videos(self, channel_ids, video_ids, enable_playlists=True):
         """
         Process VideoIDs and return listitems in a generator
 
@@ -505,9 +500,6 @@ class APIControl(Route):
 
         :param video_ids: List of all the videos to show.
         :type video_ids: list
-
-        :param pagetoken: (Optional) The token id for the next page.
-        :type pagetoken: unicode
 
         :param enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
         :type enable_playlists: bool
@@ -616,10 +608,6 @@ class APIControl(Route):
             item.set_callback(play_video, video_id=video_id)
             yield item
 
-        # Add next Page entry if pagetoken is giving
-        if pagetoken:
-            yield Listitem.next_page(pagetoken=pagetoken)
-
         # Add playlists item to results
         print enable_playlists, multi_channel
         if enable_playlists and not multi_channel:
@@ -673,17 +661,22 @@ class Playlist(APIControl):
                 # Fetch the list of video listitems
                 listitems = self.videos(channel_list, video_list, enable_playlists=False)
                 all_listitems.extend(listitems)
+
                 # Return all listitems when no more page tokens are found
                 if not pagetoken:
                     return all_listitems
             else:
                 # Return the list of video listitems
-                return self.videos(channel_list, video_list, pagetoken, enable_playlists)
+                results = list(self.videos(channel_list, video_list, enable_playlists))
+                if pagetoken:
+                    next_item = Listitem.next_page(contentid=contentid, pagetoken=pagetoken)
+                    results.append(next_item)
+                return results
 
 
 @Route.register
 class Playlists(APIControl):
-    def run(self, content_id, show_all=True):
+    def run(self, content_id, show_all=True, pagetoken=None, loop=False):
         """
         List all playlist for giving channel
 
@@ -692,6 +685,12 @@ class Playlists(APIControl):
 
         :param show_all: (Optional) Add link to all of the channels videos if True. (default => True)
         :type show_all: bool
+
+        :param pagetoken: The token for the next page of results
+        :type pagetoken: str or unicode
+
+        :param loop: (Optional) Return all the playlist for channel. (Default => False)
+        :type loop: bool
 
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
@@ -707,11 +706,16 @@ class Playlists(APIControl):
             fanart = None
 
         # Fetch channel playlists feed
-        feed = self.api.playlists(channel_id)
+        feed = self.api.playlists(channel_id, pagetoken)
+
+        # Add next Page entry if pagetoken is found
+        if u"nextPageToken" in feed:
+            yield Listitem.next_page(content_id=content_id, show_all=False, pagetoken=feed[u"nextPageToken"])
 
         # Display a link for listing all channel videos
+        # This is usefull when the root of a addon is the playlist directory
         if show_all:
-            title = self.localize(ALL_VIDEOS)
+            title = self.localize(ALLVIDEOS)
             yield Listitem.youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
 
         # Loop Entries
@@ -764,7 +768,11 @@ class Related(APIControl):
             video_list.append(item[u"id"][u"videoId"].encode("utf8"))
 
         # List all the related videos
-        return self.videos(channel_list, video_list, pagetoken=feed.get(u"nextPageToken"))
+        results = list(self.videos(channel_list, video_list))
+        if u"nextPageToken" in feed:
+            next_item = Listitem.next_page(video_id=video_id, pagetoken=feed[u"nextPageToken"])
+            results.append(next_item)
+        return results
 
 
 @Resolver.register
