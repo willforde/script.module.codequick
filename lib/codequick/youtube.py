@@ -72,14 +72,16 @@ class API(object):
         # Download the resource from the youtube v3 api
         url = "https://www.googleapis.com/youtube/v3/%s" % api_type
         if "id" in query:
-            counter = 0
             ids = query["id"].split(",")
+            counter = 0
 
+            # Fetch the first set of 50 item and use a base
             query["id"] = ",".join(ids[counter:counter+50])
             feed = self._request(url, query)
             results = feed
             counter += 50
 
+            # Fetch all content, 50 item at a time
             while counter < len(ids):
                 query["id"] = ",".join(ids[counter:counter+50])
                 feed = self._request(url, query)
@@ -89,17 +91,21 @@ class API(object):
             # Return the full feed
             return results
 
-        feed = self._request(url, query)
-        results = feed
-
-        # Loop until there is no more page tokens available
-        while loop and u"nextPageToken" in feed:
-            query["pageToken"] = feed.pop(u"nextPageToken")
+        elif loop:
+            # Fetch the first page and use as base
             feed = self._request(url, query)
-            results[u"items"].extend(feed[u"items"])
+            results = feed
 
-        # Return the full feed
-        return results
+            # Loop until there is no more page tokens available
+            while u"nextPageToken" in feed:
+                query["pageToken"] = feed.pop(u"nextPageToken")
+                feed = self._request(url, query)
+                results[u"items"].extend(feed[u"items"])
+
+            # Return the full feed
+            return results
+        else:
+            return self._request(url, query)
 
     def channels(self, channel_id=None, for_username=None):
         """
@@ -733,7 +739,7 @@ class Playlists(APIControl):
             fanart = None
 
         # Fetch channel playlists feed
-        feed = self.api.playlists(channel_id, pagetoken, True)
+        feed = self.api.playlists(channel_id, pagetoken, loop)
 
         # Add next Page entry if pagetoken is found
         if u"nextPageToken" in feed:
@@ -750,12 +756,16 @@ class Playlists(APIControl):
             # Create listitem object
             item = Listitem()
 
+            # Check if there is actualy items in the playlist before listing
+            item_count = playlist_item[u"contentDetails"][u"itemCount"]
+            if item_count == 0:
+                continue
+
             # Fetch video snippet
             snippet = playlist_item[u"snippet"]
 
-            # Fetch Title and Video Cound for combining Title
-            label = u"%s (%s)" % (snippet[u"localized"][u"title"], playlist_item[u"contentDetails"][u"itemCount"])
-            item.label = label
+            # Set label
+            item.label = u"%s (%s)" % (snippet[u"localized"][u"title"], item_count)
 
             # Fetch Image Url
             item.art["thumb"] = snippet[u"thumbnails"][u"medium"][u"url"]
@@ -808,5 +818,5 @@ def play_video(plugin, video_id):
     :type plugin: :class:`codequick.PlayMedia`
     :type video_id: unicode
     """
-    url = "https://www.youtube.com/watch?v=%s" % video_id
+    url = u"https://www.youtube.com/watch?v=%s" % video_id
     return plugin.extract_source(url)
