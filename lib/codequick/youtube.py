@@ -37,24 +37,7 @@ class API(object):
                                    "prettyPrint": str(pretty_print).lower(),
                                    "key": "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}
 
-    def _connect_v3(self, api_type, query):
-        """
-        Send API request and return response as a json object.
-
-        :param str api_type: The type of api request to make.
-        :param dict query: Dictionary of parameters that will be send to the api as a query.
-
-        :returns: The youtube api response as a dictionary.
-        :rtype: dict
-
-        :raises RuntimeError: If youtube returns a error response.
-        """
-        # Convert id query from a list, to a comma separated list of id's, if required
-        if "id" in query and hasattr(query["id"], '__iter__'):
-            query["id"] = u",".join(query["id"])
-
-        # Download the resource from the youtube v3 api
-        url = "https://www.googleapis.com/youtube/v3/%s" % api_type
+    def _request(self, url, query):
         source = self.req_session.get(url, params=query)
         response = json.loads(source.content, encoding=source.encoding)
         if u"error" not in response:
@@ -66,6 +49,57 @@ class API(object):
                 raise RuntimeError("Youtube V3 API return an error response")
             else:
                 raise RuntimeError("Youtube V3 API return an error response: %s" % message)
+
+    def _connect_v3(self, api_type, query, loop=False):
+        """
+        Send API request and return response as a json object.
+
+        :param str api_type: The type of api request to make.
+        :param dict query: Dictionary of parameters that will be send to the api as a query.
+
+        :returns: The youtube api response as a dictionary.
+        :rtype: dict
+
+        :param loop: (Optional) Return all the playlists for channel. (Default => False)
+        :type loop: bool
+
+        :raises RuntimeError: If youtube returns a error response.
+        """
+        # Convert id query from a list, to a comma separated list of id's, if required
+        if "id" in query and hasattr(query["id"], '__iter__'):
+            query["id"] = u",".join(query["id"])
+
+        # Download the resource from the youtube v3 api
+        url = "https://www.googleapis.com/youtube/v3/%s" % api_type
+        if "id" in query:
+            counter = 0
+            ids = query["id"].split(",")
+
+            query["id"] = ",".join(ids[counter:counter+50])
+            feed = self._request(url, query)
+            results = feed
+            counter += 50
+
+            while counter < len(ids):
+                query["id"] = ",".join(ids[counter:counter+50])
+                feed = self._request(url, query)
+                results[u"items"].extend(feed[u"items"])
+                counter += 50
+
+            # Return the full feed
+            return results
+
+        feed = self._request(url, query)
+        results = feed
+
+        # Loop until there is no more page tokens available
+        while loop and u"nextPageToken" in feed:
+            query["pageToken"] = feed.pop(u"nextPageToken")
+            feed = self._request(url, query)
+            results[u"items"].extend(feed[u"items"])
+
+        # Return the full feed
+        return results
 
     def channels(self, channel_id=None, for_username=None):
         """
@@ -131,7 +165,7 @@ class API(object):
         # Fetch video Information
         return self._connect_v3("videoCategories", query)
 
-    def playlist_items(self, playlist_id, pagetoken=None):
+    def playlist_items(self, playlist_id, pagetoken=None, loop=False):
         """
         Return all videos ids for giving playlist ID.
 
@@ -142,6 +176,9 @@ class API(object):
 
         :param pagetoken: The token for the next page of results
         :type pagetoken: str or unicode
+
+        :param loop: (Optional) Return all the videos within playlist. (Default => False)
+        :type loop: bool
 
         :returns: Dictionary of playlist items.
         :rtype: dict
@@ -154,8 +191,8 @@ class API(object):
         if pagetoken:
             query["pageToken"] = pagetoken
 
-        # Connect to server and return json response
-        return self._connect_v3("playlistItems", query)
+        # Connect to server to optain json response
+        return self._connect_v3("playlistItems", query, loop)
 
     def videos(self, video_id):
         """
@@ -178,7 +215,7 @@ class API(object):
         # Connect to server and return json response
         return self._connect_v3("videos", query)
 
-    def playlists(self, channel_id, pagetoken=None):
+    def playlists(self, channel_id, pagetoken=None, loop=False):
         """
         Return all playlist for a giving channel_id.
 
@@ -189,6 +226,9 @@ class API(object):
 
         :param pagetoken: The token for the next page of results
         :type pagetoken: str or unicode
+
+        :param loop: (Optional) Return all the playlists for channel. (Default => False)
+        :type loop: bool
 
         :returns: Dictionary of playlists.
         :rtype: dict
@@ -202,8 +242,8 @@ class API(object):
         if pagetoken:
             query["pageToken"] = pagetoken
 
-        # Connect to server and return json response
-        return self._connect_v3("playlists", query)
+        # Connect to server to optain json response
+        return self._connect_v3("playlists", query, loop)
 
     def search(self, **search_params):
         """
@@ -415,8 +455,7 @@ class APIControl(Route):
         :param for_username: (Optional) Username of the channel to request information for.
         :type for_username: str or unicode
 
-        Note:
-        If both channel_id and for_username is given then channel_id will take priority.
+        .. note:: If both channel_id and for_username is given then channel_id will take priority.
         """
         # Make channels api request
         feed = self.api.channels(channel_id, for_username)
@@ -642,36 +681,24 @@ class Playlist(APIControl):
         """
         # Fetch channel uploads uuid
         playlist_id = self.validate_uuid(contentid, require_playlist=True)
-        all_listitems = []
 
-        while True:
-            # Fetch playlist feed
-            enable_playlists = False if pagetoken else enable_playlists
-            feed = self.api.playlist_items(playlist_id, pagetoken)
-            pagetoken = feed.get(u"nextPageToken")
-            channel_list = []
-            video_list = []
+        # Request data feed
+        enable_playlists = False if pagetoken else enable_playlists
+        feed = self.api.playlist_items(playlist_id, pagetoken, loop)
+        channel_list = []
+        video_list = []
 
-            # Fetch video ids for all public videos
-            for item in feed[u"items"]:
-                channel_list.append(item[u"snippet"][u"channelId"])
-                video_list.append(item[u"snippet"][u"resourceId"][u"videoId"].encode("utf8"))
+        # Fetch video ids for all public videos
+        for item in feed[u"items"]:
+            channel_list.append(item[u"snippet"][u"channelId"])
+            video_list.append(item[u"snippet"][u"resourceId"][u"videoId"].encode("utf8"))
 
-            if loop:
-                # Fetch the list of video listitems
-                listitems = self.videos(channel_list, video_list, enable_playlists=False)
-                all_listitems.extend(listitems)
-
-                # Return all listitems when no more page tokens are found
-                if not pagetoken:
-                    return all_listitems
-            else:
-                # Return the list of video listitems
-                results = list(self.videos(channel_list, video_list, enable_playlists))
-                if pagetoken:
-                    next_item = Listitem.next_page(contentid=contentid, pagetoken=pagetoken)
-                    results.append(next_item)
-                return results
+        # Return the list of video listitems
+        results = list(self.videos(channel_list, video_list, enable_playlists))
+        if u"nextPageToken" in feed:
+            next_item = Listitem.next_page(contentid=contentid, pagetoken=feed[u"nextPageToken"])
+            results.append(next_item)
+        return results
 
 
 @Route.register
@@ -706,7 +733,7 @@ class Playlists(APIControl):
             fanart = None
 
         # Fetch channel playlists feed
-        feed = self.api.playlists(channel_id, pagetoken)
+        feed = self.api.playlists(channel_id, pagetoken, True)
 
         # Add next Page entry if pagetoken is found
         if u"nextPageToken" in feed:
