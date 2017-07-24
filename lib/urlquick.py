@@ -514,7 +514,6 @@ class ConnectionManager(CacheAdapter):
     def send_request(conn, req):
         try:
             # Setup request
-            logger.debug(req.selector)
             conn.putrequest(str(req.method), str(req.selector), skip_host=1, skip_accept_encoding=1)
 
             # Add all headers to request
