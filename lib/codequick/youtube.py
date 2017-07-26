@@ -658,8 +658,9 @@ class APIControl(Route):
         if enable_playlists and not multi_channel:
             item = Listitem()
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
+            item.info["plot"] = "Show all channel playlists."
             item.art["icon"] = "DefaultVideoPlaylists.png"
-            item.art.global_thumb(u"youtube.png")
+            item.art.global_thumb(u"youtubewide.png")
             item.set_callback(Playlists, content_id=channel_ids[0], show_all=False)
             yield item
 

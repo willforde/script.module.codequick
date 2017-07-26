@@ -48,8 +48,13 @@ class Route(Script):
         self.__end_directory(success)
 
     def __add_listitems(self, raw_listitems):
+        # Convert listitem to list incase we have a generator
+        if raw_listitems:
+            raw_listitems = list(raw_listitems)
+
+        # Check if raw_listitems is None or an empty list
         if not raw_listitems:
-            raise RuntimeError("No listitems found")
+            raise RuntimeError("No items found")
 
         # Create a new list containing tuples, consisting of path, listitem, isfolder.
         listitems = []

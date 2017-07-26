@@ -125,6 +125,7 @@ class Route(object):
         :returns: A list of tuples consisten of ('arg name', 'arg value)'.
         :rtype: list
         """
+        # TODO: Check how this function works when a callback has no arguments
         callback_args = inspect.getargspec(self.callback).args[1:]
         return zip(callback_args, args)
 

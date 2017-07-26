@@ -22,7 +22,8 @@ global_image = os.path.join(Script.get_info("path_global"), u"resources", u"medi
 
 # Fanart image location if exists
 _fanart = Script.get_info("fanart")
-fanart = _fanart if os.path.exists(_fanart) else None
+fanart = _fanart.encode("utf8") if os.path.exists(_fanart) else None
+icon = Script.get_info("icon").encode("utf8")
 
 # Stream type map the ensure proper stream value types
 stream_type_map = {"duration": int,
@@ -46,7 +47,7 @@ sort_map = {"title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
 auto_sort_add = auto_sort.add
 
 # Context menu requirments
-strRelated = Script.localize(32903)  # 'related_videos'
+strRelated = Script.localize(32975)  # 'related_videos'
 
 # Map quality values to it's related video resolution
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
@@ -116,6 +117,9 @@ class CommonDict(object):
         for key, value in kwargs.items():
             self[key] = value
 
+    def __contains__(self, key):
+        return key in self.raw_dict
+
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.raw_dict)
 
@@ -139,7 +143,7 @@ class Art(CommonDict):
         if value:
             self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else str(value)
         else:
-            logger.debug("Ignoring empty art value for: '%s'", key)
+            logger.debug("Ignoring empty art value: '%s'", key)
 
     def local_thumb(self, image):
         """
@@ -167,10 +171,10 @@ class Art(CommonDict):
         self.raw_dict["thumb"] = global_image % (image.encode("utf8") if isinstance(image, unicode) else str(image))
 
     def clsoe(self):
-        # Add fanart if don't already exists
         if fanart and "fanart" not in self.raw_dict:
-            self.raw_dict["fanart"] = fanart.encode("utf8")
-
+            self.raw_dict["fanart"] = fanart
+        if "thumb" not in self.raw_dict:
+            self["thumb"] = icon
         self._listitem.setArt(self.raw_dict)
 
 
@@ -188,7 +192,7 @@ class Info(CommonDict):
         :param value: The infolabel value.
         """
         if not value:
-            logger.debug("Ignoring empty infolable value for: '%s'", key)
+            logger.debug("Ignoring empty infolable: '%s'", key)
             return None
 
         # Convert duration into an integer
@@ -235,9 +239,9 @@ class Info(CommonDict):
     def _duration(duration):
         """Converts duration from a string of 'hh:mm:ss' into seconds."""
         if isinstance(duration, (str, unicode)):
-            if u":" in duration:
+            if u":" in duration or u";" in duration:
                 # Split Time By Marker and Convert to Integer
-                time_parts = duration.split(u":")
+                time_parts = duration.replace(u";", u":").split(u":")
                 time_parts.reverse()
                 duration = 0
                 counter = 1
@@ -273,7 +277,7 @@ class Property(CommonDict):
         if value:
             self.raw_dict[key] = value
         else:
-            logger.debug("Ignoring empty property value for: '%s'", key)
+            logger.debug("Ignoring empty property: '%s'", key)
 
     def close(self):
         for key, value in self.raw_dict:
@@ -382,6 +386,9 @@ class Stream(CommonDict):
             self._listitem.addStreamInfo("video", self.video)
         if self.subtitle:
             self._listitem.addStreamInfo("subtitle", self.subtitle)
+
+    def __contains__(self, key):
+        return key in self._translate(key)
 
     def __repr__(self):
         return "%s(audio=%r, video=%r, subtitle=%r)" % (self.__class__, self.audio, self.video, self.subtitle)
@@ -554,7 +561,7 @@ class Listitem(object):
     @property
     def label(self):
         """The listitem label."""
-        return self.listitem.getLabel()
+        return self.listitem.getLabel().decode("utf8")
 
     @label.setter
     def label(self, label):
@@ -618,6 +625,10 @@ class Listitem(object):
 
             # Close video related datasets
             self.stream.close()
+
+        # Add label as plot if no plot is found
+        if "plot" not in self.info:
+            self.info["plot"] = self.label
 
         # Close common datasets
         self.listitem.setPath(path)
@@ -683,6 +694,7 @@ class Listitem(object):
         # Create listitem instance
         item = cls()
         label = u"%s %i" % (Script.localize(NEXT_PAGE), params["_nextpagecount_"])
+        item.info["plot"] = "Show the next page of content."
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb(u"next.png")
         item.params.update(params)
@@ -700,11 +712,12 @@ class Listitem(object):
         :param params: Keyword arguments of parameters that will be passed to the callback function.
         """
         # Create listitem instance
-        listitem = cls()
-        listitem.label = u"[B]%s[/B]" % Script.localize(MOST_RECENT)
-        listitem.art.global_thumb(u"recent.png")
-        listitem.set_callback(callback, **params)
-        return listitem
+        item = cls()
+        item.label = Script.localize(MOST_RECENT)
+        item.info["plot"] = "Show the most recent videos."
+        item.art.global_thumb(u"recent.png")
+        item.set_callback(callback, **params)
+        return item
 
     @classmethod
     def search(cls, callback, **params):
@@ -718,11 +731,12 @@ class Listitem(object):
 
             Listitem.search(video_search, "https://www.google.com/?q=%s")
         """
-        listitem = cls()
-        listitem.label = u"[B]%s[/B]" % Script.localize(SEARCH)
-        listitem.art.global_thumb(u"search.png")
-        listitem.set_callback(SavedSearches, route=callback.route.path, **params)
-        return listitem
+        item = cls()
+        item.label = u"[B]%s[/B]" % Script.localize(SEARCH)
+        item.art.global_thumb(u"search.png")
+        item.info["plot"] = "Search for video content."
+        item.set_callback(SavedSearches, route=callback.route.path, **params)
+        return item
 
     @classmethod
     def youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
@@ -740,10 +754,10 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = "[B]%s[/B]" % (label if label else Script.localize(YOUTUBE_CHANNEL))
+        item.label = (label if label else Script.localize(YOUTUBE_CHANNEL))
         item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
         item.params["contentid"] = content_id
-        item.params["enable_playlists"] = enable_playlists
+        item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
         item.set_callback(YTPlaylist)
         return item
 

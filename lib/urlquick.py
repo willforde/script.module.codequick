@@ -1336,7 +1336,7 @@ class Response(object):
         :rtype: xml.etree.ElementTree.Element
         """
         from xml.etree import ElementTree
-        return ElementTree.fromstring(self.text)
+        return ElementTree.fromstring(self.content)
 
     def close(self):
         pass
