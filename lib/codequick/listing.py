@@ -54,7 +54,7 @@ strip_formatting = re.compile("\[[^\]]+?\]").sub
 
 # Localized string Constants
 YOUTUBE_CHANNEL = 32001
-RELATED_VIDEOS = 32301
+RELATED_VIDEOS = 32201
 RECENT_VIDEOS = 32002
 NEXT_PAGE = 33078
 SEARCH = 137
