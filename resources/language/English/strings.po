@@ -37,14 +37,6 @@ msgstr ""
 # Setting Strings: 32200 - 32299 #
 ##################################
 
-msgctxt "#32201"
-msgid "Set Folder View Mode"
-msgstr ""
-
-msgctxt "#32202"
-msgid "Set Video View Mode"
-msgstr ""
-
 
 ######################################
 # Context Menu String: 32300 - 32399 #

@@ -762,4 +762,4 @@ class Listitem(object):
 
 # Import callback functions required for listitem constructs
 from .youtube import Playlist as YTPlaylist
-from .internal import SavedSearches
+from .search import SavedSearches

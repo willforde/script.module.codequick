@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
-from functools import partial
 import logging
 import re
 
@@ -306,17 +305,6 @@ class Resolver(Script):
 
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)
-
-
-def custom_route(path, parent=None):
-    """
-    Decorator used to register callback functions/classes with custom route path.
-
-    :param str path: The route path for registering callback to.
-    :param parent: (Optional) The parent control class, if decorating a function.
-    :returns: A preconfigured register decorator.
-    """
-    return partial(dispatcher.register, cls=parent, custom_route=path)
 
 
 # Now we can import the listing module
