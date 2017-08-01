@@ -20,6 +20,7 @@ run = dispatcher.dispatch
 
 # Localized string Constants
 SELECT_PLAYBACK_ITEM = 25006
+NO_DATA = 33077
 
 
 class Route(Script):
@@ -301,7 +302,7 @@ class Resolver(Script):
         elif resolved:
             raise ValueError("resolver returned invalid url: '%s'" % type(resolved))
         else:
-            raise ValueError("resolver failed to return url")
+            raise ValueError(self.localize(NO_DATA))
 
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)
