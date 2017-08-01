@@ -13,5 +13,8 @@
         <email>willforde+codequick@gmail.com</email>
         <platform>all</platform>
         <language>en</language>
+        <assets>
+            <icon>resources/icon.png</icon>
+        </assets>
     </extension>
 </addon>
