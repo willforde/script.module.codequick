@@ -25,14 +25,14 @@ from .storage import PersistentDict
 from .listing import Listitem
 from . import utils
 
+# Notification icon options
+NOTIFICATION_WARNING = 'warning'
+NOTIFICATION_ERROR = 'error'
+NOTIFICATION_INFO = 'info'
+
 # Logging Levels
 CRITICAL = 50
 WARNING = 30
 ERROR = 40
 DEBUG = 10
 INFO = 20
-
-# Notification icon options
-NOTIFICATION_WARNING = 'warning'
-NOTIFICATION_ERROR = 'error'
-NOTIFICATION_INFO = 'info'

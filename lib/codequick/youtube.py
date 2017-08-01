@@ -19,13 +19,13 @@ import urlquick
 logger = logging.getLogger("%s.youtube" % logger_id)
 
 # Localized string Constants
-ALLVIDEOS = 32903
+ALLVIDEOS = 32003
 PLAYLISTS = 136
 
 
 class API(object):
     """
-    API class to handle requests to the youtube v3 api
+    API class to handle requests to the youtube v3 api.
 
     :param int max_results: (Optional) The maximum number of items per page that should be returned. (default => 50)
     :param bool pretty_print: (Optional) If True then the json response will be nicely indented. (default => False)
@@ -33,9 +33,10 @@ class API(object):
 
     def __init__(self, max_results=50, pretty_print=False):
         self.req_session = urlquick.Session(raise_for_status=True)
+        self.req_session.headers["referer"] = "http://www.codequick.com/"
         self.req_session.params = {"maxResults": str(max_results),
                                    "prettyPrint": str(pretty_print).lower(),
-                                   "key": "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}
+                                   "key": "AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"}
 
     def _request(self, url, query):
         source = self.req_session.get(url, params=query)
@@ -595,18 +596,19 @@ class APIControl(Route):
             # Fetch video snippet & content_details
             snippet = video_data[u"snippet"]
             content_details = video_data[u"contentDetails"]
+            channel_details = channel_cache[channel_id]
 
             # Fetch Title
             item.label = snippet[u"localized"][u"title"]
 
             # Add channel Fanart
-            item.art["fanart"] = channel_cache[channel_id][u"fanart"]
+            item.art["fanart"] = channel_details[u"fanart"]
 
             # Fetch video Image url
             item.art["thumb"] = snippet[u"thumbnails"][u"medium"][u"url"]
 
             # Fetch Description
-            item.info["plot"] = snippet[u"localized"][u"description"]
+            item.info["plot"] = "[B]%s[/B]\n\n%s" % (channel_details["title"], snippet[u"localized"][u"description"])
 
             # Fetch Studio
             item.info["studio"] = snippet[u"channelTitle"]
@@ -660,7 +662,7 @@ class APIControl(Route):
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
             item.info["plot"] = "Show all channel playlists."
             item.art["icon"] = "DefaultVideoPlaylists.png"
-            item.art.global_thumb(u"youtubewide.png")
+            item.art.global_thumb(u"playlist.png")
             item.set_callback(Playlists, content_id=channel_ids[0], show_all=False)
             yield item
 
@@ -750,7 +752,7 @@ class Playlists(APIControl):
         # This is usefull when the root of a addon is the playlist directory
         if show_all:
             title = self.localize(ALLVIDEOS)
-            yield Listitem.youtube(channel_id, title, enable_playlists=False, wide_thumb=True)
+            yield Listitem.youtube(channel_id, title, enable_playlists=False)
 
         # Loop Entries
         for playlist_item in feed[u"items"]:

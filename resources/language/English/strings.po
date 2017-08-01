@@ -17,39 +17,39 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 ################################
-# Addon Strings: 32900 - 32949 #
+# Addon Strings: 32000 - 32199 #
 ################################
 
-msgctxt "#32901"
+msgctxt "#32001"
 msgid "[B]Youtube Channel[/B]"
 msgstr ""
 
-msgctxt "#32902"
-msgid "[B]Most Recent[/B]"
+msgctxt "#32002"
+msgid "[B]Recent Videos[/B]"
 msgstr ""
 
-msgctxt "#32903"
+msgctxt "#32003"
 msgid "[B]All Videos[/B]"
 msgstr ""
 
 
 ##################################
-# Setting Strings: 32950 - 32974 #
+# Setting Strings: 32200 - 32299 #
 ##################################
 
-msgctxt "#32971"
+msgctxt "#32201"
 msgid "Set Folder View Mode"
 msgstr ""
 
-msgctxt "#32972"
+msgctxt "#32202"
 msgid "Set Video View Mode"
 msgstr ""
 
 
 ######################################
-# Context Menu String: 32975 - 32999 #
+# Context Menu String: 32300 - 32399 #
 ######################################
 
-msgctxt "#32975"
+msgctxt "#32301"
 msgid "Related Videos"
 msgstr ""

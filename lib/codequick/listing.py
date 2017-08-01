@@ -46,9 +46,6 @@ sort_map = {"title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
 # Convenient variable for adding to autosort
 auto_sort_add = auto_sort.add
 
-# Context menu requirments
-strRelated = Script.localize(32975)  # 'related_videos'
-
 # Map quality values to it's related video resolution
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
 
@@ -56,8 +53,9 @@ quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p,
 strip_formatting = re.compile("\[[^\]]+?\]").sub
 
 # Localized string Constants
-YOUTUBE_CHANNEL = 32901
-MOST_RECENT = 32902
+YOUTUBE_CHANNEL = 32001
+RELATED_VIDEOS = 32301
+RECENT_VIDEOS = 32002
 NEXT_PAGE = 33078
 SEARCH = 137
 
@@ -159,11 +157,12 @@ class Art(CommonDict):
         Set the thumbnail image to a image file located in the codequick 'resources/media' directory.
         
         Below is a list of available global thumbnail images.
-        youtubewide.png - A wide image of the youtube logo.
-        youtube.png     - A square image of the youtube logo.
-        search.png      - Image of a magnifying glass.
-        recent.png      - Image of a folder with a clock on it.
-        next.png        - Image with an arrow pointing to the right.
+        next.png        - Arrow pointing to the right.
+        videos.png      - Circle with a play button in the middle.
+        search.png      - An image of a magnifying glass.
+        search_new.png  - A magnifying glass with plus symbol in the middle.
+        playlist.png    - Image of three bulleted lines.
+        recent.png      - Image of a clock.
 
         :param image: Filename of the image.
         :type image: str or unicode
@@ -412,7 +411,7 @@ class Context(list):
         :param callback: The function that will be called when menu item is activated.
         :param query: (Optional) Keyword arguments that will be passed on to callback function.
         """
-        self.container(strRelated, callback, **query)
+        self.container(Script.localize(RELATED_VIDEOS), callback, **query)
 
     def container(self, label, callback, **query):
         """
@@ -713,7 +712,7 @@ class Listitem(object):
         """
         # Create listitem instance
         item = cls()
-        item.label = Script.localize(MOST_RECENT)
+        item.label = Script.localize(RECENT_VIDEOS)
         item.info["plot"] = "Show the most recent videos."
         item.art.global_thumb(u"recent.png")
         item.set_callback(callback, **params)
@@ -739,7 +738,7 @@ class Listitem(object):
         return item
 
     @classmethod
-    def youtube(cls, content_id, label=None, enable_playlists=True, wide_thumb=False):
+    def youtube(cls, content_id, label=None, enable_playlists=True):
         """
         A Listitem constructor to add a youtube channel to addon.
 
@@ -750,12 +749,11 @@ class Listitem(object):
         :type label: str or unicode
 
         :param bool enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
-        :param bool wide_thumb: (Optional) True to use a wide thumbnail or False for normal thumbnail image (default).
         """
         # Youtube exists, Creating listitem link
         item = cls()
         item.label = (label if label else Script.localize(YOUTUBE_CHANNEL))
-        item.art.global_thumb(u"youtubewide.png" if wide_thumb else u"youtube.png")
+        item.art.global_thumb(u"videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
         item.set_callback(YTPlaylist)

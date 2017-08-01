@@ -125,7 +125,6 @@ class Route(object):
         :returns: A list of tuples consisten of ('arg name', 'arg value)'.
         :rtype: list
         """
-        # TODO: Check how this function works when a callback has no arguments
         callback_args = inspect.getargspec(self.callback).args[1:]
         return zip(callback_args, args)
 
@@ -174,6 +173,7 @@ class Dispatcher(object):
             if hasattr(callback, "run"):
                 # Set the callback as the parent and the run method as the function to call
                 route = Route(callback, callback.run, callback, path)
+                # noinspection PyTypeChecker
                 callback.testcall = staticmethod(partial(unittest_caller, route))
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
@@ -201,7 +201,7 @@ class Dispatcher(object):
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), "error")
+            dialog.notification(e.__class__.__name__, str(e), Script.get_info("icon").encode("utf8"))
             logger.critical(str(e), exc_info=1)
         else:
             from . import start_time
@@ -384,14 +384,14 @@ class Script(object):
         lvl = kwargs.pop("lvl", 10)
         self.logger.log(lvl, msg, *args, **kwargs)
 
-    @staticmethod
-    def notify(heading, message, icon="info", display_time=5000, sound=True):
+    @classmethod
+    def notify(cls, heading, message, icon=None, display_time=5000, sound=True):
         """
         Send a notification to kodi.
 
         :param str heading: Dialog heading label.
         :param str message: Dialog message label.
-        :param str icon: (Optional) Icon to use. option are 'error', 'info', 'warning'. (default => 'info')
+        :param str icon: (Optional) Icon to use. option are 'info', 'error', 'warning'. (default => add-on icon)
         :param int display_time: (Optional) Display_time in milliseconds to show dialog. (default => 5000)
         :param bool sound: (Optional) Whether or not to play notification sound. (default => True)
         """
@@ -400,6 +400,11 @@ class Script(object):
 
         if isinstance(message, unicode):
             message = message.encode("utf8")
+
+        if icon and isinstance(icon, unicode):
+            icon = icon.encode("utf8")
+        elif not icon:
+            icon = cls.get_info("icon").encode("utf8")
 
         # Send Error Message to Display
         dialog = xbmcgui.Dialog()

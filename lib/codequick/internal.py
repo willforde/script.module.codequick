@@ -153,7 +153,7 @@ class SavedSearches(Route):
     Usefull to add search support to addon that will also keep track of previous searches
     Also contains option via context menu to remove old search terms.
     """
-
+    
     def __init__(self):
         super(SavedSearches, self).__init__()
 
@@ -169,7 +169,7 @@ class SavedSearches(Route):
 
         # Remove term from saved searches if remove argument was passed
         if remove in self.search_db:
-            del self.search_db[remove]
+            self.search_db.remove(remove)
             self.search_db.flush()
 
         # Show search dialog if search argument was passed or if there is no search term saved
@@ -177,7 +177,7 @@ class SavedSearches(Route):
             self.search_dialog()
 
         # List all saved search terms
-        return self.list_terms(dispatcher[extras.pop("route")].callback, extras)
+        return self.list_terms(extras)
 
     def search_dialog(self):
         """Show dialog for user to enter a new search term."""
@@ -186,13 +186,18 @@ class SavedSearches(Route):
             self.search_db.append(search_term)
             self.search_db.flush()
 
-    def list_terms(self, callback, extras):
+    def list_terms(self, extras):
         """:rtype: :class:`types.GeneratorType`"""
         # Add search listitem
         search_item = Listitem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
         search_item.set_callback(self, search=True, **extras)
+        search_item.art.global_thumb(u"search_new.png")
         yield search_item
+
+        callback = dispatcher[extras["route"]].callback
+        callback_params = extras.copy()
+        del callback_params["route"]
 
         # Create Context Menu item requirements
         str_remove = self.localize(REMOVE)
@@ -206,7 +211,7 @@ class SavedSearches(Route):
             item.context.container(str_remove, self, remove=search_term, **extras)
 
             # Update params with full url and set the callback
-            item.params.update(extras, search_query=search_term)
+            item.params.update(callback_params, search_query=search_term)
             item.set_callback(callback)
             yield item
 
