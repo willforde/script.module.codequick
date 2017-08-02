@@ -3,6 +3,7 @@
 # Standard Library Imports
 from hashlib import md5
 import json
+import sys
 import os
 
 # Package imports
@@ -12,7 +13,7 @@ from .base import Script
 profile_dir = Script.get_info("profile")
 
 
-class PersistentBase(object):
+class _PersistentBase(object):
     """
     Base class to handle persistent file handling.
 
@@ -26,12 +27,16 @@ class PersistentBase(object):
     :type read_only: bool
     """
     def __init__(self, filename, data_dir=None, read_only=False):
-        super(PersistentBase, self).__init__()
-        data_dir = data_dir if data_dir else profile_dir
-        self._filepath = os.path.join(data_dir, filename)
+        super(_PersistentBase, self).__init__()
         self._read_only = read_only
         self._stream = None
         self._hash = None
+
+        # Ensure that filepath is either all bytes or unicode depending on platform type, windows, linux or bsd.
+        data_dir = (data_dir.decode("utf8") if isinstance(data_dir, bytes) else data_dir) if data_dir else profile_dir
+        self._filepath = os.path.join(data_dir, filename.decode("utf8") if isinstance(filename, bytes) else filename)
+        if not sys.platform.startswith("win"):
+            self._filepath = self._filepath.encode("utf8")
 
         # Create any missing data directory
         if not os.path.exists(data_dir):
@@ -92,7 +97,7 @@ class PersistentBase(object):
         self.close()
 
 
-class PersistentDict(PersistentBase, dict):
+class PersistentDict(_PersistentBase, dict):
     """
     Persistent storage with a dictionary interface.
 
@@ -118,7 +123,7 @@ class PersistentDict(PersistentBase, dict):
             self.update(current_data)
 
 
-class PersistentList(PersistentBase, list):
+class PersistentList(_PersistentBase, list):
     """
     Persistent storage with a list interface.
 
