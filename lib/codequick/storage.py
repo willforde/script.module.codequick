@@ -37,6 +37,7 @@ class _PersistentBase(object):
         self._filepath = os.path.join(data_dir, filename.decode("utf8") if isinstance(filename, bytes) else filename)
         if not sys.platform.startswith("win"):
             self._filepath = self._filepath.encode("utf8")
+            data_dir = data_dir.encode("utf8")
 
         # Create any missing data directory
         if not os.path.exists(data_dir):
