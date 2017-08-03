@@ -12,6 +12,7 @@ import xbmcgui
 
 # Package imports
 from .base import Script, build_path, logger_id, dispatcher, auto_sort
+from .utils import safe_path
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -22,7 +23,7 @@ global_image = os.path.join(Script.get_info("path_global"), u"resources", u"medi
 
 # Fanart image location if exists
 _fanart = Script.get_info("fanart")
-fanart = _fanart.encode("utf8") if os.path.exists(_fanart) else None
+fanart = _fanart.encode("utf8") if os.path.exists(safe_path(_fanart)) else None
 icon = Script.get_info("icon").encode("utf8")
 
 # Stream type map the ensure proper stream value types

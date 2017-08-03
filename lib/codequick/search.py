@@ -25,7 +25,7 @@ class SavedSearches(Route):
         super(SavedSearches, self).__init__()
 
         # List of current saved searches
-        self.search_db = PersistentList(u"searches.json")
+        self.search_db = PersistentList(u"_searches_.json")
 
     def run(self, remove=None, search=False, **extras):
         """List all saved searches"""

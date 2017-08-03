@@ -1,6 +1,7 @@
 # Standard Library Imports
 from functools import partial
 import urlparse
+import sys
 import re
 
 # Kodi imports
@@ -79,3 +80,19 @@ def strip_tags(html):
     :type html: str or unicode
     """
     return re.sub('<[^<]+?>', '', html)
+
+
+def safe_path(path):
+    """
+    Convert path into a encoding that best suits the platform os.
+    Unicode when on windows and utf8 when on linux/bsd.
+
+    :type path: str or unicode
+    :param path: The path to convert.
+    :return: Returns the path as unicode or utf8 encoded str.
+    """
+    ensure_uni = sys.platform.startswith("win")
+    if isinstance(path, unicode):
+        return path if ensure_uni else path.encode("utf8")
+    else:
+        return path.decode("utf8") if ensure_uni else path
