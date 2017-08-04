@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
+
 # Standard Library Imports
-from functools import partial
 import urlparse
 import sys
 import re
@@ -10,66 +11,107 @@ import xbmc
 
 def keyboard(heading, default="", hidden=False):
     """
-    Return User input as a unicode string.
+    Show keyboard dialog for user input.
 
     :param heading: Keyboard heading.
     :type heading: str or unicode
 
-    :param default: (Optional) Default text entry.
+    :param default: [opt] Default text.
     :type default: str or unicode
 
-    :param hidden: (Optional) True for hidden text entry.
+    :param hidden: [opt] True for hidden text entry.
     :type hidden: bool
 
-    :return: The text that the user entered into text entry box.
+    :return: Returns the user input as unicode.
     :rtype: unicode
     """
-    # Convert input from unicode to string if required
+    # Convert inputs to strings if required
     default = default.encode("utf8") if isinstance(default, unicode) else default
     heading = heading.encode("utf8") if isinstance(heading, unicode) else heading
 
     # Show the onscreen keyboard
     kb = xbmc.Keyboard(default, heading, hidden)
     kb.doModal()
-    text = kb.getText()
-    if kb.isConfirmed() and text:
+
+    # Return user input only if 'OK' was pressed (confirmed)
+    if kb.isConfirmed():
+        text = kb.getText()
         return unicode(text, "utf8")
     else:
         return u""
 
 
-def parse_qs(qs):
+def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     """
     Parse a urlencoded query string, and return the data as a dictionary.
 
-    :param qs: Percent-encoded query string to be parsed.
+    Parse a query string given as a string or unicode argument (data of type application/x-www-form-urlencoded).
+    Data is returned as a dictionary. The dictionary keys are the unique query variable names and the values
+    are unicode values for each name
+
+    The optional argument keep_blank_values is a flag indicating whether blank values in percent-encoded queries
+    should be treated as blank strings. A true value indicates that blanks should be retained as blank strings.
+    The default false value indicates that blank values are to be ignored and treated as if they were not included.
+
+    The optional argument strict_parsing is a flag indicating what to do with parsing errors.
+    If false (the default), errors are silently ignored. If true, errors raise a ValueError exception.
+
+    :param qs: Percent-encoded query string to be parsed, or a url with a query string.
     :type qs: str or unicode
 
-    :return: Returns a dict of key/value pairs with the value as unicode.
+    :param bool keep_blank_values: True to keep blank values, else discard.
+    :param bool strict_parsing: True to raise ValueError if there are parsing errors, else silently ignore.
+
+    :return: Returns a dict of key/value pairs with the values as unicode.
     :rtype: dict
 
     :raises ValueError: If duplicate query field names exists.
     """
     params = {}
-    for key, value in urlparse.parse_qsl(qs.encode("utf8") if isinstance(qs, unicode) else qs):
+    qs = qs.split("?")[-1]
+    qs = qs.encode("utf8") if isinstance(qs, unicode) else qs
+    for key, value in urlparse.parse_qsl(qs, keep_blank_values, strict_parsing):
+        # Only add keys that are not already added, multiple values are not supported
         if key not in params:
             params[key] = unicode(value, encoding="utf8")
         else:
-            raise ValueError("encountered duplicate param field name: '{}'".format(key))
+            raise ValueError("encountered duplicate param field name: '%s'" % key)
 
     return params
 
 
-def urljoin(base_url):
+def urljoin_partial(base_url):
     """
-    Join a base URL and a possibly relative URL to form an absolute
-    interpretation of the latter.
+    Construct a full (absolute) URL by combining a base URL with another URL. Informally,
+    this uses components of the base URL, in particular the addressing scheme, the network location and (part of)
+    the path, to provide missing components in the relative URL.
+
+    Returns a new partial object which when called will pass base_url to urlparse.urljoin along with the
+    supplied relative URL.
 
     :type base_url: str or unicode
-    :param base_url: The base url.
-    :returns: A function that accepts a relative or absolute url and returns a full absolute url.
+    :param base_url: The absolute url to use as the base.
+    :returns: A partial function that accepts a relative url and returns a full absolute url.
+    
+    .. Example::
+        
+        url_constructor = urljoiner("https://google.ie/")
+        
+        url_constructor("/path/to/something")
+        "https://google.ie/path/to/something"
+
+        url_constructor("/gmail")
+        "https://google.ie/gmail"
+        
     """
-    return partial(urlparse.urljoin, base_url)
+    # Ensure that base url is unicode
+    if isinstance(base_url, bytes):
+        base_url = base_url.encode("utf8")
+
+    def wrapper(url):
+        return urlparse.urljoin(base_url, url.encode("utf8") if isinstance(url, bytes) else url)
+
+    return wrapper
 
 
 def strip_tags(html):
@@ -85,14 +127,14 @@ def strip_tags(html):
 def safe_path(path):
     """
     Convert path into a encoding that best suits the platform os.
-    Unicode when on windows and utf8 when on linux/bsd.
+    Unicode when on windows, utf8 when on linux/bsd.
 
     :type path: str or unicode
     :param path: The path to convert.
     :return: Returns the path as unicode or utf8 encoded str.
     """
     ensure_uni = sys.platform.startswith("win")
-    if isinstance(path, unicode):
-        return path if ensure_uni else path.encode("utf8")
+    if isinstance(path, bytes):
+        return unicode(path, "utf8") if ensure_uni else path
     else:
-        return path.decode("utf8") if ensure_uni else path
+        return path if ensure_uni else path.encode("utf8")
