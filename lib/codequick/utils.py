@@ -70,12 +70,13 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     params = {}
     qs = qs.split("?")[-1]
     qs = qs.encode("utf8") if isinstance(qs, unicode) else qs
-    for key, value in urlparse.parse_qsl(qs, keep_blank_values, strict_parsing):
+    for bkey, value in urlparse.parse_qsl(qs, keep_blank_values, strict_parsing):
         # Only add keys that are not already added, multiple values are not supported
-        if key not in params:
-            params[key] = unicode(value, encoding="utf8")
+        ukey = unicode(bkey, encoding="utf8")
+        if ukey not in params:
+            params[ukey] = unicode(value, encoding="utf8")
         else:
-            raise ValueError("encountered duplicate param field name: '%s'" % key)
+            raise ValueError("encountered duplicate param field name: '%s'" % bkey)
 
     return params
 
