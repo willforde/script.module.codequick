@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # Copyright: (c) 2016 - 2017 William Forde (willforde+codequick@gmail.com)
 # License: GPLv3, see LICENSE for more details
 #
