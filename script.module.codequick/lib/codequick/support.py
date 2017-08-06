@@ -118,7 +118,7 @@ def parse_sysargs():
     :return: A tuple of (selector, handle, params)
     :rtype: tuple
     """
-    # Only designed to work with parameters and no parameters were given
+    # Only designed to work as a plugin call
     if not sys.argv[0].startswith("plugin://"):
         raise RuntimeError("No parameters found, unable to execute script")
 
