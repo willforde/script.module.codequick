@@ -22,7 +22,13 @@ log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug
 
 
 class KodiLogHandler(logging.Handler):
-    """Custom Logger Handler to forward logs to Kodi."""
+    """
+    Custom Logger Handler to forward logs to Kodi.
+
+    Log records will automatically be converted from unicode to utf8 encoded strings.
+    All debug messages will be stored locally and outputed as warning messages if a critical error occurred.
+    This is done so that debug messages will appear on the normal kodi log file without having to enable debug logging.
+    """
 
     def __init__(self):
         super(KodiLogHandler, self).__init__()
@@ -79,22 +85,23 @@ class Params(dict):
     Parse the query string giving by kodi into a dictionary.
     Also splits the params into callback/support params.
 
+    :param str params: The query string passeed in from kodi.
     :ivar dict callback_params: Parameters that will be forward to callback function.
     :ivar dict support_params: Parameters used for internal functions.
     """
 
-    def __init__(self, _params):
+    def __init__(self, params):
         super(Params, self).__init__()
         self.callback_params = {}
         self.support_params = {}
 
-        if _params:
-            if _params.startswith("_json_="):
+        if params:
+            if params.startswith("_json_="):
                 # Decode params using binascii & json
-                params = json.loads(unhexlify(_params[7:]))
+                params = json.loads(unhexlify(params[7:]))
             else:
                 # Decode params using urlparse.parse_qs
-                params = parse_qs(_params)
+                params = parse_qs(params)
 
             # Populate dict of params
             super(Params, self).__init__(params)

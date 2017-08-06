@@ -63,10 +63,12 @@ def unittest_caller(route, *args, **kwargs):
 
     # Update support params with the params
     # that are to be passed to callback
-    params.update(kwargs)
     if args:
         arg_map = route.args_to_kwargs(args)
         params.update(arg_map)
+
+    if kwargs:
+        params.update(kwargs)
 
     # Instantiate the parent
     controller_ins = route.parent()
