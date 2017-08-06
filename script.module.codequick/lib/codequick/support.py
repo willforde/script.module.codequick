@@ -125,11 +125,8 @@ def parse_sysargs():
     # Extract command line arguments
     _, _, selector, params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
 
-    # Set default selector if non is found
-    if not selector or selector == "/":
-        selector = "root"
-    elif selector.startswith("/"):
-        selector = selector[1:]
+    # Remove leading / from selector
+    selector = selector.split("/", 1)[-1]
 
     # Return parsed data
-    return selector, int(sys.argv[1]), Params(params)
+    return selector if selector else "root", int(sys.argv[1]), Params(params)
