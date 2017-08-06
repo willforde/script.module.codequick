@@ -36,7 +36,11 @@ class KodiLogHandler(logging.Handler):
         self.debug_msgs = []
 
     def emit(self, record):
-        """Forward the log record to kodi, lets kodi handle the logging."""
+        """
+        Forward the log record to kodi, lets kodi handle the logging.
+
+        :param logging.LogRecord record: The log event record.
+        """
         log_level = record.levelno
         formatted_msg = self.format(record)
 
