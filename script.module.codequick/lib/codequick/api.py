@@ -34,7 +34,7 @@ class Route(Script):
         self._manual_sort = set()
         self._autosort = True
 
-        self.update_listing = self.params.get("_updatelisting_", False)
+        self.update_listing = self.params.get(u"_updatelisting_", False)
         """bool: True, this folder should update the current listing. False, this folder is a subfolder (Default)."""
 
         self.content_type = None

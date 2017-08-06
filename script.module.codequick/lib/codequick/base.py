@@ -27,8 +27,9 @@ plugin_id = addon_data.getAddonInfo("id")
 logger_id = re.sub("[ .]", "-", addon_data.getAddonInfo("name"))
 
 # Base Logger
+kodi_logger = KodiLogHandler()
 base_logger = logging.getLogger()
-base_logger.addHandler(KodiLogHandler())
+base_logger.addHandler(kodi_logger)
 base_logger.propagate = False
 base_logger.setLevel(logging.DEBUG)
 
@@ -52,15 +53,13 @@ def unittest_caller(route, *args, **kwargs):
     :param route: The route path to callback.
     :param args: Positional arguments to pass to callback.
     :param kwargs: Keyword arguments to pass to callback.
+    :returns: The response from the callback function.
     """
     # Change the selector to match callback route
     # This will ensure that the plugin paths are currect
     global selector
     org_selector = selector
     selector = route.path
-
-    # Instantiate the parent
-    controller_ins = route.parent()
 
     # Update support params with the params
     # that are to be passed to callback
@@ -69,11 +68,15 @@ def unittest_caller(route, *args, **kwargs):
         arg_map = route.args_to_kwargs(args)
         params.update(arg_map)
 
+    # Instantiate the parent
+    controller_ins = route.parent()
+
     try:
         # Now we are ready to call the callback and return its results
         return route.callback(controller_ins, *args, **kwargs)
     finally:
         # Reset global datasets
+        kodi_logger.debug_msgs = []
         selector = org_selector
         auto_sort.clear()
         params.clear()
@@ -81,13 +84,13 @@ def unittest_caller(route, *args, **kwargs):
 
 def build_path(path=None, query=None, **extra_query):
     """
-    Build addon url that can be parsed to kodi for kodi to call the next set of listings.
+    Build addon url that can be passeed to kodi for kodi to use when calling listitems.
     
-    :param path: (Optional) The route selector path referencing the callback object. (default: current route selector)
-    :param query: (Optional) A set of query key/value pairs to add to plugin path.
-    :param extra_query: (Optional) Keyword arguments if given will be added to the current set of querys.
+    :param path: [opt] The route selector path referencing the callback object. (default: current route selector)
+    :param query: [opt] A set of query key/value pairs to add to plugin path.
+    :param extra_query: [opt] Keyword arguments if given will be added to the current set of querys.
 
-    :return: Plugin url used by kodi.
+    :return: Plugin url for kodi.
     :rtype: str
     """
 
@@ -96,8 +99,7 @@ def build_path(path=None, query=None, **extra_query):
         query = params.copy()
         query.update(extra_query)
 
-    # Urlencode the query parameters
-    # Note: Look into a custom urlencode, with better unicode support
+    # Encode the query parameters using json
     if query:
         query = "_json_=" + hexlify(json.dumps(query))
 
@@ -106,7 +108,7 @@ def build_path(path=None, query=None, **extra_query):
 
 
 class Route(object):
-    """Handle callback route data like is_playable and path."""
+    """Handle callback route data."""
     __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
 
     def __init__(self, parent, callback, org_callback, path):
@@ -149,18 +151,15 @@ class Dispatcher(object):
         """
         return self[selector].org_callback
 
-    def register(self, callback, cls=None, custom_route=None):
+    def register(self, callback, cls):
         """
         Register route callback function
 
         :param callback: The callback function.
-        :param cls: (Optional) Parent class that will handle the callback, if registering a function.
-        :param str custom_route: A custom route used for mapping.
+        :param cls: Parent class that will handle the callback, if registering a function.
         :returns: The callback function with extra attributes added, 'route', 'testcall'.
         """
-        if custom_route:
-            path = custom_route.lower()
-        elif callback.__name__.lower() == "root":
+        if callback.__name__.lower() == "root":
             path = callback.__name__.lower()
         else:
             path = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
@@ -211,6 +210,8 @@ class Dispatcher(object):
 
 
 class Settings(object):
+    """Settings class to handle the getting and setting of addon settings."""
+
     def __getitem__(self, key):
         """
         Returns the value of a setting as a unicode string.
@@ -296,21 +297,28 @@ class Settings(object):
 
 
 class Script(object):
+    """
+    :cvar INFO: Info logging level.
+    :cvar DEBUG: Debug logging level.
+    :cvar ERROR: Error logging level.
+    :cvar WARNING: Warning logging level.
+    :cvar CRITICAL: Critical logging level.
+    """
     # Set listing type variables
     is_playable = False
     is_folder = False
 
-    #: Dictionary of params passed to callback
+    # Dictionary of params passed to callback
     params = params
 
-    #: Dictionary like object of add-on settings.
-    setting = Settings()
-
-    #: Underlining logger object, for advanced use.
+    # Underlining logger object, for advanced use.
     logger = logging.getLogger(logger_id)
 
-    #: Handle the add-on was started with, for advanced use.
+    # Handle the add-on was started with, for advanced use.
     handle = handle
+
+    #: :class:`Settings` Dictionary like object of add-on settings.
+    setting = Settings()
 
     # Logging Levels
     CRITICAL = 50
@@ -371,10 +379,11 @@ class Script(object):
         ERROR 	    40
         CRITICAL 	50
 
-        Note:
-        When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
-        will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
-        log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
+        .. Note::
+
+            When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
+            will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
+            log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
 
         :param msg: The message format string.
         :param args: Arguments which are merged into msg using the string formatting operator.
@@ -384,8 +393,7 @@ class Script(object):
         lvl = kwargs.pop("lvl", 10)
         self.logger.log(lvl, msg, *args, **kwargs)
 
-    @classmethod
-    def notify(cls, heading, message, icon=None, display_time=5000, sound=True):
+    def notify(self, heading, message, icon=None, display_time=5000, sound=True):
         """
         Send a notification to kodi.
 
@@ -404,7 +412,7 @@ class Script(object):
         if icon and isinstance(icon, unicode):
             icon = icon.encode("utf8")
         elif not icon:
-            icon = cls.get_info("icon").encode("utf8")
+            icon = self.icon.encode("utf8")
 
         # Send Error Message to Display
         dialog = xbmcgui.Dialog()
