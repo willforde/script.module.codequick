@@ -18,15 +18,13 @@ import xbmc
 # Package imports
 from .support import KodiLogHandler, parse_sysargs, CacheProperty
 
-# Fetch addon data objects
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
 
-# The id of the running addon
 plugin_id = addon_data.getAddonInfo("id")
 logger_id = re.sub("[ .]", "-", addon_data.getAddonInfo("name"))
 
-# Base Logger
+# Setup kodi logging
 kodi_logger = KodiLogHandler()
 base_logger = logging.getLogger()
 base_logger.addHandler(kodi_logger)
@@ -36,11 +34,32 @@ base_logger.setLevel(logging.DEBUG)
 # Logger specific to this module
 logger = logging.getLogger("%s.support" % logger_id)
 
-# Extract calling arguments from sys args
+# Extract command line arguments passed in from kodi
 selector, handle, params = parse_sysargs()
 
-# Listing auto sort methods
+# Listitem auto sort methods
 auto_sort = set()
+
+# List of callback functions that will be executed
+# after listitems have been listed
+metacalls = []
+
+
+def run_metacalls():
+    """Execute all callbacks, if any."""
+    if metacalls:
+        # Time before executing callbacks
+        start_time = time.time()
+
+        # Execute each callback one by one
+        for func, args, kwargs in metacalls:
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                logger.exception(str(e))
+
+        # Log execution time of callbacks
+        logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
 
 
 def unittest_caller(route, *args, **kwargs):
@@ -49,8 +68,7 @@ def unittest_caller(route, *args, **kwargs):
     Parent argument will be auto instantiated and passed to callback.
     This basically acts as a constructor to callback.
 
-    :type route: Route
-    :param route: The route path to callback.
+    :param Route route: The route path to callback.
     :param args: Positional arguments to pass to callback.
     :param kwargs: Keyword arguments to pass to callback.
     :returns: The response from the callback function.
@@ -66,7 +84,6 @@ def unittest_caller(route, *args, **kwargs):
     if args:
         arg_map = route.args_to_kwargs(args)
         params.update(arg_map)
-
     if kwargs:
         params.update(kwargs)
 
@@ -74,12 +91,13 @@ def unittest_caller(route, *args, **kwargs):
     controller_ins = route.parent()
 
     try:
-        # Now we are ready to call the callback and return its results
+        # Now we are ready to call the callback function and return its results
         return route.callback(controller_ins, *args, **kwargs)
     finally:
         # Reset global datasets
         kodi_logger.debug_msgs = []
         selector = org_selector
+        metacalls[:] = []
         auto_sort.clear()
         params.clear()
 
@@ -96,7 +114,8 @@ def build_path(path=None, query=None, **extra_query):
     :rtype: str
     """
 
-    # If extra querys are given then append to current set of querys
+    # If extra querys are given then append the
+    # extra querys to the current set of querys
     if extra_query:
         query = params.copy()
         query.update(extra_query)
@@ -105,12 +124,26 @@ def build_path(path=None, query=None, **extra_query):
     if query:
         query = "_json_=" + hexlify(json.dumps(query))
 
-    # Build url with new query parameters
+    # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
 
 
 class Route(object):
-    """Handle callback route data."""
+    """
+    Handle callback route data.
+
+    :param parent: The parent class that will handle the response from callback.
+    :param callback: The callable callback function.
+    :param org_callback: The decorated func/class.
+    :param str path: The route path to func/class.
+
+    :ivar is_playable: True if callback is playable, else False.
+    :ivar is_folder: True if callback is a folder, else False.
+    :ivar org_callback: The decorated func/class.
+    :ivar callback: The callable callback function.
+    :ivar parent: The parent class that will handle the response from callback.
+    :ivar path: The route path to func/class.
+    """
     __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
 
     def __init__(self, parent, callback, org_callback, path):
@@ -134,7 +167,9 @@ class Route(object):
 
 
 class Dispatcher(object):
+    """Class to handle registering and dispatching of callback functions."""
     def __init__(self):
+        #: Dictionary of registered callback functions, {'route path': callback function}.
         self.registered_routes = {}
 
     def __getitem__(self, route):
@@ -150,6 +185,7 @@ class Dispatcher(object):
         The original callback function/class.
 
         Primarily used by 'Listitem.next_page' constructor.
+        :returns: The dispatched callback function/class.
         """
         return self[selector].org_callback
 
@@ -196,9 +232,12 @@ class Dispatcher(object):
             logger.debug("Dispatching to route: '%s'", selector)
             execute_time = time.time()
 
+            # TODO: See if i cange change how i execute parent without 'execute_route' method
+
             # Initialize controller and execute callback
             controller_ins = route.parent()
-            controller_ins.execute_route(route.callback)
+            # noinspection PyProtectedMember
+            controller_ins._execute_route(route.callback)
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
@@ -208,7 +247,7 @@ class Dispatcher(object):
             from . import start_time
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
             logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            controller_ins.run_metacalls()
+            run_metacalls()
 
 
 class Settings(object):
@@ -241,7 +280,7 @@ class Settings(object):
         Returns the value of a setting as a boolean.
 
         :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
+        :param str addon_id: [opt] Id of another addon to extract settings from.
 
         :raises RuntimeError: If addon_id is given and there is no addon with given id.
 
@@ -256,7 +295,7 @@ class Settings(object):
         Returns the value of a setting as a integer.
 
         :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
+        :param str addon_id: [opt] Id of another addon to extract settings from.
 
         :raises RuntimeError: If addon_id is given and there is no addon with given id.
 
@@ -270,7 +309,7 @@ class Settings(object):
         Returns the value of a setting as a float.
 
         :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
+        :param str addon_id: [opt] Id of another addon to extract settings from.
 
         :raises RuntimeError: If addon_id is given and there is no addon with given id.
 
@@ -285,7 +324,7 @@ class Settings(object):
         Returns the value of a setting as a unicode string.
 
         :param str key: Id of the setting to access.
-        :param str addon_id: (Optional) Id of another addon to extract settings from.
+        :param str addon_id: [opt] Id of another addon to extract settings from.
 
         :raises RuntimeError: If addon_id is given and there is no addon with given id.
 
@@ -300,15 +339,27 @@ class Settings(object):
 
 class Script(object):
     """
+    This class is used to create Script callbacks. Script callbacks are callbacks that
+    just execute code and return nothing.
+
+    This class is also used as the base for all other types of callbacks i.e. Route and Resolver.
+
     :cvar INFO: Info logging level.
     :cvar DEBUG: Debug logging level.
     :cvar ERROR: Error logging level.
     :cvar WARNING: Warning logging level.
     :cvar CRITICAL: Critical logging level.
     """
-    # Set listing type variables
+    # Set the listitem types to that of a script
     is_playable = False
     is_folder = False
+
+    # Logging Levels
+    CRITICAL = 50
+    WARNING = 30
+    ERROR = 40
+    DEBUG = 10
+    INFO = 20
 
     # Dictionary of params passed to callback
     params = params
@@ -319,56 +370,44 @@ class Script(object):
     # Handle the add-on was started with, for advanced use.
     handle = handle
 
-    #: :class:`Settings` Dictionary like object of add-on settings.
+    #: :class:`Settings` object with dictionary like interface of add-on settings.
     setting = Settings()
-
-    # Logging Levels
-    CRITICAL = 50
-    WARNING = 30
-    ERROR = 40
-    DEBUG = 10
-    INFO = 20
-
-    @classmethod
-    def register(cls, callback):
-        """Decorator used to register callback function/class."""
-        return dispatcher.register(callback, cls=cls)
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
-        self._callbacks = []
 
-    def execute_route(self, callback):
-        """Execute the callback function and process the results."""
+    def _execute_route(self, callback):
+        """
+        Execute the callback function and process the results.
+
+        :param callback: The callback func/class to register.
+        :returns: The response from the callback func/class.
+        """
         logger.debug("Callback parameters: '%s'", params.callback_params)
         return callback(self, **params.callback_params)
 
-    def register_metacall(self, func, *args, **kwargs):
+    @classmethod
+    def register(cls, callback):
         """
-        Register a callback function that will be executed after kodi's 'endOfDirectory' or 'setResolvedUrl' is called.
-        Very useful for fetching extra metadata without slowing down the lising of content.
+        Decorator used to register callback function/class.
+
+        :param callback: The callback func/class to register.
+        :returns: The callback func/class with route data as a attribute.
+        """
+        return dispatcher.register(callback, cls=cls)
+
+    @staticmethod
+    def register_metacall(func, *args, **kwargs):
+        """
+        Register a callback function that will be executed after kodi has finished listing all listitems.
+        Sence callback function is called after the listitems have been shown, it will not slow anything down.
+        Very useful for fetching extra metadata without slowing down the listing of content.
 
         :param func: Function that will be called of endOfDirectory.
         :param kwargs: Keyword arguments that will be passed to callback function.
         """
         callback = (func, args, kwargs)
-        self._callbacks.append(callback)
-
-    def run_metacalls(self):
-        """Execute all callbacks, if any."""
-        if self._callbacks:
-            # Time before executing callbacks
-            start_time = time.time()
-
-            # Execute each callback one by one
-            for func, args, kwargs in self._callbacks:
-                try:
-                    func(*args, **kwargs)
-                except Exception as e:
-                    logger.exception(str(e))
-
-            # Log execution time of callbacks
-            logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
+        metacalls.append(callback)
 
     def log(self, msg, *args, **kwargs):
         """
@@ -401,22 +440,21 @@ class Script(object):
 
         :param str heading: Dialog heading label.
         :param str message: Dialog message label.
-        :param str icon: (Optional) Icon to use. option are 'info', 'error', 'warning'. (default => add-on icon)
-        :param int display_time: (Optional) Display_time in milliseconds to show dialog. (default => 5000)
-        :param bool sound: (Optional) Whether or not to play notification sound. (default => True)
+        :param str icon: [opt] Icon to use. option are 'info', 'error', 'warning'. (default => add-on icon)
+        :param int display_time: [opt] Display_time in milliseconds to show dialog. (default => 5000)
+        :param bool sound: [opt] Whether or not to play notification sound. (default => True)
         """
+        # Ensure that heading, message and icon is encoded into utf8
+        # As kodi will not except unicode
         if isinstance(heading, unicode):
             heading = heading.encode("utf8")
-
         if isinstance(message, unicode):
             message = message.encode("utf8")
-
         if icon and isinstance(icon, unicode):
             icon = icon.encode("utf8")
         elif not icon:
             icon = self.icon.encode("utf8")
 
-        # Send Error Message to Display
         dialog = xbmcgui.Dialog()
         dialog.notification(heading, message, icon, display_time, sound)
 
@@ -442,27 +480,29 @@ class Script(object):
         """
         Returns the value of an addon property as a 'unicode string'.
 
-        :param key: Id of the property to access.
-        :param str addon_id: (Optional) Id of another addon to extract properties from.
+        :param str key: Id of the property to access.
+        :param str addon_id: [opt] Id of another addon to extract properties from.
 
         :return: Add-on property as a 'unicode string'.
         :rtype: unicode
 
-        :raises RuntimeError: IF no add-on for given id was found.
+        :raises RuntimeError: IF no add-on with given id was found.
         """
-        # Check if we are extracting data from another add-on
         if addon_id:
+            # Extract property from a different add-on
             resp = xbmcaddon.Addon(addon_id).getAddonInfo(key)
         elif key == "path_global" or key == "profile_global":
+            # Extract property from codequick addon
             resp = script_data.getAddonInfo(key[:key.find("_")])
         else:
+            # Extract property from the running addon
             resp = addon_data.getAddonInfo(key)
 
         # Check if path needs to be translated first
         if resp[:10] == "special://":
             resp = xbmc.translatePath(resp)
 
-        # Convert property into unicode
+        # return the property as unicode
         return unicode(resp, "utf8")
 
     @CacheProperty

@@ -103,9 +103,7 @@ def urljoin_partial(base_url):
 
         url_constructor("/gmail")
         "https://google.ie/gmail"
-        
     """
-    # Ensure that base url is unicode
     if isinstance(base_url, bytes):
         base_url = base_url.encode("utf8")
 

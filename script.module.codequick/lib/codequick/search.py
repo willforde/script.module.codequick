@@ -7,7 +7,7 @@ from .listing import Listitem
 from .utils import keyboard
 from .api import Route
 
-# Prerequisites
+# Localized string Constants
 ENTER_SEARCH_STRING = 16017
 REMOVE = 1210
 SEARCH = 137
@@ -17,29 +17,30 @@ SEARCH = 137
 class SavedSearches(Route):
     """
     Class used to list all saved searches for the addon that called it.
-    Usefull to add search support to addon that will also keep track of previous searches
+
+    Useful to add search support to addon that will also keep track of previous searches.
     Also contains option via context menu to remove old search terms.
     """
     
     def __init__(self):
         super(SavedSearches, self).__init__()
 
-        # List of current saved searches
+        # Persistent list of currently saved searches
         self.search_db = PersistentList(u"_searches_.json")
 
     def run(self, remove=None, search=False, **extras):
-        """List all saved searches"""
+        """List all saved searches."""
 
-        # Set update listing to True only when change state of searches
+        # Update the current listings only if a serch term was removed or added
         if remove or search:
             self.update_listing = True
 
-        # Remove term from saved searches if remove argument was passed
+        # Remove search term from saved searches if remove argument was given
         if remove in self.search_db:
             self.search_db.remove(remove)
             self.search_db.flush()
 
-        # Show search dialog if search argument was passed or if there is no search term saved
+        # Show search dialog if search argument is True or if there is no search term saved
         elif not self.search_db or search:
             self.search_dialog()
 
@@ -54,22 +55,28 @@ class SavedSearches(Route):
             self.search_db.flush()
 
     def list_terms(self, extras):
-        """:rtype: :class:`types.GeneratorType`"""
-        # Add search listitem
+        """
+        List all saved searches.
+
+        :returns: A generator of listitems.
+        :rtype: :class:`types.GeneratorType`
+        """
+        # Add listitem for adding new search terms
         search_item = Listitem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
         search_item.set_callback(self, search=True, **extras)
         search_item.art.global_thumb(u"search_new.png")
         yield search_item
-
+        
+        # Set the callback function to the route that was given
         callback = dispatcher[extras["route"]].callback
         callback_params = extras.copy()
         del callback_params["route"]
 
-        # Create Context Menu item requirements
+        # Prefetch the localized string for the context menu lable
         str_remove = self.localize(REMOVE)
-
-        # Add all saved searches to item list
+        
+        # List all saved searches
         for search_term in self.search_db:
             item = Listitem()
             item.label = search_term.title()
@@ -81,6 +88,5 @@ class SavedSearches(Route):
             item.params.update(callback_params, search_query=search_term)
             item.set_callback(callback)
             yield item
-
-        # Finished with the search database
+        
         self.search_db.close()

@@ -20,19 +20,20 @@ class _PersistentBase(object):
     :param filename: Filename of persistence storage file.
     :type filename: str or unicode
 
-    :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
+    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
     :type data_dir: str or unicode
 
-    :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
+    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool
     """
+
     def __init__(self, filename, data_dir=None, read_only=False):
         super(_PersistentBase, self).__init__()
         self._read_only = read_only
         self._stream = None
         self._hash = None
 
-        # Ensure that filepath is either all bytes or unicode depending on platform type, windows, linux or bsd.
+        # Ensure that filepath is either bytes or unicode depending on platform type, windows, linux or bsd.
         data_dir = (data_dir.decode("utf8") if isinstance(data_dir, bytes) else data_dir) if data_dir else profile_dir
         self._filepath = os.path.join(data_dir, filename.decode("utf8") if isinstance(filename, bytes) else filename)
         if not sys.platform.startswith("win"):
@@ -55,7 +56,7 @@ class _PersistentBase(object):
                 self._stream = file_obj = open(self._filepath, "rb+")
                 content = file_obj.read()
 
-            # Calculate hash of file content
+            # Calculate hash of current file content
             self._hash = md5(content).hexdigest()
 
             # Load content and update storage
@@ -102,18 +103,18 @@ class PersistentDict(_PersistentBase, dict):
     """
     Persistent storage with a dictionary interface.
 
-    It is designed as a context manager.
-    Uses json for the backend.
+    Json is used as the backend to serialize the data to disk.
+    This class is also designed as a context manager, to enable the use of the 'with' statement.
 
     .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
 
     :param filename: Filename of persistence storage file.
     :type filename: str or unicode
 
-    :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
+    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
     :type data_dir: str or unicode
 
-    :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
+    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool
     """
 
@@ -128,18 +129,18 @@ class PersistentList(_PersistentBase, list):
     """
     Persistent storage with a list interface.
 
-    It is designed as a context manager.
-    Uses json for the backend.
+    Json is used as the backend to serialize the data to disk.
+    This class is also designed as a context manager, to enable the use of the 'with' statement.
 
-    .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
+    .. note:: Sence json is used as the backend, all objects within this dict, must be json serializable.
 
     :param filename: Filename of persistence storage file.
     :type filename: str or unicode
 
-    :param data_dir: (Optional) Directory where persistence storage file is located. Defaults to profile directory.
+    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
     :type data_dir: str or unicode
 
-    :param read_only: (Optional) Open the file in read only mode, Disables writeback. (default => False)
+    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
     :type read_only: bool
     """
 

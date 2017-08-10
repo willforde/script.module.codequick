@@ -2,6 +2,7 @@
 
 # Standard Library Imports
 import logging
+import inspect
 import re
 
 # Kodi imports
@@ -24,7 +25,12 @@ NO_DATA = 33077
 
 
 class Route(Script):
-    """Add Directory List Items to Kodi"""
+    """
+    This class is used to create Route callbacks. Route callbacks, are callbacks that
+    return listitems witch are expected to be listed in kodi.
+
+    Route inherits all methods and attributes from :class:`Script`.
+    """
 
     # Change listitem type to 'folder'
     is_folder = True
@@ -45,19 +51,25 @@ class Route(Script):
         'videos' when listing videos.
         """
 
-    def execute_route(self, callback):
+        for i in dir(xbmcplugin):
+            if i.startswith("SORT_METHOD"):
+                tilte = "%s = %s" % (i, getattr(xbmcplugin, i))
+                self.log(tilte, lvl=self.WARNING)
+
+    def _execute_route(self, callback):
         """Execute the callback function and process the results."""
 
         # Fetch all listitems from callback function
-        listitems = super(Route, self).execute_route(callback)
+        listitems = super(Route, self)._execute_route(callback)
 
         # Process listitems and close
         success = self.__add_listitems(listitems)
         self.__end_directory(success)
 
     def __add_listitems(self, raw_listitems):
+        """Handle the processing of the listitems."""
         # Convert listitem to list incase we have a generator
-        if raw_listitems:
+        if inspect.isgenerator(raw_listitems):
             raw_listitems = list(raw_listitems)
 
         # Check if raw_listitems is None or an empty list
@@ -74,33 +86,29 @@ class Route(Script):
                 if listitem_tuple[2]:
                     folder_counter += 1
 
-        # Guess if this directory listing is primarily a folder or a video listing.
+        # Guess if this directory listing is primarily a folder or video listing.
         # Listings will be considered to be a folder if more that half the listitems are folder items.
         isfolder = folder_counter > (len(listitems) / 2)
         self.__content_type(isfolder)
-        if isfolder is False:
-            self.__add_sort_methods(self._manual_sort)
 
         # Pass the listitems and relevant data to kodi
         return xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
 
     def __content_type(self, isfolder):
-        """Guess content type and set kodi parameters, setContent & SetViewMode"""
+        """Configure plugin properties, content, category and sort methods."""
 
         # Set the add-on content type
         xbmcplugin.setContent(self.handle, "files" if isfolder else "videos")
 
         # Sets the category for skins to display modes.
-        xbmcplugin.setPluginCategory(self.handle, re.sub("\(\d+\)$", "", self._title).strip())
+        xbmcplugin.setPluginCategory(self.handle, re.sub("\(\d+\)$", "", self._title.encode("utf8")).strip())
 
-        # Change preferred view mode if one was set for given content type
-        set_key = "{}.{}.view".format(xbmc.getSkinDir(), "folder" if isfolder else "video")
-        view_mode = self.setting[set_key]
-        if view_mode:
-            xbmc.executebuiltin("Container.SetViewMode({})".format(view_mode))
+        # Add sort methods only if not a folder(Video listing)
+        if not isfolder:
+            self.__add_sort_methods(self._manual_sort)
 
     def __add_sort_methods(self, manual):
-        """Add sort methods to kodi"""
+        """Add sort methods to kodi."""
         if self._autosort:
             manual.update(auto_sort)
 
@@ -125,9 +133,9 @@ class Route(Script):
         Normally this should not be needed as sort methods are auto detected.
 
         :param int methods: One or more kodi sort mehtods.
-        :param bool override: (Optional) keyword argument to override the auto selected sort methods. (Default: False)
+        :param bool override: [opt] keyword argument to override the auto selected sort methods. (Default: False)
 
-        Example::
+        .. Example::
 
             plugin.add_sort_methods(xbmc.SORT_METHOD_DATE, xbmc.SORT_METHOD_DURATION, override=True)
         """
@@ -137,38 +145,55 @@ class Route(Script):
 
 
 class Resolver(Script):
+    """
+    This class is used to create Resolver callbacks. Resolver callbacks, are callbacks that
+    return playable video urls witch kodi can play.
+
+    Resolver inherits all methods and attributes from :class:`Script`.
+    """
     # Change listitem type to 'player'
     is_playable = True
 
-    def execute_route(self, callback):
+    def _execute_route(self, callback):
         """Execute the callback function and process the results."""
-        resolved = super(Resolver, self).execute_route(callback)
+        resolved = super(Resolver, self)._execute_route(callback)
         self.__send_to_kodi(resolved)
 
     def create_loopback(self, url, **next_params):
         """
-        Create a playlist where the second item loops back to current addon to load next video. e.g. Party Mode
+        Create a playlist where the second item loops back to current addon to load next video.
+
+        Useful for faster playlist resolving by only resolving the video url as the playlist progresses.
+        No need to resolve all video urls at once before playing the playlist.
+
+        Also useful for continuous playback of videos with no foreseeable end. For example, party mode.
 
         :param url: Url for the first playable listitem.
         :type url: str or unicode
 
-        :param next_params: (Optional) Keyword arguments to add to the loopback request when accessing the next video.
+        :param next_params: [opt] Keyword arguments to add to the loopback request when accessing the next video.
 
         :returns: The Listitem that kodi will play
-        :rtype: :class:`xbmcgui.ListItem`
+        :rtype: xbmcgui.ListItem
+
+        .. Example::
+
+            plugin.create_loopback("http://example.com/a5ed59gk.mkv", video_set=["kd90k3lx", "j5yj9y7p", "1djy6k7e"])
         """
-        # Create Playlist
+        # Video Playlist
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
-        # Create Main listitem
+        # Main Playable listitem
         main_listitem = xbmcgui.ListItem()
         main_listitem.setPath(url)
 
+        # When called from a loopback we just add title to main listitem
         if self._title.startswith(u"_loopback_"):
             main_listitem.setLabel(self._title.split(u" - ", 1)[1])
             next_params["_title_"] = self._title
         else:
-            # Add playable listitem as the first playlist item
+            # Create playlist for loopback calling
+            # The first item is the playable listitem
             main_listitem.setLabel(self._title)
             next_params["_title_"] = u"_loopback_ - %s" % self._title
             playlist.clear()
@@ -188,46 +213,59 @@ class Resolver(Script):
 
     def extract_source(self, url, quality=None):
         """
-        Extract video url using YoutubeDL
+        Extract video url using YoutubeDL.
 
-        Options for quality parameter:
-            0=SD
-            1=720p
-            2=1080p
-            3=4K
+        The YoutubeDL module provides access to youtube-dl video stream extractor
+        witch gives access to hundreds of sites.
+
+        Quality is 0=SD, 1=720p, 2=1080p, 3=Highest Available
+
+        .. seealso:: https://rg3.github.io/youtube-dl/supportedsites.html
 
         :param url: Url to fetch video for.
         :type url: str or unicode
-        :param int quality: (Optional) Override youtubeDL's quality setting.
+        :param int quality: [opt] Override youtubeDL's quality setting.
 
         :returns: The extracted video url
         :rtype: str
         """
-        try:
-            # noinspection PyUnresolvedReferences
-            from YDStreamExtractor import getVideoInfo
-        except ImportError:
-            self.log("YoutubeDL module not installed. Please install to enable 'extract_source'", lvl=40)
-            raise ImportError("Missing YoutubeDL module")
-        else:
-            # If there is more than one stream found then ask for selection
-            video_info = getVideoInfo(url, quality)
-            if video_info:
-                if video_info.hasMultipleStreams():
-                    # Ask the user to select a stream
-                    return self.__source_selection(video_info)
-                else:
-                    return video_info.streamURL()
+        def ytdl_logger(record):
+            if record.startswith("ERROR:"):
+                # Save error rocord for raising later, outside of the callback
+                # YoutubeDL ignores errors inside callbacks
+                stored_errors.append(record[7:])
+
+            self.log(record)
+            return True
+
+        # Setup YoutubeDL module
+        from YDStreamExtractor import getVideoInfo, setOutputCallback
+        setOutputCallback(ytdl_logger)
+        stored_errors = []
+
+        # Atempt to extract video source
+        video_info = getVideoInfo(url, quality)
+        if video_info:
+            if video_info.hasMultipleStreams():
+                # More than one stream found, Ask the user to select a stream
+                return self.__source_selection(video_info)
+            else:
+                return video_info.streamURL()
+
+        # Raise any stored errors
+        elif stored_errors:
+            raise RuntimeError(stored_errors[0])
 
     def __source_selection(self, video_info):
         """
-        Ask user with video stream to play
+        Ask user with video stream to play.
 
-        :param video_info: YDStreamExtractor video_info object
+        :param video_info: YDStreamExtractor video_info object.
         :returns: Stream url of video
         :rtype: str
         """
         display_list = []
+        # Populate list with name of extractor ('YouTube') and video title.
         for stream in video_info.streams():
             data = "%s - %s" % (stream["ytdl_format"]["extractor"].title(), stream["title"])
             display_list.append(data)
@@ -246,7 +284,7 @@ class Resolver(Script):
                           List may consist of url or listitem object.
 
         :returns The first listitem of the playlist.
-        :rtype: :class:`xbmcgui.ListItem`:
+        :rtype: xbmcgui.ListItem
         """
         # Create Playlist
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
@@ -254,11 +292,14 @@ class Resolver(Script):
 
         # Loop each item to create playlist
         for count, url in enumerate(urls, 1):
+            # Kodi original listitem object
             if isinstance(url, xbmcgui.ListItem):
                 listitem = url
+            # Custom listitem object
             elif isinstance(url, Listitem):
                 listitem = url.close()[1]
             else:
+                # Not already a listitem object
                 listitem = xbmcgui.ListItem()
                 if isinstance(url, (list, tuple)):
                     url, title = url
@@ -272,14 +313,15 @@ class Resolver(Script):
             # Populate Playlis
             playlist.add(listitem.getPath(), listitem)
 
-        # Return first playlist item to send to kodi
+        # Return the first playlist item
         return playlist[0]
 
     def __send_to_kodi(self, resolved):
-        """ Construct playable listitem and send to kodi
+        """
+        Construct playable listitem and send to kodi.
 
-        :param resolved: The resolved url to send back to kodi
-        :type resolved: str or unicode or :class:`xbmcgui.ListItem` or :class:`codequick.Listitem`
+        :param resolved: The resolved url to send back to kodi.
+        :type resolved: str or unicode or :class:`xbmcgui.ListItem` or :class:`codequick.Listitem`.
         """
 
         # Create listitem object if resolved object is a string or unicode
@@ -287,14 +329,15 @@ class Resolver(Script):
             listitem = xbmcgui.ListItem()
             listitem.setPath(resolved)
 
-        # Create playlist if resolved a list of urls
-        elif isinstance(resolved, (list, tuple)):
+        # Create playlist if resolved object is a list of urls
+        elif isinstance(resolved, (list, tuple)) or inspect.isgenerator(resolved):
             listitem = self.__create_playlist(resolved)
 
-        # Use resoleved as is if its already a listitem
+        # Directly use resoleved if its already a listitem
         elif isinstance(resolved, xbmcgui.ListItem):
             listitem = resolved
 
+        # Extract original kodi listitem from custom listitem
         elif isinstance(resolved, Listitem):
             listitem = resolved.close()[1]
 

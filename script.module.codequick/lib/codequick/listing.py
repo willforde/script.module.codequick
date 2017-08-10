@@ -26,7 +26,7 @@ _fanart = Script.get_info("fanart")
 fanart = _fanart.encode("utf8") if os.path.exists(safe_path(_fanart)) else None
 icon = Script.get_info("icon").encode("utf8")
 
-# Stream type map the ensure proper stream value types
+# Stream type map to ensure proper stream value types
 stream_type_map = {"duration": int,
                    "channels": int,
                    "aspect": float,
@@ -34,20 +34,37 @@ stream_type_map = {"duration": int,
                    "width": int}
 
 # Listing sort methods & sort mappings
-sort_map = {"title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
-            "size": (xbmcplugin.SORT_METHOD_SIZE, long),
-            "date": (xbmcplugin.SORT_METHOD_DATE, None),
-            "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
-            "studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),
-            "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, int),
-            "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
-            "episode": (xbmcplugin.SORT_METHOD_EPISODE, int),
-            "year": (xbmcplugin.SORT_METHOD_VIDEO_YEAR, int)}
+infolable_map = {"studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),
+                 "artist": (xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE, None),
+                 "title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
+                 "album": (xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE, None),
+                 "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
+                 "code": (xbmcplugin.SORT_METHOD_PRODUCTIONCODE, None),
+                 "tracknumber": (xbmcplugin.SORT_METHOD_TRACKNUM, int),
+                 "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, int),
+                 "listeners": (xbmcplugin.SORT_METHOD_LISTENERS, int),
+                 "mpaa": (xbmcplugin.SORT_METHOD_MPAA_RATING, None),
+                 "country": (xbmcplugin.SORT_METHOD_COUNTRY, None),
+                 "episode": (xbmcplugin.SORT_METHOD_EPISODE, int),
+                 "year": (xbmcplugin.SORT_METHOD_VIDEO_YEAR, int),
+                 "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
+                 "size": (xbmcplugin.SORT_METHOD_SIZE, long),
+                 "date": (xbmcplugin.SORT_METHOD_DATE, None),
+                 "sortepisode": (None, int),
+                 "sortseason": (None, int),
+                 "userrating": (None, int),
+                 "discnumber": (None, int),
+                 "playcount": (None, int),
+                 "overlay": (None, int),
+                 "season": (None, int),
+                 "top250": (None, int),
+                 "setid": (None, int),
+                 "dbid": (None, int)}
 
 # Convenient variable for adding to autosort
 auto_sort_add = auto_sort.add
 
-# Map quality values to it's related video resolution
+# Map quality values to it's related video resolution, used by 'strea.hd'
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
 
 # Re.sub to remove formatting from label strings
@@ -201,20 +218,22 @@ class Info(CommonDict):
             auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
         else:
             try:
-                # The sort method to set and the type that the value should be
-                sort_type, type_converter = sort_map[key]
+                # The sort method to set and the type that the infolabel should be
+                sort_type, type_converter = infolable_map[key]
             except KeyError:
                 pass
             else:
-                # Set the requred sort method needed for this infolabel
-                auto_sort_add(sort_type)
+                # Convert value to required type needed for this infolabel
                 if type_converter:
                     try:
-                        # Convert value to required type needed for this infolabel
                         value = type_converter(value)
                     except ValueError:
-                        msg = "Value of '%s' for infolabel '%s', is not of type '%s'"
+                        msg = "value of '%s' for infolabel '%s', is not of type '%s'"
                         raise TypeError(msg % (value, key, type_converter))
+
+                if sort_type:
+                    # Set the required sort method needed for this infolabel
+                    auto_sort_add(sort_type)
 
         # Ensure the value is not unicode
         self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
@@ -231,9 +250,9 @@ class Info(CommonDict):
         https://docs.python.org/2/library/time.html#time.strftime
         """
         converted_date = strptime(date, date_format)
-        self["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2009
-        self["aired"] = strftime("%Y-%m-%d", converted_date)  # 2009-01-01
-        self["year"] = strftime("%Y", converted_date)  # 2009
+        self["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2017
+        self["aired"] = strftime("%Y-%m-%d", converted_date)  # 2017-01-01
+        self["year"] = strftime("%Y", converted_date)  # 2017
 
     @staticmethod
     def _duration(duration):
@@ -359,7 +378,7 @@ class Stream(CommonDict):
 
         :type quality: bool or int
         :param quality: Quality of the stream e.g. 0=480p, 1=720p, 2=1080p, 3=4K.
-        :param float aspect: (Optional) The aspect ratio of the video.
+        :param float aspect: [opt] The aspect ratio of the video.
         """
         # Skip if value is None(Unknown), useful when passing a variable with unkown value
         if quality is None:
@@ -410,7 +429,7 @@ class Context(list):
         Keyword arguments can be any json serializable object e.g. str, list, dict
         
         :param callback: The function that will be called when menu item is activated.
-        :param query: (Optional) Keyword arguments that will be passed on to callback function.
+        :param query: [opt] Keyword arguments that will be passed on to callback function.
         """
         self.container(Script.localize(RELATED_VIDEOS), callback, **query)
 
@@ -422,7 +441,7 @@ class Context(list):
         
         :param label: The label of the context menu item.
         :param callback: The function that will be called when menu item is activated.
-        :param query: (Optional) Keyword arguments that will be passed on to callback function.
+        :param query: [opt] Keyword arguments that will be passed on to callback function.
         """
         command = "XBMC.Container.Update(%s)" % build_path(callback.route.path, query)
         self.append((label, command))
@@ -460,7 +479,7 @@ class Listitem(object):
         self._path = ""
 
         self.listitem = listitem = xbmcgui.ListItem()
-        """dict: The underlining kodi listitem object, for advanced use."""
+        """The underlining kodi listitem object, for advanced use."""
 
         self.params = CommonDict()
         """
@@ -684,7 +703,7 @@ class Listitem(object):
         """
         A Listitem constructor for adding Next Page item.
 
-        :param params: (Optional) Keyword arguments of params that will be added to the current set of callback params.
+        :param params: [opt] Keyword arguments of params that will be added to the current set of callback params.
         """
         # Add support params to callback params
         params["_updatelisting_"] = True
@@ -746,10 +765,10 @@ class Listitem(object):
         :param content_id: Channel name, channel id or playlist id to list videos from.
         :type content_id: str or unicode
 
-        :param label: (Optional) Label of listitem. (default: '-Youtube Channel').
+        :param label: [opt] Label of listitem. (default: '-Youtube Channel').
         :type label: str or unicode
 
-        :param bool enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
+        :param bool enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
         """
         # Youtube exists, Creating listitem link
         item = cls()

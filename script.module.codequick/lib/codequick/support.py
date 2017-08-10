@@ -13,7 +13,7 @@ import xbmc
 # Package imports
 from .utils import parse_qs
 
-# Level mapper to convert logger levels to kodi logger levels
+# Level mapper to convert logging module levels to kodi logger levels
 log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug
                  20: xbmc.LOGNOTICE,   # logger.info
                  30: xbmc.LOGWARNING,  # logger.warning
@@ -28,6 +28,8 @@ class KodiLogHandler(logging.Handler):
     Log records will automatically be converted from unicode to utf8 encoded strings.
     All debug messages will be stored locally and outputed as warning messages if a critical error occurred.
     This is done so that debug messages will appear on the normal kodi log file without having to enable debug logging.
+
+    :ivar debug_msgs: Local store of degub messages.
     """
 
     def __init__(self):
@@ -44,11 +46,11 @@ class KodiLogHandler(logging.Handler):
         log_level = record.levelno
         formatted_msg = self.format(record)
 
-        # Kodi will not except unicode logging
+        # Kodi will not except unicode logs
         if isinstance(formatted_msg, unicode):
             formatted_msg = formatted_msg.encode("utf8")
 
-        # Forward the log record to kodi
+        # Forward the log record to kodi with translated log level
         xbmc.log(formatted_msg, log_level_map[log_level])
 
         # Keep a history of all debug records so they can be logged later if a critical error occurred
@@ -129,15 +131,11 @@ def parse_sysargs():
     :return: A tuple of (selector, handle, params)
     :rtype: tuple
     """
-    # Only designed to work as a plugin call
+    # Only designed to work as a plugin
     if not sys.argv[0].startswith("plugin://"):
         raise RuntimeError("No parameters found, unable to execute script")
 
-    # Extract command line arguments
+    # Extract command line arguments and remove leading '/' from selector
     _, _, selector, params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
-
-    # Remove leading / from selector
     selector = selector.split("/", 1)[-1]
-
-    # Return parsed data
     return selector if selector else "root", int(sys.argv[1]), Params(params)

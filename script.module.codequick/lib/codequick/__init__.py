@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Execution start time
+# Execution start time, used later to report total execution time
 start_time = __import__("time").time()
 
 # Package imports
@@ -28,10 +28,3 @@ from . import utils
 NOTIFICATION_WARNING = 'warning'
 NOTIFICATION_ERROR = 'error'
 NOTIFICATION_INFO = 'info'
-
-# Logging Levels
-CRITICAL = 50
-WARNING = 30
-ERROR = 40
-DEBUG = 10
-INFO = 20

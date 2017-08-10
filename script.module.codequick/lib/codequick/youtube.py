@@ -28,8 +28,8 @@ class API(object):
     """
     API class to handle requests to the youtube v3 api.
 
-    :param int max_results: (Optional) The maximum number of items per page that should be returned. (default => 50)
-    :param bool pretty_print: (Optional) If True then the json response will be nicely indented. (default => False)
+    :param int max_results: [opt] The maximum number of items per page that should be returned. (default => 50)
+    :param bool pretty_print: [opt] If True then the json response will be nicely indented. (default => False)
     """
 
     def __init__(self, max_results=50, pretty_print=False):
@@ -62,7 +62,7 @@ class API(object):
         :returns: The youtube api response as a dictionary.
         :rtype: dict
 
-        :param loop: (Optional) Return all the playlists for channel. (Default => False)
+        :param loop: [opt] Return all the playlists for channel. (Default => False)
         :type loop: bool
 
         :raises RuntimeError: If youtube returns a error response.
@@ -118,10 +118,10 @@ class API(object):
 
         Refer to 'https://developers.google.com/youtube/v3/docs/channels/list'
 
-        :param channel_id: (Optional) ID(s) of the channel for requesting data for.
+        :param channel_id: [opt] ID(s) of the channel for requesting data for.
         :type channel_id: str or unicode or list or frozenset
 
-        :param for_username: (Optional) Username of the channel for requesting information for.
+        :param for_username: [opt] Username of the channel for requesting information for.
         :type for_username: unicode or str
 
         :returns: Dictionary of channel information.
@@ -154,10 +154,10 @@ class API(object):
         Note:
         If no id(s) are given then all category ids are fetched for given region.
 
-        :param cat_id: (Optional) ID(s) of the categories to fetch category names for.
+        :param cat_id: [opt] ID(s) of the categories to fetch category names for.
         :type cat_id: str or unicode or list or frozenset
 
-        :param region_code: (Optional) The region code for the categories id(s).
+        :param region_code: [opt] The region code for the categories id(s).
         :type region_code: str or unicode
 
         :returns: Dictionary of video categories.
@@ -185,7 +185,7 @@ class API(object):
         :param pagetoken: The token for the next page of results
         :type pagetoken: str or unicode
 
-        :param loop: (Optional) Return all the videos within playlist. (Default => False)
+        :param loop: [opt] Return all the videos within playlist. (Default => False)
         :type loop: bool
 
         :returns: Dictionary of playlist items.
@@ -235,7 +235,7 @@ class API(object):
         :param pagetoken: The token for the next page of results
         :type pagetoken: str or unicode
 
-        :param loop: (Optional) Return all the playlists for channel. (Default => False)
+        :param loop: [opt] Return all the playlists for channel. (Default => False)
         :type loop: bool
 
         :returns: Dictionary of playlists.
@@ -392,7 +392,7 @@ class APIControl(Route):
                           Channel Uploads ID or Playlist ID.
         
         :type require_playlist: bool
-        :param require_playlist: (Optional) True, return a upload/playlist ID (Default). False, return a channelID.
+        :param require_playlist: [opt] True, return a upload/playlist ID (Default). False, return a channelID.
 
         :raises ValueError: Will be raised if content id is a playlist id and require_playlist is False.
                             Sense we can not match a playlist id to a channel id. ValueError can also be raised
@@ -457,10 +457,10 @@ class APIControl(Route):
         """
         Update on disk cache of channel information
 
-        :param channel_id: (Optional) ID of the channel to request information for.
+        :param channel_id: [opt] ID of the channel to request information for.
         :type channel_id: str or unicode or list or frozenset
 
-        :param for_username: (Optional) Username of the channel to request information for.
+        :param for_username: [opt] Username of the channel to request information for.
         :type for_username: str or unicode
 
         .. note:: If both channel_id and for_username is given then channel_id will take priority.
@@ -503,7 +503,7 @@ class APIControl(Route):
         """
         Update on disk cache of category information
 
-        :param cat_id: (Optional) ID(s) of the categories to fetch category names for.
+        :param cat_id: [opt] ID(s) of the categories to fetch category names for.
         :type cat_id: unicode or list or frozenset
 
         Note:
@@ -548,7 +548,7 @@ class APIControl(Route):
         :param video_ids: List of all the videos to show.
         :type video_ids: list
 
-        :param enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
+        :param enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
         :type enable_playlists: bool
 
         :returns: A generator of listitems.
@@ -677,13 +677,13 @@ class Playlist(APIControl):
         :param contentid: Channel id, channel name or playlist id to list videos for.
         :type contentid: unicode
 
-        :param pagetoken: (Optional) The page token representing the next page of content.
+        :param pagetoken: [opt] The page token representing the next page of content.
         :type pagetoken: unicode
 
-        :param enable_playlists: (Optional) Set to True to enable linking to channel playlists. (default => False)
+        :param enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
         :type enable_playlists: bool
 
-        :param loop: (Optional) Return all the videos within playlist. (Default => False)
+        :param loop: [opt] Return all the videos within playlist. (Default => False)
         :type loop: bool
 
         :returns: A generator of listitems.
@@ -720,13 +720,13 @@ class Playlists(APIControl):
         :param content_id: Channel uuid or channel name to list playlists for
         :type content_id: unicode
 
-        :param show_all: (Optional) Add link to all of the channels videos if True. (default => True)
+        :param show_all: [opt] Add link to all of the channels videos if True. (default => True)
         :type show_all: bool
 
         :param pagetoken: The token for the next page of results
         :type pagetoken: str or unicode
 
-        :param loop: (Optional) Return all the playlist for channel. (Default => False)
+        :param loop: [opt] Return all the playlist for channel. (Default => False)
         :type loop: bool
 
         :returns: A generator of listitems.
@@ -794,7 +794,7 @@ class Related(APIControl):
         :param video_id: Id of the video the fetch related video for.
         :type video_id: unicode
 
-        :param pagetoken: (Optional) The page token representing the next page of content.
+        :param pagetoken: [opt] The page token representing the next page of content.
         :type pagetoken: unicode
 
         :returns: A generator of listitems.
