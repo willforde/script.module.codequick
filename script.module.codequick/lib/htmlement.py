@@ -364,24 +364,24 @@ class ParseHTML(HTMLParser):
         if data.strip() and self.enabled:
             self._data.append(data)
 
-    def handle_entityref(self, data):
+    def handle_entityref(self, name):
         if self.enabled:
             try:
-                data = _chr(name2codepoint[data])
+                name = _chr(name2codepoint[name])
             except KeyError:
                 pass
-            self._data.append(data)
+            self._data.append(name)
 
-    def handle_charref(self, data):
+    def handle_charref(self, name):
         if self.enabled:
             try:
-                if data[0].lower() == "x":
-                    data = _chr(int(data[1:], 16))
+                if name[0].lower() == "x":
+                    name = _chr(int(name[1:], 16))
                 else:
-                    data = _chr(int(data))
+                    name = _chr(int(name))
             except ValueError:
                 pass
-            self._data.append(data)
+            self._data.append(name)
 
     def handle_comment(self, data):
         data = data.strip()

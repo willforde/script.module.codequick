@@ -304,7 +304,7 @@ class APIControl(Route):
         valid_channel_refs = set()
 
         # Remove 1000 of the oldest videos
-        for count, (published, videoid, channelid) in enumerate(sorted_cache):
+        for count, (_, videoid, channelid) in enumerate(sorted_cache):
             if count < 1000:
                 remove_list.append(videoid)
             else:
@@ -560,8 +560,8 @@ class APIControl(Route):
         video_cache = self.video_cache
 
         # Check for any missing cache
-        fetch_channels = frozenset(filter(lambda channelid: channelid not in channel_cache, channel_ids))
-        fetch_videos = frozenset(filter(lambda videoid: videoid not in video_cache, video_ids))
+        fetch_channels = frozenset(channelid for channelid in channel_ids if channelid not in channel_cache)
+        fetch_videos = frozenset(videoid for videoid in video_ids if videoid not in video_cache)
         multi_channel = len(frozenset(channel_ids)) > 1
 
         # Fetch any missing channel data

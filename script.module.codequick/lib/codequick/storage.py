@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Standard Library Imports
-from hashlib import md5
+from hashlib import sha1
 import json
 import sys
 import os
@@ -57,7 +57,7 @@ class _PersistentBase(object):
                 content = file_obj.read()
 
             # Calculate hash of current file content
-            self._hash = md5(content).hexdigest()
+            self._hash = sha1(content).hexdigest()
 
             # Load content and update storage
             return json.loads(content)
@@ -69,7 +69,7 @@ class _PersistentBase(object):
 
         # Serialize the storage data
         content = json.dumps(self, indent=4, separators=(",", ":"))
-        current_hash = md5(content).hexdigest()
+        current_hash = sha1(content).hexdigest()
 
         # Compare saved hash with current hash, to detect if content has changed
         if self._hash is None or self._hash != current_hash:
