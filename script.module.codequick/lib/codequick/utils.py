@@ -26,8 +26,8 @@ def keyboard(heading, default="", hidden=False):
     :rtype: unicode
     """
     # Convert inputs to strings if required
-    default = default.encode("utf8") if isinstance(default, unicode) else default
-    heading = heading.encode("utf8") if isinstance(heading, unicode) else heading
+    default = ensure_str(default)
+    heading = ensure_str(heading)
 
     # Show the onscreen keyboard
     kb = xbmc.Keyboard(default, heading, hidden)
@@ -69,7 +69,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     """
     params = {}
     qs = qs.split("?")[-1]
-    qs = qs.encode("utf8") if isinstance(qs, unicode) else qs
+    qs = ensure_str(qs)
     for bkey, value in urlparse.parse_qsl(qs, keep_blank_values, strict_parsing):
         # Only add keys that are not already added, multiple values are not supported
         ukey = unicode(bkey, encoding="utf8")
@@ -104,11 +104,10 @@ def urljoin_partial(base_url):
         url_constructor("/gmail")
         "https://google.ie/gmail"
     """
-    if isinstance(base_url, bytes):
-        base_url = base_url.encode("utf8")
+    base_url = ensure_unicode(base_url)
 
     def wrapper(url):
-        return urlparse.urljoin(base_url, url.encode("utf8") if isinstance(url, bytes) else url)
+        return urlparse.urljoin(base_url, ensure_unicode(url))
 
     return wrapper
 
@@ -132,18 +131,28 @@ def safe_path(path):
     :param path: The path to convert.
     :return: Returns the path as unicode or utf8 encoded str.
     """
-    ensure_uni = sys.platform.startswith("win")
-    if isinstance(path, bytes):
-        return unicode(path, "utf8") if ensure_uni else path
+    # Ensure unicode if running windows
+    if sys.platform.startswith("win"):
+        return ensure_unicode(path)
     else:
-        return path if ensure_uni else path.encode("utf8")
+        return ensure_str(path)
 
 
 def ensure_str(data):
-    """Ensures that given string is returned as a UTF-8 encoded string."""
+    """
+    Ensures that given string is returned as a UTF-8 encoded string.
+
+    :returns: The given string as UTF-8.
+    :rtype: str
+    """
     return data.encode("utf8") if isinstance(data, unicode) else str(data)
 
 
 def ensure_unicode(data):
-    """Ensures that given string is return as a unicode string."""
+    """
+    Ensures that given string is return as a unicode string.
+
+    :returns: The given string as unicode.
+    :rtype: unicode
+    """
     return data.decode("utf8") if isinstance(data, bytes) else unicode(data)
