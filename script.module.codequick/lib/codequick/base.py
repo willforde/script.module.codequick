@@ -17,6 +17,7 @@ import xbmc
 
 # Package imports
 from .support import KodiLogHandler, parse_sysargs, CacheProperty
+from .utils import ensure_str
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -446,10 +447,9 @@ class Script(object):
         """
         # Ensure that heading, message and icon is encoded into utf8
         # As kodi will not except unicode
-        if isinstance(heading, unicode):
-            heading = heading.encode("utf8")
-        if isinstance(message, unicode):
-            message = message.encode("utf8")
+        heading = ensure_str(heading)
+        message = ensure_str(message)
+
         if icon and isinstance(icon, unicode):
             icon = icon.encode("utf8")
         elif not icon:

@@ -8,6 +8,7 @@ import os
 
 # Package imports
 from .base import Script
+from .utils import ensure_unicode
 
 # The addon profile directory
 profile_dir = Script.get_info("profile")
@@ -34,8 +35,8 @@ class _PersistentBase(object):
         self._hash = None
 
         # Ensure that filepath is either bytes or unicode depending on platform type, windows, linux or bsd.
-        data_dir = (data_dir.decode("utf8") if isinstance(data_dir, bytes) else data_dir) if data_dir else profile_dir
-        self._filepath = os.path.join(data_dir, filename.decode("utf8") if isinstance(filename, bytes) else filename)
+        data_dir = ensure_unicode(data_dir) if data_dir else profile_dir
+        self._filepath = os.path.join(data_dir, ensure_unicode(filename))
         if not sys.platform.startswith("win"):
             self._filepath = self._filepath.encode("utf8")
             data_dir = data_dir.encode("utf8")

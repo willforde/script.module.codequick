@@ -94,10 +94,7 @@ class CommonDict(object):
         :rtype: unicode
         """
         value = self.raw_dict[key]
-        if isinstance(value, bytes):
-            return value.decode("utf8")
-        else:
-            return value
+        return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
         """
@@ -157,7 +154,7 @@ class Art(CommonDict):
         :type value: str or unicode
         """
         if value:
-            self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else str(value)
+            self.raw_dict[key] = ensure_str(value)
         else:
             logger.debug("Ignoring empty art value: '%s'", key)
 
@@ -168,7 +165,7 @@ class Art(CommonDict):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self.raw_dict["thumb"] = local_image % (image.encode("utf8") if isinstance(image, unicode) else str(image))
+        self.raw_dict["thumb"] = local_image % (ensure_str(image))
 
     def global_thumb(self, image):
         """
@@ -185,7 +182,7 @@ class Art(CommonDict):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self.raw_dict["thumb"] = global_image % (image.encode("utf8") if isinstance(image, unicode) else str(image))
+        self.raw_dict["thumb"] = global_image % (ensure_str(image))
 
     def clsoe(self):
         if fanart and "fanart" not in self.raw_dict:
@@ -339,10 +336,7 @@ class Stream(CommonDict):
         """
         related_obj = self._translate(key)
         value = related_obj[key.split("_")[-1]]
-        if isinstance(value, bytes):
-            return value.decode("utf8")
-        else:
-            return value
+        return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
         """
@@ -357,7 +351,7 @@ class Stream(CommonDict):
             return None
 
         # Ensure that value is of required type
-        type_converter = stream_type_map.get(key, lambda x: x.encode("utf8") if isinstance(x, unicode) else str(x))
+        type_converter = stream_type_map.get(key, ensure_str)
         try:
             value = type_converter(value)
         except ValueError:
@@ -623,9 +617,9 @@ class Listitem(object):
             path = build_path(callback.route.path, self.params.raw_dict)
             isfolder = callback.route.is_folder
         else:
-            path = callback.encode("utf8") if isinstance(callback, unicode) else str(callback)
-            self.listitem.setProperty("isplayable", "true" if path else "false")
+            self.listitem.setProperty("isplayable", "true" if callback else "false")
             self.listitem.setProperty("folder", "false")
+            path = ensure_str(callback)
             isfolder = False
 
         if isfolder:

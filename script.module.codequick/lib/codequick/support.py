@@ -11,7 +11,7 @@ import sys
 import xbmc
 
 # Package imports
-from .utils import parse_qs
+from .utils import parse_qs, ensure_str
 
 # Level mapper to convert logging module levels to kodi logger levels
 log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug
@@ -47,8 +47,7 @@ class KodiLogHandler(logging.Handler):
         formatted_msg = self.format(record)
 
         # Kodi will not except unicode logs
-        if isinstance(formatted_msg, unicode):
-            formatted_msg = formatted_msg.encode("utf8")
+        formatted_msg = ensure_str(formatted_msg)
 
         # Forward the log record to kodi with translated log level
         xbmc.log(formatted_msg, log_level_map[log_level])
