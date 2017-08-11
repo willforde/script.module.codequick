@@ -34,32 +34,32 @@ stream_type_map = {"duration": int,
                    "width": int}
 
 # Listing sort methods & sort mappings
-infolable_map = {"artist":      (None,  xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
-                 "count":       (int,   xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
-                 "rating":      (float, xbmcplugin.SORT_METHOD_VIDEO_RATING),
-                 "year":        (int,   xbmcplugin.SORT_METHOD_VIDEO_YEAR),
-                 "listeners":   (int,   xbmcplugin.SORT_METHOD_LISTENERS),
-                 "tracknumber": (int,   xbmcplugin.SORT_METHOD_TRACKNUM),
-                 "episode":     (int,   xbmcplugin.SORT_METHOD_EPISODE),
-                 "genre":       (None,  xbmcplugin.SORT_METHOD_GENRE),
-                 "size":        (long,  xbmcplugin.SORT_METHOD_SIZE),
-                 "sortepisode": (int,   None),
-                 "sortseason":  (int,   None),
-                 "userrating":  (int,   None),
-                 "discnumber":  (int,   None),
-                 "playcount":   (int,   None),
-                 "overlay":     (int,   None),
-                 "season":      (int,   None),
-                 "top250":      (int,   None),
-                 "setid":       (int,   None),
-                 "dbid":        (int,   None),
-                 "date":        (ensure_str,  xbmcplugin.SORT_METHOD_DATE),
-                 "country":     (ensure_str,  xbmcplugin.SORT_METHOD_COUNTRY),
-                 "mpaa":        (ensure_str,  xbmcplugin.SORT_METHOD_MPAA_RATING),
-                 "code":        (ensure_str,  xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
-                 "album":       (ensure_str,  xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
-                 "title":       (ensure_str,  xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
-                 "studio":      (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)}
+infolable_map = {"artist":      (None,       xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
+                 "studio":      (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
+                 "title":       (ensure_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
+                 "album":       (ensure_str, xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
+                 "code":        (ensure_str, xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
+                 "count":       (int,        xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
+                 "rating":      (float,      xbmcplugin.SORT_METHOD_VIDEO_RATING),
+                 "mpaa":        (ensure_str, xbmcplugin.SORT_METHOD_MPAA_RATING),
+                 "year":        (int,        xbmcplugin.SORT_METHOD_VIDEO_YEAR),
+                 "listeners":   (int,        xbmcplugin.SORT_METHOD_LISTENERS),
+                 "tracknumber": (int,        xbmcplugin.SORT_METHOD_TRACKNUM),
+                 "episode":     (int,        xbmcplugin.SORT_METHOD_EPISODE),
+                 "country":     (ensure_str, xbmcplugin.SORT_METHOD_COUNTRY),
+                 "genre":       (None,       xbmcplugin.SORT_METHOD_GENRE),
+                 "date":        (ensure_str, xbmcplugin.SORT_METHOD_DATE),
+                 "size":        (long,       xbmcplugin.SORT_METHOD_SIZE),
+                 "sortepisode": (int,        None),
+                 "sortseason":  (int,        None),
+                 "userrating":  (int,        None),
+                 "discnumber":  (int,        None),
+                 "playcount":   (int,        None),
+                 "overlay":     (int,        None),
+                 "season":      (int,        None),
+                 "top250":      (int,        None),
+                 "setid":       (int,        None),
+                 "dbid":        (int,        None)}
 
 # Convenient variable for adding to autosort
 auto_sort_add = auto_sort.add
@@ -193,9 +193,10 @@ class Art(CommonDict):
 
 
 class Info(CommonDict):
-    def __init__(self, listitem):
+    def __init__(self, listitem, ctype):
         super(Info, self).__init__()
         self._listitem = listitem
+        self._ctype = ctype
 
     def __setitem__(self, key, value):
         """
@@ -271,8 +272,8 @@ class Info(CommonDict):
 
         return duration
 
-    def close(self, media_type="video"):
-        self._listitem.setInfo(media_type, self.raw_dict)
+    def close(self):
+        self._listitem.setInfo(self._ctype, self.raw_dict)
 
 
 class Property(CommonDict):
@@ -448,27 +449,30 @@ class Listitem(object):
     """
     The list item control is used for creating item lists in Kodi.
 
-    Usage:
-    for elem in root_elem.iterfind("li"):
-        a_tag = elem.find("a")
+    :param str ctype: Type of content been listed. e.g. video, music, pictures or game.
 
-        # Create new listitem object
-        item = ListItem()
+    Usage::
 
-        # Set label of listitem
-        item.set_label(a_tag.text)
+        for elem in root_elem.iterfind("li"):
+            a_tag = elem.find("a")
 
-        # Set thumbnail image
-        item.art["thumb"] = elem.find("img").get("src")
+            # Create new listitem object
+            item = ListItem()
 
-        # Set callback function with arguments
-        item.set_callback(some_callback_func, cat=a_tag.get("href"))
+            # Set label of listitem
+            item.set_label(a_tag.text)
 
-        # Return the listitem object
-        yield item
+            # Set thumbnail image
+            item.art["thumb"] = elem.find("img").get("src")
+
+            # Set callback function with arguments
+            item.set_callback(some_callback_func, cat=a_tag.get("href"))
+
+            # Return the listitem object
+            yield item
     """
 
-    def __init__(self):
+    def __init__(self, ctype="video"):
         self._path = ""
 
         self.listitem = listitem = xbmcgui.ListItem()
@@ -484,7 +488,7 @@ class Listitem(object):
         item.params['videoid'] = 'kqmdIV_gBfo'
         """
 
-        self.info = Info(listitem)
+        self.info = Info(listitem, ctype)
         """
         dict: Dictionary for listitem infoLabels.
 

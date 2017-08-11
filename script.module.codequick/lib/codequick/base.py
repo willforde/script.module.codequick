@@ -233,8 +233,6 @@ class Dispatcher(object):
             logger.debug("Dispatching to route: '%s'", selector)
             execute_time = time.time()
 
-            # TODO: See if i cange change how i execute parent without 'execute_route' method
-
             # Initialize controller and execute callback
             controller_ins = route.parent()
             # noinspection PyProtectedMember

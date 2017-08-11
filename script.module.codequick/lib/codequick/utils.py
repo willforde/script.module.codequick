@@ -142,6 +142,7 @@ def ensure_str(data):
     """
     Ensures that given string is returned as a UTF-8 encoded string.
 
+    :param data: String to convert if needed.
     :returns: The given string as UTF-8.
     :rtype: str
     """
@@ -152,6 +153,7 @@ def ensure_unicode(data):
     """
     Ensures that given string is return as a unicode string.
 
+    :param data: String to convert if needed.
     :returns: The given string as unicode.
     :rtype: unicode
     """
