@@ -497,21 +497,22 @@ class Listitem(object):
         Sort methods will be automaticly selected and the object type will
         be converted to what is required for that infolabel.
 
-        Examples:
-        'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
-        'genre' will be converted to string and sort method will be set to 'SORT_METHOD_GENRE'.
-        'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
+        Examples::
+        
+            'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
+            'genre' will be converted to string and sort method will be set to 'SORT_METHOD_GENRE'.
+            'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
 
-        Note:
-        Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
-        Any unicode values will be converted to 'UTF-8' encoded strings.
+        .. note:: Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
+        .. note:: Any unicode values will be converted to 'UTF-8' encoded strings.
 
-        The full list of listitem infoLabels, can be found here.
+        The full list of listitem infoLabels, can be found at.
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
         
-        Usage:
-        item.info['genre'] = 'Science Fiction'
-        item.info.date('june 27, 2017', '%B %d, %Y'))
+        Usage::
+        
+            item.info['genre'] = 'Science Fiction'
+            item.info.date('june 27, 2017', '%B %d, %Y'))
         """
 
         self.art = Art(listitem)
