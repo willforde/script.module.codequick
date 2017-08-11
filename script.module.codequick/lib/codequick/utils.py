@@ -137,3 +137,13 @@ def safe_path(path):
         return unicode(path, "utf8") if ensure_uni else path
     else:
         return path if ensure_uni else path.encode("utf8")
+
+
+def ensure_str(data):
+    """Ensures that given string is returned as a UTF-8 encoded string."""
+    return data.encode("utf8") if isinstance(data, unicode) else str(data)
+
+
+def ensure_unicode(data):
+    """Ensures that given string is return as a unicode string."""
+    return data.decode("utf8") if isinstance(data, bytes) else unicode(data)

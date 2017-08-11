@@ -12,7 +12,7 @@ import xbmcgui
 
 # Package imports
 from .base import Script, build_path, logger_id, dispatcher, auto_sort
-from .utils import safe_path
+from .utils import safe_path, ensure_str
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -34,32 +34,32 @@ stream_type_map = {"duration": int,
                    "width": int}
 
 # Listing sort methods & sort mappings
-infolable_map = {"studio": (xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE, None),
-                 "artist": (xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE, None),
-                 "title": (xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE, None),
-                 "album": (xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE, None),
-                 "rating": (xbmcplugin.SORT_METHOD_VIDEO_RATING, float),
-                 "code": (xbmcplugin.SORT_METHOD_PRODUCTIONCODE, None),
-                 "tracknumber": (xbmcplugin.SORT_METHOD_TRACKNUM, int),
-                 "count": (xbmcplugin.SORT_METHOD_PROGRAM_COUNT, int),
-                 "listeners": (xbmcplugin.SORT_METHOD_LISTENERS, int),
-                 "mpaa": (xbmcplugin.SORT_METHOD_MPAA_RATING, None),
-                 "country": (xbmcplugin.SORT_METHOD_COUNTRY, None),
-                 "episode": (xbmcplugin.SORT_METHOD_EPISODE, int),
-                 "year": (xbmcplugin.SORT_METHOD_VIDEO_YEAR, int),
-                 "genre": (xbmcplugin.SORT_METHOD_GENRE, None),
-                 "size": (xbmcplugin.SORT_METHOD_SIZE, long),
-                 "date": (xbmcplugin.SORT_METHOD_DATE, None),
-                 "sortepisode": (None, int),
-                 "sortseason": (None, int),
-                 "userrating": (None, int),
-                 "discnumber": (None, int),
-                 "playcount": (None, int),
-                 "overlay": (None, int),
-                 "season": (None, int),
-                 "top250": (None, int),
-                 "setid": (None, int),
-                 "dbid": (None, int)}
+infolable_map = {"artist":      (None,  xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
+                 "count":       (int,   xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
+                 "rating":      (float, xbmcplugin.SORT_METHOD_VIDEO_RATING),
+                 "year":        (int,   xbmcplugin.SORT_METHOD_VIDEO_YEAR),
+                 "listeners":   (int,   xbmcplugin.SORT_METHOD_LISTENERS),
+                 "tracknumber": (int,   xbmcplugin.SORT_METHOD_TRACKNUM),
+                 "episode":     (int,   xbmcplugin.SORT_METHOD_EPISODE),
+                 "genre":       (None,  xbmcplugin.SORT_METHOD_GENRE),
+                 "size":        (long,  xbmcplugin.SORT_METHOD_SIZE),
+                 "sortepisode": (int,   None),
+                 "sortseason":  (int,   None),
+                 "userrating":  (int,   None),
+                 "discnumber":  (int,   None),
+                 "playcount":   (int,   None),
+                 "overlay":     (int,   None),
+                 "season":      (int,   None),
+                 "top250":      (int,   None),
+                 "setid":       (int,   None),
+                 "dbid":        (int,   None),
+                 "date":        (ensure_str,  xbmcplugin.SORT_METHOD_DATE),
+                 "country":     (ensure_str,  xbmcplugin.SORT_METHOD_COUNTRY),
+                 "mpaa":        (ensure_str,  xbmcplugin.SORT_METHOD_MPAA_RATING),
+                 "code":        (ensure_str,  xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
+                 "album":       (ensure_str,  xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
+                 "title":       (ensure_str,  xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
+                 "studio":      (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE)}
 
 # Convenient variable for adding to autosort
 auto_sort_add = auto_sort.add
@@ -214,29 +214,28 @@ class Info(CommonDict):
 
         # Convert duration into an integer
         elif key == "duration":
-            value = self._duration(value)
             auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
+            self.raw_dict[key] = self._duration(value)
         else:
-            try:
-                # The sort method to set and the type that the infolabel should be
-                sort_type, type_converter = infolable_map[key]
-            except KeyError:
-                pass
+            # The sort method to set and the type that the infolabel should be
+            type_converter, sort_type = infolable_map.get(key, (None, None))
+
+            # Convert value to required type needed for this infolabel
+            if type_converter:
+                try:
+                    value = type_converter(value)
+                except ValueError:
+                    msg = "value of '%s' for infolabel '%s', is not of type '%s'"
+                    raise TypeError(msg % (value, key, type_converter))
+                else:
+                    self.raw_dict[key] = value
             else:
-                # Convert value to required type needed for this infolabel
-                if type_converter:
-                    try:
-                        value = type_converter(value)
-                    except ValueError:
-                        msg = "value of '%s' for infolabel '%s', is not of type '%s'"
-                        raise TypeError(msg % (value, key, type_converter))
+                # Ensure the value is not unicode
+                self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
 
-                if sort_type:
-                    # Set the required sort method needed for this infolabel
-                    auto_sort_add(sort_type)
-
-        # Ensure the value is not unicode
-        self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
+            if sort_type:
+                # Set the associated sort method for this infolabel
+                auto_sort_add(sort_type)
 
     def date(self, date, date_format):
         """
