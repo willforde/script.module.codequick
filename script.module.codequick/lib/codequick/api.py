@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
 import logging
@@ -11,7 +12,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .base import dispatcher, Script, build_path, logger_id
+from codequick.base import dispatcher, Script, build_path, logger_id
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -41,7 +42,7 @@ class Route(Script):
         self._autosort = True
 
         self.update_listing = self.params.get(u"_updatelisting_", False)
-        """bool: True, this folder should update the current listing. False, this folder is a subfolder (Default)."""
+        """bool: True, this folder should update the current listing. False, this folder is a subfolder (default)."""
 
         self.content_type = None
         """
@@ -76,7 +77,8 @@ class Route(Script):
         folder_counter = 0
         for listitem in raw_listitems:
             if listitem:
-                listitem_tuple = listitem.close()
+                # noinspection PyProtectedMember
+                listitem_tuple = listitem._close()
                 listitems.append(listitem_tuple)
                 if listitem_tuple[2]:
                     folder_counter += 1
@@ -128,7 +130,7 @@ class Route(Script):
         Normally this should not be needed as sort methods are auto detected.
 
         :param int methods: One or more kodi sort mehtods.
-        :param bool override: [opt] keyword argument to override the auto selected sort methods. (Default: False)
+        :param bool override: [opt] keyword argument to override the auto selected sort methods. (default => False)
 
         .. Example::
 
@@ -292,7 +294,8 @@ class Resolver(Script):
                 listitem = url
             # Custom listitem object
             elif isinstance(url, Listitem):
-                listitem = url.close()[1]
+                # noinspection PyProtectedMember
+                listitem = url._close()[1]
             else:
                 # Not already a listitem object
                 listitem = xbmcgui.ListItem()
@@ -334,7 +337,8 @@ class Resolver(Script):
 
         # Extract original kodi listitem from custom listitem
         elif isinstance(resolved, Listitem):
-            listitem = resolved.close()[1]
+            # noinspection PyProtectedMember
+            listitem = resolved._close()[1]
 
         # Invalid or No url was found
         elif resolved:

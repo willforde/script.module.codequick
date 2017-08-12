@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
+from collections import MutableMapping
 from time import strptime, strftime
 import logging
 import os
@@ -11,17 +13,17 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from .base import Script, build_path, logger_id, dispatcher, auto_sort
-from .utils import safe_path, ensure_str
+from codequick.base import Script, build_path, logger_id, dispatcher, auto_sort
+from codequick.utils import safe_path, ensure_str, ensure_unicode
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
 
-# Listitem art locations
+# Listitem thumbnail locations
 local_image = os.path.join(Script.get_info("path"), u"resources", u"media", u"%s").encode("utf8")
 global_image = os.path.join(Script.get_info("path_global"), u"resources", u"media", u"%s").encode("utf8")
 
-# Fanart image location if exists
+# Prefetch fanart/icon for use later
 _fanart = Script.get_info("fanart")
 fanart = _fanart.encode("utf8") if os.path.exists(safe_path(_fanart)) else None
 icon = Script.get_info("icon").encode("utf8")
@@ -33,35 +35,36 @@ stream_type_map = {"duration": int,
                    "height": int,
                    "width": int}
 
-# Listing sort methods & sort mappings
-infolable_map = {"artist":      (None,       xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
-                 "studio":      (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
-                 "title":       (ensure_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
-                 "album":       (ensure_str, xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
-                 "code":        (ensure_str, xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
-                 "count":       (int,        xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
-                 "rating":      (float,      xbmcplugin.SORT_METHOD_VIDEO_RATING),
-                 "mpaa":        (ensure_str, xbmcplugin.SORT_METHOD_MPAA_RATING),
-                 "year":        (int,        xbmcplugin.SORT_METHOD_VIDEO_YEAR),
-                 "listeners":   (int,        xbmcplugin.SORT_METHOD_LISTENERS),
-                 "tracknumber": (int,        xbmcplugin.SORT_METHOD_TRACKNUM),
-                 "episode":     (int,        xbmcplugin.SORT_METHOD_EPISODE),
-                 "country":     (ensure_str, xbmcplugin.SORT_METHOD_COUNTRY),
-                 "genre":       (None,       xbmcplugin.SORT_METHOD_GENRE),
-                 "date":        (ensure_str, xbmcplugin.SORT_METHOD_DATE),
-                 "size":        (long,       xbmcplugin.SORT_METHOD_SIZE),
-                 "sortepisode": (int,        None),
-                 "sortseason":  (int,        None),
-                 "userrating":  (int,        None),
-                 "discnumber":  (int,        None),
-                 "playcount":   (int,        None),
-                 "overlay":     (int,        None),
-                 "season":      (int,        None),
-                 "top250":      (int,        None),
-                 "setid":       (int,        None),
-                 "dbid":        (int,        None)}
+# Listing sort methods & sort mappings.
+# Skips infolables that have no sortmethod and type is string. As by default they will be string anyway
+infolable_map = {"artist": (None, xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
+                 "studio": (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
+                 "title": (ensure_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
+                 "album": (ensure_str, xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
+                 "code": (ensure_str, xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
+                 "count": (int, xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
+                 "rating": (float, xbmcplugin.SORT_METHOD_VIDEO_RATING),
+                 "mpaa": (ensure_str, xbmcplugin.SORT_METHOD_MPAA_RATING),
+                 "year": (int, xbmcplugin.SORT_METHOD_VIDEO_YEAR),
+                 "listeners": (int, xbmcplugin.SORT_METHOD_LISTENERS),
+                 "tracknumber": (int, xbmcplugin.SORT_METHOD_TRACKNUM),
+                 "episode": (int, xbmcplugin.SORT_METHOD_EPISODE),
+                 "country": (ensure_str, xbmcplugin.SORT_METHOD_COUNTRY),
+                 "genre": (None, xbmcplugin.SORT_METHOD_GENRE),
+                 "date": (ensure_str, xbmcplugin.SORT_METHOD_DATE),
+                 "size": (long, xbmcplugin.SORT_METHOD_SIZE),
+                 "sortepisode": (int, None),
+                 "sortseason": (int, None),
+                 "userrating": (int, None),
+                 "discnumber": (int, None),
+                 "playcount": (int, None),
+                 "overlay": (int, None),
+                 "season": (int, None),
+                 "top250": (int, None),
+                 "setid": (int, None),
+                 "dbid": (int, None)}
 
-# Convenient variable for adding to autosort
+# Convenient function for adding to autosort set
 auto_sort_add = auto_sort.add
 
 # Map quality values to it's related video resolution, used by 'strea.hd'
@@ -74,70 +77,60 @@ strip_formatting = re.compile("\[[^\]]+?\]").sub
 YOUTUBE_CHANNEL = 32001
 RELATED_VIDEOS = 32201
 RECENT_VIDEOS = 32002
+ALLVIDEOS = 32003
 NEXT_PAGE = 33078
 SEARCH = 137
 
 
-class CommonDict(object):
+class CommonDict(MutableMapping):
     def __init__(self):
-        self.raw_dict = {}
-        """dict: The underlining raw dictionary, for advanced use."""
+        self._raw_dict = {}
 
     def __getitem__(self, key):
         """
-        Return a value from the dictionary.
+        Return the item from dictionary with given key. Raises a KeyError if key is not in the map.
 
-        All string values will be converted to unicode on return.
+        .. note:: All string values will be converted to unicode when returned.
 
         :param str key: The key required for requested value.
         :return: The saved value.
-        :rtype: unicode
+        :raise KeyError: If key is not in the dictionary.
         """
-        value = self.raw_dict[key]
+        value = self._raw_dict[key]
         return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
         """
-        Custom setter that converts unicode values to 'utf8' encoded strings.
+        Add a value to dictionary with given key.
 
-        :param str key: The art name to set e.g. thumb, icon or fanart.
-        :param value: The path to the image.
-        :type value: str or unicode
+        :param str key: The name to set.
+        :param value: The value to add to key.
         """
-        self.raw_dict[key] = value
+        self._raw_dict[key] = value
 
-    def update(self, *args, **kwargs):
+    def __delitem__(self, key):
         """
-        Update the dictionary with the key/value pairs, overwriting existing keys.
+        Remove key from dictionary.
 
-        update() accepts either another dictionary object or an iterable of key/value pairs
-        (as tuples or other iterables of length two).
-
-        If keyword arguments are specified, the dictionary is then updated with those key/value pairs.
+        :param str key: The key to remove from dictionary.
+        :raises KeyError: If key is not in the dictionary.
         """
-        # Add a dict to raw_dict
-        for arg in args:
-            # Check for a valid dictionary like object by checking for the existents of 'items'
-            # When we have a dictionary, convert it to a list of key, value pairs.
-            if hasattr(arg, "items"):
-                arg = arg.items()
-
-            # Add list of key, value pairs to raw_dict
-            for key, value in arg:
-                self[key] = value
-
-        # Add keyword arguments to raw_dict
-        for key, value in kwargs.items():
-            self[key] = value
+        del self._raw_dict[key]
 
     def __contains__(self, key):
-        return key in self.raw_dict
+        return key in self._raw_dict
 
-    def __repr__(self):
-        return "%s(%r)" % (self.__class__, self.raw_dict)
+    def __len__(self):
+        return len(self._raw_dict)
+
+    def __iter__(self):
+        return iter(self._raw_dict)
 
     def __str__(self):
-        return str(self.raw_dict)
+        return str(self._raw_dict)
+
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__, self._raw_dict)
 
 
 class Art(CommonDict):
@@ -154,7 +147,7 @@ class Art(CommonDict):
         :type value: str or unicode
         """
         if value:
-            self.raw_dict[key] = ensure_str(value)
+            self._raw_dict[key] = ensure_str(value)
         else:
             logger.debug("Ignoring empty art value: '%s'", key)
 
@@ -165,31 +158,32 @@ class Art(CommonDict):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self.raw_dict["thumb"] = local_image % (ensure_str(image))
+        self._raw_dict["thumb"] = local_image % (ensure_str(image))
 
     def global_thumb(self, image):
         """
         Set the thumbnail image to a image file located in the codequick 'resources/media' directory.
         
-        Below is a list of available global thumbnail images.
-        next.png        - Arrow pointing to the right.
-        videos.png      - Circle with a play button in the middle.
-        search.png      - An image of a magnifying glass.
-        search_new.png  - A magnifying glass with plus symbol in the middle.
-        playlist.png    - Image of three bulleted lines.
-        recent.png      - Image of a clock.
+        Below is a list of available global thumbnail images::
+
+            next.png        - Arrow pointing to the right.
+            videos.png      - Circle with a play button in the middle.
+            search.png      - An image of a magnifying glass.
+            search_new.png  - A magnifying glass with plus symbol in the middle.
+            playlist.png    - Image of three bulleted lines.
+            recent.png      - Image of a clock.
 
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self.raw_dict["thumb"] = global_image % (ensure_str(image))
+        self._raw_dict["thumb"] = global_image % (ensure_str(image))
 
-    def clsoe(self):
-        if fanart and "fanart" not in self.raw_dict:
-            self.raw_dict["fanart"] = fanart
-        if "thumb" not in self.raw_dict:
+    def _close(self):
+        if fanart and "fanart" not in self._raw_dict:
+            self._raw_dict["fanart"] = fanart
+        if "thumb" not in self._raw_dict:
             self["thumb"] = icon
-        self._listitem.setArt(self.raw_dict)
+        self._listitem.setArt(self._raw_dict)
 
 
 class Info(CommonDict):
@@ -206,14 +200,14 @@ class Info(CommonDict):
         :param str key: The infolabel name to set e.g. duration, genre or size.
         :param value: The infolabel value.
         """
-        if not value:
+        if value is None or value == "":
             logger.debug("Ignoring empty infolable: '%s'", key)
             return None
 
         # Convert duration into an integer
         elif key == "duration":
             auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
-            self.raw_dict[key] = self._duration(value)
+            self._raw_dict[key] = self._duration(value)
         else:
             # The sort method to set and the type that the infolabel should be
             type_converter, sort_type = infolable_map.get(key, (None, None))
@@ -226,10 +220,10 @@ class Info(CommonDict):
                     msg = "value of '%s' for infolabel '%s', is not of type '%s'"
                     raise TypeError(msg % (value, key, type_converter))
                 else:
-                    self.raw_dict[key] = value
+                    self._raw_dict[key] = value
             else:
                 # Ensure the value is not unicode
-                self.raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
+                self._raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
 
             if sort_type:
                 # Set the associated sort method for this infolabel
@@ -253,7 +247,14 @@ class Info(CommonDict):
 
     @staticmethod
     def _duration(duration):
-        """Converts duration from a string of 'hh:mm:ss' into seconds."""
+        """
+        Converts duration from a string of 'hh:mm:ss' into seconds.
+
+        :param duration: The duration of stream.
+        :type duration: int or str or unicode
+        :returns: The duration converted to seconds.
+        :rtype: int
+        """
         if isinstance(duration, (str, unicode)):
             if u":" in duration or u";" in duration:
                 # Split Time By Marker and Convert to Integer
@@ -272,72 +273,37 @@ class Info(CommonDict):
 
         return duration
 
-    def close(self):
-        self._listitem.setInfo(self._ctype, self.raw_dict)
+    def _close(self):
+        self._listitem.setInfo(self._ctype, self._raw_dict)
 
 
 class Property(CommonDict):
-    # noinspection PyMissingConstructor
     def __init__(self, listitem):
         super(Property, self).__init__()
         self._listitem = listitem
 
     def __setitem__(self, key, value):
         """
-        Add listitem property
+        Add listitem property.
 
         :param str key: The name of the property.
         :param value: The property value.
         :type value: str or unicode
         """
         if value:
-            self.raw_dict[key] = value
+            self._raw_dict[key] = ensure_unicode(value)
         else:
             logger.debug("Ignoring empty property: '%s'", key)
 
-    def close(self):
-        for key, value in self.raw_dict:
+    def _close(self):
+        for key, value in self._raw_dict:
             self._listitem.setProperty(key, value)
 
 
 class Stream(CommonDict):
-    # noinspection PyMissingConstructor
     def __init__(self, listitem):
+        super(Stream, self).__init__()
         self._listitem = listitem
-        #: The underlining raw video dictionary, for advanced use.
-        self.video = {}
-        #: The underlining raw audio dictionary, for advanced use.
-        self.audio = {"channels": 2}
-        #: The underlining raw subtitle dictionary, for advanced use.
-        self.subtitle = {}
-
-    def _translate(self, key):
-        """
-        Translate custom keys to the related stream keys dictionary required by kodi.
-
-        :param str key: The custom key to translate
-        :return dict: The dictionary related to key e.g. video, audio, subtitle
-        """
-        if key in ("video_codec", "aspect", "width", "height", "duration"):
-            return self.video
-        elif key in ("audio_codec", "audio_language", "channels"):
-            return self.audio
-        elif key == "subtitle_language":
-            return self.subtitle
-        else:
-            raise KeyError("unknown stream detail key: '{}'".format(key))
-
-    def __getitem__(self, key):
-        """
-        Returns stream detail.
-
-        :param str key: The key required for requested value.
-        :return: The property value.
-        :rtype: unicode
-        """
-        related_obj = self._translate(key)
-        value = related_obj[key.split("_")[-1]]
-        return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
         """
@@ -347,7 +313,7 @@ class Stream(CommonDict):
         :param value: The value of the stream detail.
         :type value: str or unicode
         """
-        if not value:
+        if value is None:
             logger.debug("Ignoring empty stream detail value for: '%s'", key)
             return None
 
@@ -358,15 +324,13 @@ class Stream(CommonDict):
         except ValueError:
             msg = "Value of '%s' for stream info '%s', is not of type '%s'"
             raise TypeError(msg % (value, key, type_converter))
-
-        # Add value to appropriate dict for kodi to use
-        related_obj = self._translate(key)
-        related_obj[key.split("_")[-1]] = value
+        else:
+            self._raw_dict[key] = value
 
     def hd(self, quality, aspect=None):
         """
         Convenient method to set required stream info to show SD/HD/4K logos.
-        
+
         The values witch are set are width, height and aspect.
         When no aspect ratio is given, then a ratio of '1.78'(16:9) is set when the quality is greater than SD.
 
@@ -380,35 +344,41 @@ class Stream(CommonDict):
 
         # Set video resolution
         try:
-            self.video["width"], self.video["height"] = quality_map[quality]
+            self._raw_dict["width"], self._raw_dict["height"] = quality_map[quality]
         except IndexError:
             raise ValueError("quality id must be within range (0 to 3): '{}'".format(quality))
 
         # Set the aspect ratio if one is given
         if aspect:
-            self.video["aspect"] = aspect
+            self["aspect"] = aspect
 
         # Or set the aspect ratio to 16:9 for HD content and above
-        elif self.video["height"] >= 720:
-            self.video["aspect"] = 1.78
+        elif self._raw_dict["height"] >= 720:
+            self._raw_dict["aspect"] = 1.78
 
-    def close(self):
-        if self.audio:
-            self._listitem.addStreamInfo("audio", self.audio)
-        if self.video:
-            self._listitem.addStreamInfo("video", self.video)
-        if self.subtitle:
-            self._listitem.addStreamInfo("subtitle", self.subtitle)
+    def _close(self):
+        video = {}
+        subtitle = {}
+        audio = {"channels": 2}
+        # Populate the above dictionary with the appropriate key/value pairs
+        for key, value in self._raw_dict.iteritems():
+            rkey = key.split("_")[-1]
+            if key in ("video_codec", "aspect", "width", "height", "duration"):
+                video[rkey] = value
+            elif key in ("audio_codec", "audio_language", "channels"):
+                audio[rkey] = value
+            elif key == "subtitle_language":
+                subtitle[rkey] = value
+            else:
+                raise KeyError("unknown stream detail key: '{}'".format(key))
 
-    def __contains__(self, key):
-        return key in self._translate(key)
-
-    def __repr__(self):
-        return "%s(audio=%r, video=%r, subtitle=%r)" % (self.__class__, self.audio, self.video, self.subtitle)
-
-    def __str__(self):
-        data = {"audio": self.audio, "video": self.video, "subtitle": self.subtitle}
-        return str(data)
+        # Now we are ready to send the stream info to kodi
+        if audio:
+            self._listitem.addStreamInfo("audio", audio)
+        if video:
+            self._listitem.addStreamInfo("video", video)
+        if subtitle:
+            self._listitem.addStreamInfo("subtitle", subtitle)
 
 
 class Context(list):
@@ -420,7 +390,7 @@ class Context(list):
         """
         Convenient method to add a related videos context menu container item.
 
-        Keyword arguments can be any json serializable object e.g. str, list, dict
+        Keyword arguments can be any json serializable object e.g. str, list, dict.
         
         :param callback: The function that will be called when menu item is activated.
         :param query: [opt] Keyword arguments that will be passed on to callback function.
@@ -429,9 +399,9 @@ class Context(list):
 
     def container(self, label, callback, **query):
         """
-        Convenient method add a context menu container item.
+        Convenient method to add a context menu container item.
 
-        Keyword arguments can be any json serializable object e.g. str, list, dict
+        Keyword arguments can be any json serializable object e.g. str, list, dict.
         
         :param label: The label of the context menu item.
         :param callback: The function that will be called when menu item is activated.
@@ -440,7 +410,7 @@ class Context(list):
         command = "XBMC.Container.Update(%s)" % build_path(callback.route.path, query)
         self.append((label, command))
 
-    def close(self):
+    def _close(self):
         if self:
             self._listitem.addContextMenuItems(self)
 
@@ -480,28 +450,26 @@ class Listitem(object):
 
         self.params = CommonDict()
         """
-        dict: Dictionary for parameters that will be passed to the callback object.
-
-        This is a simple dictionary like object that allows you to add callback parameters.
+        Dictionary like object for parameters that will be passed to the callback object.
         
-        Usage:
-        item.params['videoid'] = 'kqmdIV_gBfo'
+        Parameters can be any json serializable object e.g. str, list, dict.
+        
+        Example::
+        
+            item.params['videoid'] = 'kqmdIV_gBfo'
         """
 
         self.info = Info(listitem, ctype)
         """
-        dict: Dictionary for listitem infoLabels.
-
-        This is a simple dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
+        :class:`Info` object for adding infoLabels:
+        
+        This is a dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
         
         Sort methods will be automaticly selected and the object type will
-        be converted to what is required for that infolabel.
-
-        Examples::
+        be converted to what is required for each infolabel.
         
-            'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
-            'genre' will be converted to string and sort method will be set to 'SORT_METHOD_GENRE'.
-            'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
+        'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
+        'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
 
         .. note:: Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
         .. note:: Any unicode values will be converted to 'UTF-8' encoded strings.
@@ -509,67 +477,76 @@ class Listitem(object):
         The full list of listitem infoLabels, can be found at.
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
         
-        Usage::
+        Examples::
         
             item.info['genre'] = 'Science Fiction'
+            item.info['size'] = 256816
             item.info.date('june 27, 2017', '%B %d, %Y'))
         """
 
         self.art = Art(listitem)
         """
-        dict: Dictionary for listitem's art.
+        :class:`Art` object for adding listitem's art.
 
-        This is a simple dictionary like object that allows you to add various image values. e.g. thumb, fanart.
+        This is a dictionary like object that allows you to add various image values. e.g. thumb, fanart.
 
         The full list of art values, can be found here.
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
 
-        Usage:
-        item.art['thumb"] = 'http://www.example.ie/image.jpg'
-        item.art['fanart"] = 'http://www.example.ie/fanart.jpg'
-        item.art.local_thumb('local_art.png')
+        Usage::
+        
+            item.art['thumb"] = 'http://www.example.ie/image.jpg'
+            item.art['fanart"] = 'http://www.example.ie/fanart.jpg'
+            item.art.local_thumb('local_art.png')
         """
 
         self.stream = Stream(listitem)
         """
-        dict: Dictionary for stream details.
+        :class:`Stream` object for adding stream details.
 
-        This is a simple dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
+        This is a dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
         
-        Stream Values:
-        video_codec        : string (h264)
-        aspect             : float (1.78)
-        width              : integer (1280)
-        height             : integer (720)
-        channels           : integer (2)
-        audio_codec        : string (AAC)
-        audio_language     : string (en)
-        subtitle_language  : string (en)
+        Stream Values::
         
-        Usage:
-        item.stream['video_codec'] = 'h264'
-        item.stream['audio_codec'] = 'aac'
-        item.stream.hd(2, aspect=1.78) # 1080p
+            video_codec        : string (h264)
+            aspect             : float (1.78)
+            width              : integer (1280)
+            height             : integer (720)
+            channels           : integer (2)
+            audio_codec        : string (AAC)
+            audio_language     : string (en)
+            subtitle_language  : string (en)
+        
+        Example::
+        
+            item.stream['video_codec'] = 'h264'
+            item.stream['audio_codec'] = 'aac'
+            item.stream.hd(2, aspect=1.78) # 1080p
         """
 
         self.property = Property(listitem)
         """
-        dict: Dictionary for listitem property, similar to an infolabel.
+        :class:`Property` object for adding listitem properties.
 
-        This is a simple dictionary like object that allows you to add listitem properties.
+        This is a dictionary like object that allows you to add listitem properties. e.g. StartOffset
+        
+        Some of these are treated internally by Kodi, such as the 'StartOffset' property,
+        which is the offset in seconds at which to start playback of an item. Others may be used
+        in the skin to add extra information, such as 'WatchedCount' for tvshow items.
 
-        Usage:
-        item.property['AspectRatio'] = '1.85:1'
-        item.property['StartOffset'] = '256.4'
+        Examples::
+        
+            item.property['StartOffset'] = '256.4'
         """
 
         self.context = Context(listitem)
         """
-        dict: List for context menu item(s).
+        :class:`list` object for context menu items.
 
         This is a list containing tuples, consisting of label/function pairs.
-        label str or unicode - item's label.
-        command str or unicode - any built-in function to perform e.g. XBMC.Container.Update
+        
+        label: str or unicode - item's label.
+        function: str or unicode - any built-in function to perform e.g. XBMC.Container.Update
 
         The full list of built-in functions can be found here.
         http://kodi.wiki/view/List_of_Built_In_Functions
@@ -591,15 +568,15 @@ class Listitem(object):
         :type label: str or unicode
         """
         self.listitem.setLabel(label)
-        clean_label = strip_formatting("", label)
-        self.params["_title_"] = clean_label
-        self.info["title"] = clean_label
+        unformatted_label = strip_formatting("", label)
+        self.params["_title_"] = unformatted_label
+        self.info["title"] = unformatted_label
 
     def set_callback(self, callback, *args, **kwargs):
         """
         Sets the callback function or playable path.
 
-        Keyword arguments can be any json serializable object e.g. str, list, dict
+        Arguments can be any json serializable object e.g. str, list, dict.
         
         :param callback: The function to callback or a playable path to a video.
         :type callback: :class:`types.FunctionType` or :class:`codequick.Base` or str or unicode
@@ -614,12 +591,13 @@ class Listitem(object):
         self._path = callback
         self.params.update(kwargs)
 
-    def close(self):
+    # noinspection PyProtectedMember
+    def _close(self):
         callback = self._path
         if hasattr(callback, "route"):
             self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
-            path = build_path(callback.route.path, self.params.raw_dict)
+            path = build_path(callback.route.path, self.params._raw_dict)
             isfolder = callback.route.is_folder
         else:
             self.listitem.setProperty("isplayable", "true" if callback else "false")
@@ -629,11 +607,11 @@ class Listitem(object):
 
         if isfolder:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:
+            if "icon" not in self.art._raw_dict:
                 self.art["icon"] = "DefaultFolder.png"
         else:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:
+            if "icon" not in self.art._raw_dict:
                 self.art["icon"] = "DefaultVideo.png"
 
             # Add Video Specific Context menu items
@@ -641,7 +619,7 @@ class Listitem(object):
             self.context.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
 
             # Close video related datasets
-            self.stream.close()
+            self.stream._close()
 
         # Add label as plot if no plot is found
         if "plot" not in self.info:
@@ -649,10 +627,10 @@ class Listitem(object):
 
         # Close common datasets
         self.listitem.setPath(path)
-        self.property.close()
-        self.context.close()
-        self.info.close()
-        self.art.clsoe()
+        self.property._close()
+        self.context._close()
+        self.info._close()
+        self.art._close()
 
         # Return a tuple compatible with 'xbmcplugin.addDirectoryItems'
         return path, self.listitem, isfolder
@@ -660,7 +638,7 @@ class Listitem(object):
     @classmethod
     def from_dict(cls, label, callback, params=None, info=None, art=None, stream=None, properties=None, context=None):
         """
-        Constructor to create listitem.
+        Constructor to create a listitem.
 
         This method will create and populate a listitem from a set of listitem values.
 
@@ -699,7 +677,7 @@ class Listitem(object):
     @classmethod
     def next_page(cls, **params):
         """
-        A Listitem constructor for adding Next Page item.
+        A Listitem constructor for adding Next Page listitem.
 
         :param params: [opt] Keyword arguments of params that will be added to the current set of callback params.
         """
@@ -721,7 +699,7 @@ class Listitem(object):
     @classmethod
     def recent(cls, callback, **params):
         """
-        A Listitem constructor for adding Recent Folder item.
+        A Listitem constructor for adding Recent Folder listitem.
 
         :param callback: The callback function.
         :type callback: :class:`types.FunctionType`
@@ -763,14 +741,14 @@ class Listitem(object):
         :param content_id: Channel name, channel id or playlist id to list videos from.
         :type content_id: str or unicode
 
-        :param label: [opt] Label of listitem. (default: '-Youtube Channel').
+        :param label: [opt] Label of listitem. (default => 'All Videos').
         :type label: str or unicode
 
-        :param bool enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
+        :param bool enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => True)
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = (label if label else Script.localize(YOUTUBE_CHANNEL))
+        item.label = (label if label else Script.localize(ALLVIDEOS))
         item.art.global_thumb(u"videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
 from functools import partial
@@ -16,8 +17,8 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from .support import KodiLogHandler, parse_sysargs, CacheProperty
-from .utils import ensure_str
+from codequick.support import KodiLogHandler, parse_sysargs, CacheProperty
+from codequick.utils import ensure_str
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -107,7 +108,7 @@ def build_path(path=None, query=None, **extra_query):
     """
     Build addon url that can be passeed to kodi for kodi to use when calling listitems.
     
-    :param path: [opt] The route selector path referencing the callback object. (default: current route selector)
+    :param path: [opt] The route selector path referencing the callback object. (default => current route selector)
     :param query: [opt] A set of query key/value pairs to add to plugin path.
     :param extra_query: [opt] Keyword arguments if given will be added to the current set of querys.
 
@@ -522,6 +523,12 @@ class Script(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
+
+    @CacheProperty
+    def request(self):
+        """A urlquick session."""
+        import urlquick
+        return urlquick.Session()
 
 
 # Dispatcher to manage route callbacks

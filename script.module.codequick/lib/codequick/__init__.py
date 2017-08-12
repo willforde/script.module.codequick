@@ -16,13 +16,14 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Execution start time, used later to report total execution time
+from __future__ import absolute_import
 start_time = __import__("time").time()
 
 # Package imports
-from .api import Script, Route, Resolver, run
-from .storage import PersistentDict
-from .listing import Listitem
-from . import utils
+from codequick.api import Script, Route, Resolver, run
+from codequick.storage import PersistentDict, PersistentList
+from codequick.listing import Listitem
+from codequick import utils
 
 # Notification icon options
 NOTIFICATION_WARNING = 'warning'

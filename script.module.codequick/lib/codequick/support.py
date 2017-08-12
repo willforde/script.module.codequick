@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
 from binascii import unhexlify
@@ -11,7 +12,7 @@ import sys
 import xbmc
 
 # Package imports
-from .utils import parse_qs, ensure_str
+from codequick.utils import parse_qs, ensure_str
 
 # Level mapper to convert logging module levels to kodi logger levels
 log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug

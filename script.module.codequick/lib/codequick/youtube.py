@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
 import logging
@@ -6,14 +7,12 @@ import json
 import os
 
 # Package imports
-from .base import logger_id
-from .storage import PersistentDict
-from .api import Route, Resolver
-from .support import CacheProperty
-from .listing import Listitem
-from .utils import safe_path
-
-# Outer package imports
+from codequick.base import logger_id
+from codequick.listing import Listitem
+from codequick.api import Route, Resolver
+from codequick.storage import PersistentDict
+from codequick.support import CacheProperty
+from codequick.utils import safe_path
 import urlquick
 
 # Logger specific to this module
@@ -33,13 +32,23 @@ class API(object):
     """
 
     def __init__(self, max_results=50, pretty_print=False):
-        self.req_session = urlquick.Session(raise_for_status=True)
+        self.req_session = urlquick.Session()
         self.req_session.headers["referer"] = "http://www.codequick.com/"
         self.req_session.params = {"maxResults": str(max_results),
                                    "prettyPrint": str(pretty_print).lower(),
                                    "key": "AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"}
 
     def _request(self, url, query):
+        """
+        Make online resource request.
+
+        :param str url: The url resource to request.
+        :param dict query: Dictionary of parameters that will be send to the api as a query.
+        :return: The youtube api response
+        :rtype: dict
+
+        :raises RuntimeError: If youtube returns a error response.
+        """
         source = self.req_session.get(url, params=query)
         response = json.loads(source.content, encoding=source.encoding)
         if u"error" not in response:
@@ -58,14 +67,9 @@ class API(object):
 
         :param str api_type: The type of api request to make.
         :param dict query: Dictionary of parameters that will be send to the api as a query.
-
+        :param bool loop: [opt] Return all the playlists for channel. (Default => False)
         :returns: The youtube api response as a dictionary.
         :rtype: dict
-
-        :param loop: [opt] Return all the playlists for channel. (Default => False)
-        :type loop: bool
-
-        :raises RuntimeError: If youtube returns a error response.
         """
         # Convert id query from a list, to a comma separated list of id's, if required
         if "id" in query and hasattr(query["id"], '__iter__'):
@@ -78,14 +82,14 @@ class API(object):
             counter = 0
 
             # Fetch the first set of 50 item and use a base
-            query["id"] = ",".join(ids[counter:counter+50])
+            query["id"] = ",".join(ids[counter:counter + 50])
             feed = self._request(url, query)
             results = feed
             counter += 50
 
             # Fetch all content, 50 item at a time
             while counter < len(ids):
-                query["id"] = ",".join(ids[counter:counter+50])
+                query["id"] = ",".join(ids[counter:counter + 50])
                 feed = self._request(url, query)
                 results[u"items"].extend(feed[u"items"])
                 counter += 50

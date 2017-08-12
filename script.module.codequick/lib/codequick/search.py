@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Package imports
-from .base import dispatcher
-from .storage import PersistentList
-from .listing import Listitem
-from .utils import keyboard
-from .api import Route
+from codequick.base import dispatcher
+from codequick.storage import PersistentList
+from codequick.listing import Listitem
+from codequick.utils import keyboard
+from codequick.api import Route
 
 # Localized string Constants
 ENTER_SEARCH_STRING = 16017

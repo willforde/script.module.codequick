@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 # Standard Library Imports
 from hashlib import sha1
@@ -7,8 +8,8 @@ import sys
 import os
 
 # Package imports
-from .base import Script
-from .utils import ensure_unicode
+from codequick.base import Script
+from codequick.utils import ensure_unicode
 
 # The addon profile directory
 profile_dir = Script.get_info("profile")
