@@ -51,11 +51,6 @@ class Route(Script):
         'videos' when listing videos.
         """
 
-        for i in dir(xbmcplugin):
-            if i.startswith("SORT_METHOD"):
-                tilte = "%s = %s" % (i, getattr(xbmcplugin, i))
-                self.log(tilte, lvl=self.WARNING)
-
     def _execute_route(self, callback):
         """Execute the callback function and process the results."""
 
