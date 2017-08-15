@@ -3,11 +3,12 @@
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
         <import addon="script.module.youtube.dl" version="17.0.0"/>
+        <import addon="script.module.htmlement" version="0.2.3"/>
     </requires>
     <extension point="xbmc.python.module" library="lib"/>
     <extension point="xbmc.addon.metadata">
-        <summary lang="en_GB">Control Module for Class Integration</summary>
-        <description lang="en_GB">Used for creating add-ons by automating as many task as possible while minimizing amount of code needed</description>
+        <summary lang="en_GB">Control Module for Class Integration.</summary>
+        <description lang="en_GB">Used for creating add-ons by automating as many task as possible while minimizing amount of code needed.</description>
         <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
         <source>https://github.com/willforde/script.module.codequick</source>
         <email>willforde+codequick@gmail.com</email>
