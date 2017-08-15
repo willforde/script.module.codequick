@@ -42,8 +42,8 @@ requests: http://docs.python-requests.org/en/master/
 
 # Standard library imports
 from collections import MutableMapping, defaultdict
-from base64 import b64encode, b64decode
 from codecs import open as _open, getencoder
+from base64 import b64encode, b64decode
 from datetime import datetime
 import json as _json
 import logging
@@ -112,16 +112,16 @@ __repo__ = "https://github.com/willforde/urlquick"
 __copyright__ = "Copyright (C) 2017 William Forde"
 __author__ = "William Forde"
 __license__ = "MIT"
-__version__ = "0.1.3"
+__version__ = "0.9.1"
 
 # Cacheable request types
-CACHE_LOCATION = __import__("xbmc").translatePath(__import__("xbmcaddon").Addon().getAddonInfo("profile"))
+CACHE_LOCATION = __import__("xbmc").translatePath(__import__("xbmcaddon").Addon().getAddonInfo("profile")).decode("utf8")
 CACHEABLE_METHODS = (u"GET", u"HEAD", u"POST")
 CACHEABLE_CODES = (200, 203, 204, 300, 301, 302, 303, 307, 308, 410, 414)
 REDIRECT_CODES = (301, 302, 303, 307, 308)
 
 #: The default max age of the cache in seconds is used when no max age is given in request.
-MAX_AGE = 14400
+MAX_AGE = 14400  # 4 Hours
 
 # Unique logger for this module
 logger = logging.getLogger("urlquick")
@@ -236,30 +236,34 @@ class CachedProperty(object):
 
 
 class CacheHandler(object):
-    def __init__(self, url_hash, max_age=14400):
+    def __init__(self, uid, max_age=MAX_AGE):
         self.max_age = max_age
         self.response = None
+
+        # Filepath to cache file
         cache_dir = self.cache_dir()
-        self.cache_path = cache_path = os.path.join(cache_dir, url_hash)
-        if os.path.exists(cache_path):
+        self.cache_file = cache_file = os.path.join(cache_dir, uid)
+        print(cache_file)
+        if os.path.exists(cache_file):
             self.response = self._load()
             if self.response is None:
-                self.delete(cache_path)
+                self.delete(cache_file)
 
-    @staticmethod
-    def cache_dir():
-        cache_dir = os.path.join(CACHE_LOCATION, ".cache")
+    @classmethod
+    def cache_dir(cls):
+        """Returns the cache directory."""
+        cache_dir = cls.safe_path(os.path.join(CACHE_LOCATION, u".cache"))
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
         return cache_dir
 
     @staticmethod
     def delete(cache_path):
-        """Delete cache from disk"""
+        """Delete cache from disk."""
         try:
             os.remove(cache_path)
-        except OSError:
-            pass
+        except EnvironmentError:
+            logger.error("Faild to remove cache: %s", cache_path)
         else:
             logger.debug("Removed cache: %s", cache_path)
 
@@ -268,21 +272,21 @@ class CacheHandler(object):
         return (time.time() - os.stat(cache_path).st_mtime) < max_age
 
     def isfresh(self):
-        """ Return True if cache is fresh else False """
+        """Return True if cache is fresh else False."""
         # Check that the response is of status 301 or that the cache is not older than the max age
         if self.response.status in (301, 308, 414) or self.max_age == -1:
             return True
         elif self.max_age == 0:
             return False
         else:
-            return self.isfilefresh(self.cache_path, self.max_age)
+            return self.isfilefresh(self.cache_file, self.max_age)
 
     def reset_timestamp(self):
-        """ Reset the last modified timestamp to current time"""
-        os.utime(self.cache_path, None)
+        """Reset the last modified timestamp to current time."""
+        os.utime(self.cache_file, None)
 
     def add_conditional_headers(self, headers):
-        """Return a dict of conditional headers from cache"""
+        """Return a dict of conditional headers from cache."""
         # Fetch cached headers
         cached_headers = self.response.headers
 
@@ -314,10 +318,10 @@ class CacheHandler(object):
         self._save(headers=dict(headers), body=body, status=status, reason=reason, version=version, strict=strict)
 
     def _load(self):
-        """ Load the cache response that is stored on disk """
+        """Load the cache response that is stored on disk."""
         try:
             # Atempt to read the raw cache data
-            with _open(self.cache_path, "rb", encoding="utf8") as stream:
+            with _open(self.cache_file, "rb", encoding="utf8") as stream:
                 json_data = _json.load(stream)
 
         except (IOError, OSError):
@@ -335,30 +339,40 @@ class CacheHandler(object):
 
     def _save(self, **response):
         # Base64 encode the body to make it json serializable
-        response["body"] = b64encode(response["body"]).decode("ascii")
+        response[u"body"] = b64encode(response["body"]).decode("ascii")
 
         try:
             # Save the response to disk using json Serialization
-            with _open(self.cache_path, "wb", encoding="utf8") as stream:
+            with _open(self.cache_file, "wb", encoding="utf8") as stream:
                 _json.dump(response, stream, indent=4, separators=(",", ":"))
 
         except (IOError, OSError):
             logger.exception("Cache Error: Failed to write response to cache.")
-            self.delete(self.cache_path)
+            self.delete(self.cache_file)
 
         except TypeError:
             logger.exception("Cache Error: Failed to serialize response.")
-            self.delete(self.cache_path)
-
-    def __bool__(self):
-        return self.response is not None
-
-    def __nonzero__(self):
-        return self.response is not None
+            self.delete(self.cache_file)
 
     @staticmethod
-    def hash_url(url, data=None):
-        """ Return url as a sha1 encoded hash """
+    def safe_path(path):
+        """
+        Convert path into a encoding that best suits the platform os.
+        Unicode when on windows and utf8 when on linux/bsd.
+
+        :type path: str
+        :param path: The path to convert.
+        :return: Returns the path as unicode or utf8 encoded str.
+        """
+        # Notting needs to be down if on windows as windows works well with unicode already
+        # We only want to convert to bytes when we are on linux.
+        if not sys.platform.startswith("win"):
+            path = path.encode("utf8")
+        return path
+
+    @classmethod
+    def hash_url(cls, url, data=None):
+        """Return url as a sha1 encoded hash."""
         # Make sure that url is of type bites
         if isinstance(url, unicode):
             url = url.encode("utf8")
@@ -372,29 +386,44 @@ class CacheHandler(object):
         # Convert hashed url to unicode
         urlhash = hashlib.sha1(url).hexdigest()
         if isinstance(urlhash, bytes):
-            # noinspection PyArgumentList
             urlhash = unicode(urlhash)
 
         # Append urlhash to the filename
-        return "cache-{}".format(urlhash)
+        return cls.safe_path(u"cache-{}".format(urlhash))
+
+    @classmethod
+    def from_url(cls, url, data=None, max_age=MAX_AGE):
+        """Initialize CacheHandler with url instead of uid."""
+        uid = cls.hash_url(url, data)
+        return cls(uid, max_age)
+
+    def __bool__(self):
+        return self.response is not None
+
+    def __nonzero__(self):
+        return self.response is not None
 
 
 def cache_cleanup(max_age=None):
     """
     Remove all stale cache files.
 
-    :param int max_age: (optional) The max age the cache can be before removal.
-                        Defaults to :data:`MAX_AGE <urlquick.MAX_AGE>`
+    :param int max_age: [opt] The max age the cache can be before removal.
+                        defaults => :data:`MAX_AGE <urlquick.MAX_AGE>`
     """
+    handler = CacheHandler
     max_age = MAX_AGE if max_age is None else max_age
-    cache_dir = CacheHandler.cache_dir()
-    for url_hash in os.listdir(cache_dir):
+    cache_dir = handler.cache_dir()
+
+    # Loop over all cache files and remove stale files
+    filestart = handler.safe_path(u"cache-")
+    for cachefile in os.listdir(cache_dir):
         # Check that we actually have a cache file
-        if url_hash.startswith("cache-"):
-            cache_path = os.path.join(cache_dir, url_hash)
+        if cachefile.startswith(filestart):
+            cache_path = os.path.join(cache_dir, cachefile)
             # Check if the cache is not fresh and delete if so
-            if not CacheHandler.isfilefresh(cache_path, max_age):
-                CacheHandler.delete(cache_path)
+            if not handler.isfilefresh(cache_path, max_age):
+                handler.delete(cache_path)
 
 
 class CacheAdapter(object):
@@ -404,16 +433,15 @@ class CacheAdapter(object):
     def cache_check(self, method, url, data, headers, max_age=None):
         # Fetch max age from request header
         max_age = max_age if max_age is not None else int(headers.pop(u"x-max-age", MAX_AGE))
-        url_hash = CacheHandler.hash_url(url, data)
         if method == u"OPTIONS":
             return None
 
         # Check if cache exists first
-        self.__cache = cache = CacheHandler(url_hash, max_age)
+        self.__cache = cache = CacheHandler.from_url(url, data, max_age)
         if cache:
             if method in ("PUT", "DELETE"):
                 logger.debug("Cache purged, %s request invalidates cache", method)
-                cache.delete(cache.cache_path)
+                cache.delete(cache.cache_file)
 
             elif cache.isfresh():
                 logger.debug("Cache is fresh, returning cached response")
@@ -658,7 +686,6 @@ class Request(object):
         if query:
             # Ensure that query contains only valid characters
             qsl = parse_qsl(query)
-            # noinspection PyTypeChecker
             query = urlencode(qsl)
 
         if query and params:
@@ -705,10 +732,6 @@ class UnicodeDict(dict):
                         key = make_unicode(key)
                         value = make_unicode(value)
                         self[key] = value
-
-                    # Remove item from dict if already added and value is None
-                    elif key in self:
-                        del self[key]
 
 
 def make_unicode(data, encoding="utf8", errors=""):
@@ -830,17 +853,15 @@ class Session(ConnectionManager):
 
         Requests data from a specified resource.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
-
-        :param dict params: (optional) Dictionary of url query key/value pairs.
+        :param str url: Url of the remote resource.
+        :param dict params: [opt] Dictionary of url query key/value pairs.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
         kwargs["params"] = params
-        return self.request("GET", url, **kwargs)
+        return self.request(u"GET", url, **kwargs)
 
     def head(self, url, **kwargs):
         """
@@ -848,14 +869,13 @@ class Session(ConnectionManager):
     
         Same as GET but returns only HTTP headers and no document body.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
+        :param str url: Url of the remote resource.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
-        return self.request("HEAD", url, **kwargs)
+        return self.request(u"HEAD", url, **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs):
         """
@@ -863,19 +883,15 @@ class Session(ConnectionManager):
     
         Submits data to be processed to a specified resource.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
-
-        :type data: dict or str or unicode
-        :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
-        :param json: (optional) Json data sent in the body of the Request.
+        :param str url: Url of the remote resource.
+        :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
+        :param json: [opt] Json data sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
-        return self.request("POST", url, data=data, json=json, **kwargs)
+        return self.request(u"POST", url, data=data, json=json, **kwargs)
 
     def put(self, url, data=None, **kwargs):
         """
@@ -883,74 +899,57 @@ class Session(ConnectionManager):
     
         Uploads a representation of the specified URI.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
-
-        :type data: dict or str or unicode
-        :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
+        :param str url: Url of the remote resource.
+        :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
-        return self.request("PUT", url, data=data, **kwargs)
+        return self.request(u"PUT", url, data=data, **kwargs)
 
     def patch(self, url, data=None, **kwargs):
         """
         Sends a PATCH request.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
-
-        :type data: dict or str or unicode
-        :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
+        :param str url: Url of the remote resource.
+        :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
-        return self.request("PATCH", url, data=data, **kwargs)
+        return self.request(u"PATCH", url, data=data, **kwargs)
 
     def delete(self, url, **kwargs):
         """
         Sends a DELETE request.
     
-        :type url: str or unicode
-        :param url: Url of the remote resource.
+        :param str url: Url of the remote resource.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
         :rtype: urlquick.Response
         """
-        return self.request("DELETE", url, **kwargs)
+        return self.request(u"DELETE", url, **kwargs)
 
     def request(self, method, url, params=None, data=None, json=None, headers=None, cookies=None, auth=None,
                 timeout=10, allow_redirects=None, raise_for_status=None, max_age=None):
         """
         Make request for remote resource.
-
-        :type method: str or unicode
-        :param method: HTTP request method, GET, HEAD, POST.
-
-        :type url: str or unicode
-        :param url: Url of the remote resource.
-
-        :type params: dict
-        :param params: (optional) Dictionary of url query key/value pairs.
-
-        :type data: dict or str or unicode
-        :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
-        :param json: (optional) Json data sent in the body of the Request.
-        :param dict headers: (optional) HTTP request headers.
-        :param dict cookies: (optional) Dictionary of cookies to send with the request.
-        :param tuple auth: (optional) (username, password) for basic authentication.
-        :param int timeout: (optional) Connection timeout in seconds.
-        :param bool allow_redirects: (optional) Enable/disable redirection. Defaults to ``True``.
-        :param bool raise_for_status: (optional) Raise's HTTPError if status code is > 400. Defaults to ``False``.
-        :param int max_age: (optional) Age the 'cache' can be, before it’s considered stale. -1 will disable caching.
+    
+        :param str method: HTTP request method, GET, HEAD, POST.
+        :param str url: Url of the remote resource.
+        :param dict params: [opt] Dictionary of url query key/value pairs.
+        :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
+        :param json: [opt] Json data sent in the body of the Request.
+        :param dict headers: [opt] HTTP request headers.
+        :param dict cookies: [opt] Dictionary of cookies to send with the request.
+        :param tuple auth: [opt] (username, password) for basic authentication.
+        :param int timeout: [opt] Connection timeout in seconds.
+        :param bool allow_redirects: [opt] Enable/disable redirection. Defaults to ``True``.
+        :param bool raise_for_status: [opt] Raise's HTTPError if status code is > 400. Defaults to ``False``.
+        :param int max_age: [opt] Age the 'cache' can be, before it’s considered stale. -1 will disable caching.
                             Defaults to :data:`MAX_AGE <urlquick.MAX_AGE>`
     
         :return: A requests like Response object.
@@ -962,7 +961,6 @@ class Session(ConnectionManager):
         :raises SSLError: If an SSL error occurs while sending the request.
         :raises Timeout: If the connection to server timed out.
         """
-
         # Fetch settings from local or session
         allow_redirects = self.allow_redirects if allow_redirects is None else allow_redirects
         raise_for_status = self.raise_for_status if raise_for_status is None else raise_for_status
@@ -1148,21 +1146,18 @@ class Response(object):
             except UnicodeDecodeError:
                 logger.debug("Failed to decode content with given encoding: '%s'", self.encoding)
 
-        if not (self.encoding and getencoder(self.encoding) == getencoder(self.apparent_encoding)):
+        apparent_encoding = self.apparent_encoding
+        if apparent_encoding and not (self.encoding and getencoder(self.encoding) == getencoder(apparent_encoding)):
             logger.debug("Attempting to decode with default encoding: '%s'", self.apparent_encoding)
             try:
-                return self.content.decode(self.apparent_encoding)
+                return self.content.decode(apparent_encoding)
             except UnicodeDecodeError:
-                logger.debug("Failed to decode content with default encoding, "
-                             "switching to fallback encoding: 'iso-8859-1'")
+                logger.debug("Failed to decode content with default encoding: %s, "
+                             "switching to fallback encoding: 'iso-8859-1'", apparent_encoding)
         else:
             logger.debug("Attempting to decode with fallback encoding: 'iso-8859-1'")
 
-        try:
-            return self.content.decode("iso-8859-1")
-        except UnicodeDecodeError:
-            logger.debug("Failed to decode content with fallback encoding: 'iso-8859-1'")
-            raise
+        return self.content.decode("iso-8859-1")
 
     @CachedProperty
     def cookies(self):
@@ -1240,19 +1235,29 @@ class Response(object):
         """
         Returns the json-encoded content of a response.
 
-        :param kwargs: (Optional) Arguments that :func:`json.loads` takes.
+        :param kwargs: [opt] Arguments that :func:`json.loads` takes.
         :raises ValueError: If the response body does not contain valid json.
         """
         return _json.loads(self.text, **kwargs)
+
+    def xml(self):
+        """
+        Parse's "XML" document into a element tree.
+
+        :return: The root element of the element tree.
+        :rtype: xml.etree.ElementTree.Element
+        """
+        from xml.etree import ElementTree
+        return ElementTree.fromstring(self.content)
 
     def iter_content(self, chunk_size=512, decode_unicode=False):
         """
         Iterates over the response data. The chunk size are the number of bytes it should read into memory.
         This is not necessarily the length of each item returned, as decoding can take place.
 
-        :param int chunk_size: (Optional) The chunk size to use for each chunk.
+        :param int chunk_size: [opt] The chunk size to use for each chunk.
                                (default=512)
-        :param bool decode_unicode: (Optional) ``True`` to return unicode, else ``False`` to return bytes.
+        :param bool decode_unicode: [opt] ``True`` to return unicode, else ``False`` to return bytes.
                                     (default=``False``)
         """
         content = self.text if decode_unicode else self.content
@@ -1270,10 +1275,10 @@ class Response(object):
         """
         Iterates over the response data, one line at a time.
 
-        :param int chunk_size: (Optional) Unused, here for compatibility with requests.
-        :param bool decode_unicode: (Optional) ``True`` to return unicode, else ``False`` to return bytes.
+        :param int chunk_size: [opt] Unused, here for compatibility with requests.
+        :param bool decode_unicode: [opt] ``True`` to return unicode, else ``False`` to return bytes.
                                     (default=``False``)
-        :param bytes delimiter: (Optional) Delimiter used as the end of line marker.
+        :param bytes delimiter: [opt] Delimiter used as the end of line marker.
                                 (default=b'\\\\n')
         """
         if decode_unicode:
@@ -1305,39 +1310,6 @@ class Response(object):
         if self.status_code >= 400:
             raise HTTPError(self.url, self.status_code, self.reason, self.headers)
 
-    def parse(self, tag=u"", attrs=None):
-        """
-        Parse's "HTML" document into a element tree using HTMLement.
-
-        .. seealso::
-
-            'http://python-htmlement.readthedocs.io/en/stable/?badge=stable'
-
-        :type tag: str or unicode
-        :param tag: (optional) Name of 'element' which is used to filter tree to required section.
-
-        :type attrs: dict
-        :param attrs: (optional) Attributes of 'element', used when searching for required section.
-                                 Attrs should be a dict of unicode key/value pairs.
-
-        :return: The root element of the element tree.
-        :rtype: xml.etree.ElementTree.Element
-        """
-        from htmlement import HTMLement
-        parser = HTMLement(unicode(tag), attrs)
-        parser.feed(self.text)
-        return parser.close()
-
-    def xml(self):
-        """
-        Parse's "XML" document into a element tree.
-
-        :return: The root element of the element tree.
-        :rtype: xml.etree.ElementTree.Element
-        """
-        from xml.etree import ElementTree
-        return ElementTree.fromstring(self.content)
-
     def close(self):
         pass
 
@@ -1356,32 +1328,47 @@ class Response(object):
     def __repr__(self):
         return "<Response [{}]>".format(self.status_code)
 
+    def parse(self, tag=u"", attrs=None):
+        """
+        Parse's "HTML" document into a element tree using HTMLement.
+
+        .. seealso::
+
+            'http://python-htmlement.readthedocs.io/en/stable/?badge=stable'
+
+        :type tag: str or unicode
+        :param tag: [opt] Name of 'element' which is used to filter tree to required section.
+
+        :type attrs: dict
+        :param attrs: [opt] Attributes of 'element', used when searching for required section.
+                                 Attrs should be a dict of unicode key/value pairs.
+
+        :return: The root element of the element tree.
+        :rtype: xml.etree.ElementTree.Element
+        """
+        from htmlement import HTMLement
+        parser = HTMLement(unicode(tag), attrs)
+        parser.feed(self.text)
+        return parser.close()
+
 
 def request(method, url, params=None, data=None, json=None, headers=None, cookies=None, auth=None,
             timeout=10, allow_redirects=None, raise_for_status=None, max_age=None):
     """
     Make request for remote resource.
 
-    :type method: str or unicode
-    :param method: HTTP request method, GET, HEAD, POST.
-
-    :type url: str or unicode
-    :param url: Url of the remote resource.
-
-    :type params: dict
-    :param params: (optional) Dictionary of url query key/value pairs.
-
-    :type data: dict or str or unicode
-    :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
-    :param json: (optional) Json data sent in the body of the Request.
-    :param dict headers: (optional) HTTP request headers.
-    :param dict cookies: (optional) Dictionary of cookies to send with the request.
-    :param tuple auth: (optional) (username, password) for basic authentication.
-    :param int timeout: (optional) Connection timeout in seconds.
-    :param bool allow_redirects: (optional) Enable/disable redirection. Defaults to ``True``.
-    :param bool raise_for_status: (optional) Raise's HTTPError if status code is > 400. Defaults to ``False``.
-    :param int max_age: (optional) Age the 'cache' can be, before it’s considered stale. -1 will disable caching.
+    :param str method: HTTP request method, GET, HEAD, POST.
+    :param str url: Url of the remote resource.
+    :param dict params: [opt] Dictionary of url query key/value pairs.
+    :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
+    :param json: [opt] Json data sent in the body of the Request.
+    :param dict headers: [opt] HTTP request headers.
+    :param dict cookies: [opt] Dictionary of cookies to send with the request.
+    :param tuple auth: [opt] (username, password) for basic authentication.
+    :param int timeout: [opt] Connection timeout in seconds.
+    :param bool allow_redirects: [opt] Enable/disable redirection. Defaults to ``True``.
+    :param bool raise_for_status: [opt] Raise's HTTPError if status code is > 400. Defaults to ``False``.
+    :param int max_age: [opt] Age the 'cache' can be, before it’s considered stale. -1 will disable caching.
                         Defaults to :data:`MAX_AGE <urlquick.MAX_AGE>`
 
     :return: A requests like Response object.
@@ -1404,17 +1391,15 @@ def get(url, params=None, **kwargs):
 
     Requests data from a specified resource.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
-
-    :param dict params: (optional) Dictionary of url query key/value pairs.
+    :param str url: Url of the remote resource.
+    :param dict params: [opt] Dictionary of url query key/value pairs.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("GET", url, params=params, **kwargs)
+        return session.request(u"GET", url, params=params, **kwargs)
 
 
 def head(url, **kwargs):
@@ -1423,15 +1408,14 @@ def head(url, **kwargs):
 
     Same as GET but returns only HTTP headers and no document body.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
+    :param str url: Url of the remote resource.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("HEAD", url, **kwargs)
+        return session.request(u"HEAD", url, **kwargs)
 
 
 def post(url, data=None, json=None, **kwargs):
@@ -1440,20 +1424,16 @@ def post(url, data=None, json=None, **kwargs):
 
     Submits data to be processed to a specified resource.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
-
-    :type data: dict or str or unicode
-    :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
-    :param json: (optional) Json data sent in the body of the Request.
+    :param str url: Url of the remote resource.
+    :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
+    :param json: [opt] Json data sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("POST", url, data=data, json=json, **kwargs)
+        return session.request(u"POST", url, data=data, json=json, **kwargs)
 
 
 def put(url, data=None, **kwargs):
@@ -1462,50 +1442,41 @@ def put(url, data=None, **kwargs):
 
     Uploads a representation of the specified URI.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
-
-    :type data: dict or str or unicode
-    :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
+    :param str url: Url of the remote resource.
+    :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("PUT", url, data=data, **kwargs)
+        return session.request(u"PUT", url, data=data, **kwargs)
 
 
 def patch(url, data=None, **kwargs):
     """
     Sends a PATCH request.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
-
-    :type data: dict or str or unicode
-    :param data: (optional) Dictionary (will be form-encoded) or bytes sent in the body of the Request.
-
+    :param str url: Url of the remote resource.
+    :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("PATCH", url, data=data, **kwargs)
+        return session.request(u"PATCH", url, data=data, **kwargs)
 
 
 def delete(url, **kwargs):
     """
     Sends a DELETE request.
 
-    :type url: str or unicode
-    :param url: Url of the remote resource.
+    :param str url: Url of the remote resource.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
     :rtype: urlquick.Response
     """
     with Session() as session:
-        return session.request("DELETE", url, **kwargs)
+        return session.request(u"DELETE", url, **kwargs)
