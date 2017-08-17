@@ -114,8 +114,10 @@ __author__ = "William Forde"
 __license__ = "MIT"
 __version__ = "0.9.1"
 
+_addon_data = __import__("xbmcaddon").Addon()
+
 # Cacheable request types
-CACHE_LOCATION = __import__("xbmc").translatePath(__import__("xbmcaddon").Addon().getAddonInfo("profile")).decode("utf8")
+CACHE_LOCATION = __import__("xbmc").translatePath(_addon_data.getAddonInfo("profile")).decode("utf8")
 CACHEABLE_METHODS = (u"GET", u"HEAD", u"POST")
 CACHEABLE_CODES = (200, 203, 204, 300, 301, 302, 303, 307, 308, 410, 414)
 REDIRECT_CODES = (301, 302, 303, 307, 308)
@@ -360,8 +362,7 @@ class CacheHandler(object):
         Convert path into a encoding that best suits the platform os.
         Unicode when on windows and utf8 when on linux/bsd.
 
-        :type path: str
-        :param path: The path to convert.
+        :param unicode path: The path to convert.
         :return: Returns the path as unicode or utf8 encoded str.
         """
         # Notting needs to be down if on windows as windows works well with unicode already
@@ -626,7 +627,7 @@ class Request(object):
         """
         Parse a URL into it's individual components.
 
-        :param str url: Url to parse
+        :param url: Url to parse
         :param dict params: params to add to url as query
         :return: A 5-tuple of URL components
         :rtype: urllib.parse.SplitResult
@@ -686,6 +687,7 @@ class Request(object):
         if query:
             # Ensure that query contains only valid characters
             qsl = parse_qsl(query)
+            # noinspection PyTypeChecker
             query = urlencode(qsl)
 
         if query and params:
@@ -852,8 +854,9 @@ class Session(ConnectionManager):
         Sends a GET request.
 
         Requests data from a specified resource.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param dict params: [opt] Dictionary of url query key/value pairs.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
@@ -868,8 +871,9 @@ class Session(ConnectionManager):
         Sends a HEAD request.
     
         Same as GET but returns only HTTP headers and no document body.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
@@ -882,8 +886,9 @@ class Session(ConnectionManager):
         Sends a POST request.
     
         Submits data to be processed to a specified resource.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param json: [opt] Json data sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
@@ -898,8 +903,9 @@ class Session(ConnectionManager):
         Sends a PUT request.
     
         Uploads a representation of the specified URI.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
@@ -911,8 +917,9 @@ class Session(ConnectionManager):
     def patch(self, url, data=None, **kwargs):
         """
         Sends a PATCH request.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
@@ -924,8 +931,9 @@ class Session(ConnectionManager):
     def delete(self, url, **kwargs):
         """
         Sends a DELETE request.
-    
-        :param str url: Url of the remote resource.
+
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
         :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
     
         :return: A requests like Response object.
@@ -937,9 +945,12 @@ class Session(ConnectionManager):
                 timeout=10, allow_redirects=None, raise_for_status=None, max_age=None):
         """
         Make request for remote resource.
-    
-        :param str method: HTTP request method, GET, HEAD, POST.
-        :param str url: Url of the remote resource.
+
+        :type method: bytes or unicode
+        :param method: HTTP request method, GET, HEAD, POST.
+        :type url: bytes or unicode
+        :param url: Url of the remote resource.
+
         :param dict params: [opt] Dictionary of url query key/value pairs.
         :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
         :param json: [opt] Json data sent in the body of the Request.
@@ -1357,8 +1368,11 @@ def request(method, url, params=None, data=None, json=None, headers=None, cookie
     """
     Make request for remote resource.
 
-    :param str method: HTTP request method, GET, HEAD, POST.
-    :param str url: Url of the remote resource.
+    :type method: bytes or unicode
+    :param method: HTTP request method, GET, HEAD, POST.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
+
     :param dict params: [opt] Dictionary of url query key/value pairs.
     :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param json: [opt] Json data sent in the body of the Request.
@@ -1391,7 +1405,8 @@ def get(url, params=None, **kwargs):
 
     Requests data from a specified resource.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param dict params: [opt] Dictionary of url query key/value pairs.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
@@ -1408,7 +1423,8 @@ def head(url, **kwargs):
 
     Same as GET but returns only HTTP headers and no document body.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
@@ -1424,7 +1440,8 @@ def post(url, data=None, json=None, **kwargs):
 
     Submits data to be processed to a specified resource.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param json: [opt] Json data sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
@@ -1442,7 +1459,8 @@ def put(url, data=None, **kwargs):
 
     Uploads a representation of the specified URI.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
@@ -1457,7 +1475,8 @@ def patch(url, data=None, **kwargs):
     """
     Sends a PATCH request.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param data: [opt] Dictionary (will be form-encoded) or bytes sent in the body of the Request.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
@@ -1472,7 +1491,8 @@ def delete(url, **kwargs):
     """
     Sends a DELETE request.
 
-    :param str url: Url of the remote resource.
+    :type url: bytes or unicode
+    :param url: Url of the remote resource.
     :param kwargs: Optional arguments that :func:`request <urlquick.request>` takes.
 
     :return: A requests like Response object.
