@@ -39,7 +39,9 @@ class Route(Script):
     def __init__(self):
         super(Route, self).__init__()
         self._manual_sort = set()
-        self._autosort = True
+
+        self.autosort = True
+        """bool: False value will disable autosort."""
 
         self.update_listing = self.params.get(u"_updatelisting_", False)
         """bool: True, this folder should update the current listing. False, this folder is a subfolder (default)."""
@@ -106,7 +108,7 @@ class Route(Script):
 
     def __add_sort_methods(self, manual):
         """Add sort methods to kodi."""
-        if self._autosort:
+        if self.autosort:
             manual.update(auto_sort)
 
         if manual:
@@ -137,7 +139,7 @@ class Route(Script):
             plugin.add_sort_methods(xbmc.SORT_METHOD_DATE, xbmc.SORT_METHOD_DURATION, override=True)
         """
         # Disable auto sort if override is True, Default
-        self._autosort = self._autosort and not override.get("override", False)
+        self.autosort = self.autosort and not override.get("override", False)
         self._manual_sort.update(methods)
 
 

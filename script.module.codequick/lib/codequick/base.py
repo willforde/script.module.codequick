@@ -349,6 +349,10 @@ class Script(object):
     :cvar ERROR: Error logging level.
     :cvar WARNING: Warning logging level.
     :cvar CRITICAL: Critical logging level.
+
+    :cvar NOTIFY_WARNING: Notification Warning icon.
+    :cvar NOTIFY_ERROR: Notification Error icon.
+    :cvar NOTIFY_INFO: Notification Info icon.
     """
     # Set the listitem types to that of a script
     is_playable = False
@@ -360,6 +364,11 @@ class Script(object):
     ERROR = 40
     DEBUG = 10
     INFO = 20
+
+    # Notification icon options
+    NOTIFY_WARNING = 'warning'
+    NOTIFY_ERROR = 'error'
+    NOTIFY_INFO = 'info'
 
     # Dictionary of params passed to callback
     params = params
@@ -440,7 +449,8 @@ class Script(object):
 
         :param str heading: Dialog heading label.
         :param str message: Dialog message label.
-        :param str icon: [opt] Icon to use. option are 'info', 'error', 'warning'. (default => add-on icon)
+        :param str icon: [opt] Icon image to use. Other options are 'NOTIFY_INFO', 'NOTIFY_ERROR', 'NOTIFY_WARNING'.
+                         (default => add-on icon)
         :param int display_time: [opt] Display_time in milliseconds to show dialog. (default => 5000)
         :param bool sound: [opt] Whether or not to play notification sound. (default => True)
         """

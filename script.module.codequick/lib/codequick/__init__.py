@@ -20,12 +20,7 @@ from __future__ import absolute_import
 start_time = __import__("time").time()
 
 # Package imports
-from codequick.api import Script, Route, Resolver, run
 from codequick.storage import PersistentDict, PersistentList
+from codequick.api import Script, Route, Resolver, run
 from codequick.listing import Listitem
 from codequick import utils
-
-# Notification icon options
-NOTIFICATION_WARNING = 'warning'
-NOTIFICATION_ERROR = 'error'
-NOTIFICATION_INFO = 'info'
