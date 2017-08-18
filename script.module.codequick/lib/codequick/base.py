@@ -379,8 +379,8 @@ class Script(object):
     # Handle the add-on was started with, for advanced use.
     handle = handle
 
-    #: :class:`Settings` object with dictionary like interface of add-on settings.
     setting = Settings()
+    """:class:`Settings` object with dictionary like interface of add-on settings."""
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
@@ -488,6 +488,11 @@ class Script(object):
     def get_info(key, addon_id=None):
         """
         Returns the value of an addon property as a 'unicode string'.
+
+        Properties::
+
+            author, changelog, description, disclaimer, fanart, icon,
+            id, name, path, profile, stars, summary, type, version
 
         :param str key: Id of the property to access.
         :param str addon_id: [opt] Id of another addon to extract properties from.
