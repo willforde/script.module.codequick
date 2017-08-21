@@ -245,7 +245,6 @@ class CacheHandler(object):
         # Filepath to cache file
         cache_dir = self.cache_dir()
         self.cache_file = cache_file = os.path.join(cache_dir, uid)
-        print(cache_file)
         if os.path.exists(cache_file):
             self.response = self._load()
             if self.response is None:
