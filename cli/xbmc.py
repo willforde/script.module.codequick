@@ -8,6 +8,7 @@ You can also find system information using the functions available in this libra
 import logging
 import random
 import time
+import sys
 import os
 
 # Kodi user directory
@@ -16,6 +17,16 @@ import xbmcgui as _xbmcgui
 # Package imports
 from codequickcli import addon_db, logger
 import codequickcli.support as _support
+
+dirname, basename = os.path.split(sys.argv[0])
+if basename == "addon.py":
+    pluginid = os.path.basename(dirname)
+    from codequickcli import cli
+    newargs = sys.argv[:]
+    newargs[0] = pluginid
+    cli.main(newargs)
+    exit(0)
+
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
