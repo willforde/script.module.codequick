@@ -19,6 +19,7 @@ import xbmc
 # Package imports
 from codequick.support import KodiLogHandler, parse_sysargs, CacheProperty
 from codequick.utils import ensure_str
+import urlquick
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -542,7 +543,6 @@ class Script(object):
     @CacheProperty
     def request(self):
         """A urlquick session."""
-        import urlquick
         return urlquick.Session()
 
 
