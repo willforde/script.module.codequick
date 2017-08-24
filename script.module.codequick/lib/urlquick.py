@@ -40,6 +40,13 @@ urlfetch: https://github.com/ifduyue/urlfetch
 requests: http://docs.python-requests.org/en/master/
 """
 
+__all__ = ["request", "get", "head", "post", "put", "patch", "delete", "cache_cleanup", "Session"]
+__repo__ = "https://github.com/willforde/urlquick"
+__copyright__ = "Copyright (C) 2017 William Forde"
+__author__ = "William Forde"
+__license__ = "MIT"
+__version__ = "0.9.1"
+
 # Standard library imports
 from collections import MutableMapping, defaultdict
 from codecs import open as _open, getencoder
@@ -65,6 +72,7 @@ if py3:
     from urllib.parse import urlsplit, urlunsplit, urljoin, SplitResult, urlencode, parse_qsl, quote, unquote
     # noinspection PyUnresolvedReferences
     from http.cookies import SimpleCookie
+
     # noinspection PyShadowingBuiltins
     unicode = str
 else:
@@ -77,18 +85,22 @@ else:
     # noinspection PyUnresolvedReferences
     from Cookie import SimpleCookie
 
+
     def quote(data, safe=b"/", encoding="utf8", errors="strict"):
         data = data.encode(encoding, errors)
         return _quote(data, safe).decode("ascii")
+
 
     def unquote(data, encoding="utf-8", errors="replace"):
         data = data.encode("ascii", errors)
         return _unquote(data).decode(encoding, errors)
 
+
     def parse_qsl(qs, encoding="utf8", errors="replace", **kwargs):
         qs = qs.encode(encoding, errors)
         qsl = _parse_qsl(qs, **kwargs)
         return [(key.decode(encoding, errors), value.decode(encoding, errors)) for key, value in qsl]
+
 
     def urlencode(query, doseq=False, encoding="utf8", errors=""):
         # Fetch items as a tuple of (key, value)
@@ -107,16 +119,8 @@ else:
         # Decode the output of urlencode back into unicode and return
         return _urlencode(new_query, doseq).decode("ascii")
 
-__all__ = ["request", "get", "head", "post", "put", "patch", "delete", "cache_cleanup", "Session"]
-__repo__ = "https://github.com/willforde/urlquick"
-__copyright__ = "Copyright (C) 2017 William Forde"
-__author__ = "William Forde"
-__license__ = "MIT"
-__version__ = "0.9.1"
-
-_addon_data = __import__("xbmcaddon").Addon()
-
 # Cacheable request types
+_addon_data = __import__("xbmcaddon").Addon()
 CACHE_LOCATION = __import__("xbmc").translatePath(_addon_data.getAddonInfo("profile")).decode("utf8")
 CACHEABLE_METHODS = (u"GET", u"HEAD", u"POST")
 CACHEABLE_CODES = (200, 203, 204, 300, 301, 302, 303, 307, 308, 410, 414)
@@ -155,6 +159,7 @@ class SSLError(ConnError):
 
 class HTTPError(UrlError):
     """Raised when HTTP error occurs."""
+
     def __init__(self, url, code, msg, hdrs):
         self.code = code
         self.msg = msg
@@ -173,6 +178,7 @@ class CaseInsensitiveDict(MutableMapping):
     Credit goes to requests for this code
     http://docs.python-requests.org/en/master/
     """
+
     def __init__(self, *args):
         self._store = {}
         for _dict in args:
@@ -213,6 +219,7 @@ class CachedProperty(object):
     itself with an ordinary attribute. Deleting the attribute resets the
     property.
     """
+
     def __init__(self, fget=None):
         self.__get = fget
         self.__doc__ = fget.__doc__
@@ -470,6 +477,7 @@ class CacheAdapter(object):
 
 class CacheResponse(object):
     """A mock HTTPResponse class"""
+
     def __init__(self, headers, body, status, reason, version=11, strict=True):
         self.headers = headers
         self.status = status
@@ -571,6 +579,7 @@ class ConnectionManager(CacheAdapter):
 
 class Request(object):
     """A Request Object"""
+
     def __init__(self, method, url, headers, data=None, json=None, params=None, referer=None):
         #: Tuple of (username, password) for basic authentication.
         self.auth = None
@@ -760,6 +769,7 @@ class Session(ConnectionManager):
     :ivar int max_age: Max age the cache can be, before it’s considered stale. -1 will disable caching.
                        Defaults to :data:`MAX_AGE <urlquick.MAX_AGE>`
     """
+
     def __init__(self, **kwargs):
         super(Session, self).__init__()
         self._headers = CaseInsensitiveDict()
@@ -781,7 +791,7 @@ class Session(ConnectionManager):
         self.max_repeats = kwargs.get("max_repeats", 4)
         self.max_redirects = kwargs.get("max_redirects", 10)
         self.allow_redirects = kwargs.get("allow_redirects", True)
-        self.raise_for_status = kwargs.get("raise_for_status", False)
+        self.raise_for_status = kwargs.get("raise_for_status", True)
 
     @property
     def auth(self):
@@ -940,8 +950,8 @@ class Session(ConnectionManager):
         """
         return self.request(u"DELETE", url, **kwargs)
 
-    def request(self, method, url, params=None, data=None, json=None, headers=None, cookies=None, auth=None,
-                timeout=10, allow_redirects=None, raise_for_status=None, max_age=None):
+    def request(self, method, url, params=None, data=None, headers=None, cookies=None, auth=None,
+                timeout=10, allow_redirects=None, json=None, raise_for_status=None, max_age=None):
         """
         Make request for remote resource.
 
@@ -1362,8 +1372,8 @@ class Response(object):
         return parser.close()
 
 
-def request(method, url, params=None, data=None, json=None, headers=None, cookies=None, auth=None,
-            timeout=10, allow_redirects=None, raise_for_status=None, max_age=None):
+def request(method, url, params=None, data=None, headers=None, cookies=None, auth=None,
+            timeout=10, allow_redirects=None, json=None, raise_for_status=None, max_age=None):
     """
     Make request for remote resource.
 
@@ -1394,8 +1404,8 @@ def request(method, url, params=None, data=None, json=None, headers=None, cookie
     :raises Timeout: If the connection to server timed out.
     """
     with Session() as session:
-        return session.request(method, url, params, data, json, headers, cookies, auth, timeout,
-                               allow_redirects, raise_for_status, max_age)
+        return session.request(method, url, params, data, headers, cookies, auth, timeout,
+                               allow_redirects, json, raise_for_status, max_age)
 
 
 def get(url, params=None, **kwargs):
