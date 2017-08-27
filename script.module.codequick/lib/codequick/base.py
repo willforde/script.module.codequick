@@ -4,7 +4,6 @@ from __future__ import absolute_import
 # Standard Library Imports
 from functools import partial
 from binascii import hexlify
-import urlparse
 import logging
 import inspect
 import time
@@ -18,7 +17,7 @@ import xbmc
 
 # Package imports
 from codequick.support import KodiLogHandler, parse_sysargs, CacheProperty
-from codequick.utils import ensure_str
+from codequick.utils import ensure_bytes, ensure_unicode, ensure_native_str, urlparse
 import urlquick
 
 script_data = xbmcaddon.Addon("script.module.codequick")
@@ -125,7 +124,7 @@ def build_path(path=None, query=None, **extra_query):
 
     # Encode the query parameters using json
     if query:
-        query = "_json_=" + hexlify(json.dumps(query))
+        query = "_json_=" + ensure_native_str(hexlify(ensure_bytes(json.dumps(query))))
 
     # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
@@ -157,6 +156,7 @@ class Route(object):
         self.parent = parent
         self.path = path
 
+    # noinspection PyDeprecation
     def args_to_kwargs(self, args):
         """
         Convert positional arguments to keyword arguments.
@@ -165,14 +165,19 @@ class Route(object):
         :returns: A list of tuples consisten of ('arg name', 'arg value)'.
         :rtype: list
         """
-        callback_args = inspect.getargspec(self.callback).args[1:]
+        try:
+            # noinspection PyUnresolvedReferences
+            callback_args = inspect.getfullargspec(self.callback).args[1:]
+        except AttributeError:
+            # "inspect.getargspec" is deprecated in python 3
+            callback_args = inspect.getargspec(self.callback).args[1:]
+
         return zip(callback_args, args)
 
 
 class Dispatcher(object):
     """Class to handle registering and dispatching of callback functions."""
     def __init__(self):
-        #: Dictionary of registered callback functions, {'route path': callback function}.
         self.registered_routes = {}
 
     def __getitem__(self, route):
@@ -242,7 +247,7 @@ class Dispatcher(object):
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), Script.get_info("icon").encode("utf8"))
+            dialog.notification(e.__class__.__name__, str(e), ensure_native_str(Script.get_info("icon")))
             logger.critical(str(e), exc_info=1)
         else:
             from . import start_time
@@ -274,7 +279,7 @@ class Settings(object):
         :type value: str or unicode
         """
         # noinspection PyTypeChecker
-        addon_data.setSetting(key, value if isinstance(value, basestring) else str(value).lower())
+        addon_data.setSetting(key, ensure_unicode(value))
 
     def get_boolean(self, key, addon_id=None):
         """
@@ -455,15 +460,11 @@ class Script(object):
         :param int display_time: [opt] Display_time in milliseconds to show dialog. (default => 5000)
         :param bool sound: [opt] Whether or not to play notification sound. (default => True)
         """
-        # Ensure that heading, message and icon is encoded into utf8
-        # As kodi will not except unicode
-        heading = ensure_str(heading)
-        message = ensure_str(message)
-
-        if icon and isinstance(icon, unicode):
-            icon = icon.encode("utf8")
-        elif not icon:
-            icon = self.icon.encode("utf8")
+        # Ensure that heading, message and icon
+        # is encoded into native str type
+        heading = ensure_native_str(heading)
+        message = ensure_native_str(message)
+        icon = ensure_native_str(icon if icon else self.icon)
 
         dialog = xbmcgui.Dialog()
         dialog.notification(heading, message, icon, display_time, sound)
@@ -518,7 +519,7 @@ class Script(object):
             resp = xbmc.translatePath(resp)
 
         # return the property as unicode
-        return unicode(resp, "utf8")
+        return resp.decode("utf8") if isinstance(resp, bytes) else resp
 
     @CacheProperty
     def icon(self):

@@ -13,6 +13,7 @@ import xbmc
 
 # Package imports
 from codequick.base import dispatcher, Script, build_path, logger_id
+from codequick.utils import unicode_type, ensure_native_str, ensure_unicode
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
@@ -76,7 +77,7 @@ class Route(Script):
 
         # Create a new list containing tuples, consisting of path, listitem, isfolder.
         listitems = []
-        folder_counter = 0
+        folder_counter = 0.0
         for listitem in raw_listitems:
             if listitem:
                 # noinspection PyProtectedMember
@@ -100,7 +101,7 @@ class Route(Script):
         xbmcplugin.setContent(self.handle, "files" if isfolder else "videos")
 
         # Sets the category for skins to display modes.
-        xbmcplugin.setPluginCategory(self.handle, re.sub("\(\d+\)$", "", self._title.encode("utf8")).strip())
+        xbmcplugin.setPluginCategory(self.handle, ensure_native_str(re.sub(u"\(\d+\)$", u"", self._title).strip()))
 
         # Add sort methods only if not a folder(Video listing)
         if not isfolder:
@@ -149,6 +150,16 @@ class Resolver(Script):
     return playable video urls witch kodi can play.
 
     Resolver inherits all methods and attributes from :class:`Script`.
+
+    The expected return types from the callback resolver::
+
+        * bytes: Url as type bytes.
+        * unicode: Url as type unicode.
+        * iterable: List or tuple, consisting of url's, listItem's or tuple's consisting of title and url.
+        * dict: Dictionary consisting of title as the key and the url as the value.
+        * listItem: A kodi listitem object with required data already set e.g. label and path.
+
+    When multiple url's are given, a playlist will be automaticly created.
     """
     # Change listitem type to 'player'
     is_playable = True
@@ -227,6 +238,11 @@ class Resolver(Script):
 
         :returns: The extracted video url
         :rtype: str
+
+        ..note::
+
+            Unfortunately the kodi YoutubeDL module is python2 only.
+            Hopefully it will be ported to python3 when kodi gets upgraded.
         """
         def ytdl_logger(record):
             if record.startswith("ERROR:"):
@@ -287,10 +303,10 @@ class Resolver(Script):
         """
         # Create Playlist
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        title = self._title.encode("utf8")
+        title = self._title
 
         # Loop each item to create playlist
-        for count, url in enumerate(urls, 1):
+        for count, url in enumerate(filter(None, urls), 1):
             # Kodi original listitem object
             if isinstance(url, xbmcgui.ListItem):
                 listitem = url
@@ -302,12 +318,11 @@ class Resolver(Script):
                 # Not already a listitem object
                 listitem = xbmcgui.ListItem()
                 if isinstance(url, (list, tuple)):
-                    url, title = url
-                    if isinstance(title, unicode):
-                        title = title.encode("utf8")
+                    title, url = url
+                    title = ensure_unicode(title)
 
                 # Create listitem with new title
-                listitem.setLabel("%s Part %i" % (title, count))
+                listitem.setLabel(u"%s Part %i" % (title, count))
                 listitem.setPath(url)
 
             # Populate Playlis
@@ -325,13 +340,17 @@ class Resolver(Script):
         """
 
         # Create listitem object if resolved object is a string or unicode
-        if isinstance(resolved, (str, unicode)):
+        if isinstance(resolved, (bytes, unicode_type)):
             listitem = xbmcgui.ListItem()
             listitem.setPath(resolved)
 
         # Create playlist if resolved object is a list of urls
         elif isinstance(resolved, (list, tuple)) or inspect.isgenerator(resolved):
             listitem = self.__create_playlist(resolved)
+
+        # Create playlist if resolved is a dict of {title: url}
+        elif hasattr(resolved, "items"):
+            listitem = self.__create_playlist(resolved.items())
 
         # Directly use resoleved if its already a listitem
         elif isinstance(resolved, xbmcgui.ListItem):
@@ -344,7 +363,7 @@ class Resolver(Script):
 
         # Invalid or No url was found
         elif resolved:
-            raise ValueError("resolver returned invalid url: '%s'" % type(resolved))
+            raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
         else:
             raise ValueError(self.localize(NO_DATA))
 

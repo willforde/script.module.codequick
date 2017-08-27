@@ -92,7 +92,7 @@ def handle_prompt(prompt):
         data_pipe.send({"prompt": prompt})
         return data_pipe.recv()
     else:
-        return raw_input(prompt)
+        return input(prompt)
 
 
 def addon_search(pluginid):
@@ -117,18 +117,33 @@ def addon_search(pluginid):
     # Return the path to found addon
     return addon_path
 
+
 class Strings(dict):
     def __init__(self, addon_path):
         super(Strings, self).__init__()
         # Location of the stirngs.po file
-        strings_path = os.path.join(addon_path, "resources", "language", "English", "strings.po")
-        if not os.path.exists(strings_path):
-            strings_path = os.path.join(addon_path, "resources", "strings.po")
-            if not os.path.exists(strings_path):
-                return
+        strings_path = self._string_local(addon_path)
+        if not (strings_path and os.path.exists(strings_path)):
+            return
 
         # Extract data from strings.po
         self._extractor(strings_path)
+
+    @staticmethod
+    def _string_local(addon_path):
+        local_string = os.path.join(addon_path, "resources", "strings.po")
+        if os.path.exists(local_string):
+            return local_string
+
+        base_loc = os.path.join(addon_path, "resources", "language")
+        if os.path.exists(base_loc):
+            local_type = os.listdir(base_loc)
+            if "English" in local_type:
+                return os.path.join(base_loc, "English", "strings.po")
+            elif "resource.language.en_gb" in local_type:
+                return os.path.join(base_loc, "resource.language.en_gb", "strings.po")
+            else:
+                return os.path.join(base_loc, local_type[0], "strings.po")
 
     def _extractor(self, strings_path):
         """Extract the strings from the strings.po file"""
@@ -191,7 +206,7 @@ class Settings(dict):
         else:
             # Create xml file
             self._xml = tree = ETree.Element("settings")
-            for key, value in self.iteritems():
+            for key, value in self.items():
                 ETree.SubElement(tree, "setting", {"id": key, "value": value})
 
         settings_dir = os.path.dirname(self._settings_path)

@@ -2,12 +2,28 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
-import urlparse
 import sys
 import re
 
 # Kodi imports
 import xbmc
+
+try:
+    import urllib.parse as urlparse
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    import urlparse
+
+try:
+    # noinspection PyUnresolvedReferences
+    long_type = long
+except NameError:
+    long_type = int
+
+PY3 = sys.version_info >= (3, 0)
+
+# Unicode Type object, unicode on python2 or str on python3
+unicode_type = type(u"")
 
 
 def keyboard(heading, default="", hidden=False):
@@ -15,10 +31,10 @@ def keyboard(heading, default="", hidden=False):
     Show keyboard dialog for user input.
 
     :param heading: Keyboard heading.
-    :type heading: str or unicode
+    :type heading: bytes or unicode
 
     :param default: [opt] Default text.
-    :type default: str or unicode
+    :type default: bytes or unicode
 
     :param hidden: [opt] True for hidden text entry.
     :type hidden: bool
@@ -27,8 +43,8 @@ def keyboard(heading, default="", hidden=False):
     :rtype: unicode
     """
     # Convert inputs to strings if required
-    default = ensure_str(default)
-    heading = ensure_str(heading)
+    heading = ensure_native_str(heading)
+    default = ensure_native_str(default)
 
     # Show the onscreen keyboard
     kb = xbmc.Keyboard(default, heading, hidden)
@@ -37,7 +53,7 @@ def keyboard(heading, default="", hidden=False):
     # Return user input only if 'OK' was pressed (confirmed)
     if kb.isConfirmed():
         text = kb.getText()
-        return unicode(text, "utf8")
+        return text.decode("utf8") if isinstance(text, bytes) else text
     else:
         return u""
 
@@ -58,7 +74,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     If false (the default), errors are silently ignored. If true, errors raise a ValueError exception.
 
     :param qs: Percent-encoded query string to be parsed, or a url with a query string.
-    :type qs: str or unicode
+    :type qs: bytes or unicode
 
     :param bool keep_blank_values: True to keep blank values, else discard.
     :param bool strict_parsing: True to raise ValueError if there are parsing errors, else silently ignore.
@@ -69,16 +85,25 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     :raises ValueError: If duplicate query field names exists.
     """
     params = {}
-    qs = qs.split("?")[-1]
-    qs = ensure_str(qs)
-    for bkey, value in urlparse.parse_qsl(qs, keep_blank_values, strict_parsing):
-        # Only add keys that are not already added, multiple values are not supported
-        ukey = unicode(bkey, encoding="utf8")
-        if ukey not in params:
-            params[ukey] = unicode(value, encoding="utf8")
-        else:
-            raise ValueError("encountered duplicate param field name: '%s'" % bkey)
+    qs = ensure_native_str(qs)
+    parsed = urlparse.parse_qsl(qs.split("?", 1)[-1], keep_blank_values, strict_parsing)
+    if PY3:
+        for key, value in parsed:
+            if key not in params:
+                params[key] = value
+            else:
+                # Only add keys that are not already added, multiple values are not supported
+                raise ValueError("encountered duplicate param field name: '%s'" % key)
+    else:
+        for bkey, value in parsed:
+            ukey = unicode_type(bkey, encoding="utf8")
+            if ukey not in params:
+                params[ukey] = unicode_type(value, encoding="utf8")
+            else:
+                # Only add keys that are not already added, multiple values are not supported
+                raise ValueError("encountered duplicate param field name: '%s'" % bkey)
 
+    # Return the params with all keys and values as unicode
     return params
 
 
@@ -91,7 +116,7 @@ def urljoin_partial(base_url):
     Returns a new partial object which when called will pass base_url to urlparse.urljoin along with the
     supplied relative URL.
 
-    :type base_url: str or unicode
+    :type base_url: bytes or unicode
     :param base_url: The absolute url to use as the base.
     :returns: A partial function that accepts a relative url and returns a full absolute url.
     
@@ -108,6 +133,13 @@ def urljoin_partial(base_url):
     base_url = ensure_unicode(base_url)
 
     def wrapper(url):
+        """
+        Construct a full (absolute) using saved base url.
+
+        :param url: The relative URL to combine with base.
+        :return: Absolute url.
+        :rtype: unicode
+        """
         return urlparse.urljoin(base_url, ensure_unicode(url))
 
     return wrapper
@@ -118,9 +150,11 @@ def strip_tags(html):
     Strips out html code and return plan text.
 
     :param html: HTML with text to extract.
-    :type html: str or unicode
+    :type html: bytes or unicode
     """
-    return re.sub('<[^<]+?>', '', html)
+    # This will fail under python3 when html is of type bytes
+    # This is ok sence you will have much bigger problems if you are still using bytes on python3
+    return re.sub("<[^<]+?>", "", html)
 
 
 def safe_path(path):
@@ -128,26 +162,46 @@ def safe_path(path):
     Convert path into a encoding that best suits the platform os.
     Unicode when on windows, utf8 when on linux/bsd.
 
-    :type path: str or unicode
+    :type path: bytes or unicode
     :param path: The path to convert.
-    :return: Returns the path as unicode or utf8 encoded str.
+    :return: Returns the path as unicode or utf8 encoded string.
     """
     # Ensure unicode if running windows
     if sys.platform.startswith("win"):
         return ensure_unicode(path)
     else:
-        return ensure_str(path)
+        return ensure_bytes(path)
 
 
-def ensure_str(data):
+def ensure_bytes(data):
     """
     Ensures that given string is returned as a UTF-8 encoded string.
 
     :param data: String to convert if needed.
     :returns: The given string as UTF-8.
+    :rtype: bytes
+    """
+    return data if isinstance(data, bytes) else unicode_type(data).encode("utf8")
+
+
+def ensure_native_str(data):
+    """
+    Ensures that given string is returned as a native str type, bytes on python2 or unicode on python3.
+
+    :param data: String to convert if needed.
+    :returns: The given string as UTF-8.
     :rtype: str
     """
-    return data.encode("utf8") if isinstance(data, unicode) else str(data)
+    if isinstance(data, str):
+        return data
+    elif isinstance(data, unicode_type):
+        # Only executes on python 2
+        return data.encode("utf8")
+    elif isinstance(data, bytes):
+        # Only executes on python 3
+        return data.decode("utf8")
+    else:
+        str(data)
 
 
 def ensure_unicode(data):
@@ -158,4 +212,4 @@ def ensure_unicode(data):
     :returns: The given string as unicode.
     :rtype: unicode
     """
-    return data.decode("utf8") if isinstance(data, bytes) else unicode(data)
+    return data.decode("utf8") if isinstance(data, bytes) else unicode_type(data)

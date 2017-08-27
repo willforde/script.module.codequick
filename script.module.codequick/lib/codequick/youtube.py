@@ -55,7 +55,7 @@ class API(object):
             return response
         else:
             try:
-                message = response[u"error"]["errors"][0][u"message"]
+                message = response[u"error"][u"errors"][0][u"message"]
             except:
                 raise RuntimeError("Youtube V3 API return an error response")
             else:
@@ -135,8 +135,8 @@ class API(object):
         """
         # Set parameters
         query = {"hl": "en", "part": "contentDetails,brandingSettings,snippet",
-                 "fields": u"items(id,brandingSettings/image/bannerTvMediumImageUrl,"
-                           u"contentDetails/relatedPlaylists/uploads,snippet/localized)"}
+                 "fields": "items(id,brandingSettings/image/bannerTvMediumImageUrl,"
+                           "contentDetails/relatedPlaylists/uploads,snippet/localized)"}
 
         # Add the channel_id or channel name of the channel to params
         if channel_id:
@@ -168,7 +168,7 @@ class API(object):
         :rtype: dict
         """
         # Set parameters
-        query = {"fields": u"items(id,snippet/title)", "part": "snippet", "hl": "en", "regionCode": region_code}
+        query = {"fields": "items(id,snippet/title)", "part": "snippet", "hl": "en", "regionCode": region_code}
 
         # Set mode of fetching, by id or region
         if cat_id:
@@ -196,8 +196,8 @@ class API(object):
         :rtype: dict
         """
         # Set parameters
-        query = {"fields": u"nextPageToken,items(snippet(channelId,resourceId/videoId))",
-                 "playlistId": playlist_id, "part": u"snippet"}
+        query = {"fields": "nextPageToken,items(snippet(channelId,resourceId/videoId))",
+                 "playlistId": playlist_id, "part": "snippet"}
 
         # Add pageToken if exists
         if pagetoken:
@@ -219,10 +219,10 @@ class API(object):
         :rtype: dict
         """
         # Set parameters
-        query = {"part": u"contentDetails,statistics,snippet,status", "hl": "en", "id": video_id,
-                 "fields": u"items(id,snippet(publishedAt,channelId,thumbnails/medium/url,channelTitle,"
-                           u"categoryId,localized),contentDetails(duration,definition),statistics/viewCount,"
-                           u"status/privacyStatus)"}
+        query = {"part": "contentDetails,statistics,snippet,status", "hl": "en", "id": video_id,
+                 "fields": "items(id,snippet(publishedAt,channelId,thumbnails/medium/url,channelTitle,"
+                           "categoryId,localized),contentDetails(duration,definition),statistics/viewCount,"
+                           "status/privacyStatus)"}
 
         # Connect to server and return json response
         return self._connect_v3("videos", query)
@@ -246,9 +246,9 @@ class API(object):
         :rtype: dict
         """
         # Set Default parameters
-        query = {"part": u"snippet,contentDetails", "channelId": channel_id,
-                 "fields": u"nextPageToken,items(id,contentDetails/itemCount,snippet"
-                           u"(publishedAt,localized,thumbnails/medium/url))"}
+        query = {"part": "snippet,contentDetails", "channelId": channel_id,
+                 "fields": "nextPageToken,items(id,contentDetails/itemCount,snippet"
+                           "(publishedAt,localized,thumbnails/medium/url))"}
 
         # Add pageToken if exists
         if pagetoken:
@@ -269,8 +269,8 @@ class API(object):
         :rtype: dict
         """
         # Set Default parameters
-        query = {"relevanceLanguage": "en", "safeSearch": u"none", "part": u"snippet", "type": "video",
-                 "fields": u"nextPageToken,items(id/videoId,snippet/channelId)"}
+        query = {"relevanceLanguage": "en", "safeSearch": "none", "part": "snippet", "type": "video",
+                 "fields": "nextPageToken,items(id/videoId,snippet/channelId)"}
 
         # Add the search params to query
         query.update(search_params)
@@ -296,7 +296,7 @@ class APIControl(Route):
         dated = []
 
         # Filter out videos that are not public
-        for vdata in video_cache.itervalues():
+        for vdata in video_cache.items():
             status = vdata[u"status"]
             if status[u"privacyStatus"] == u"public" and status[u"uploadStatus"] == u"processed":
                 dated.append((vdata[u"snippet"][u"publishedAt"], vdata[u"id"], vdata[u"snippet"][u"channelId"]))
@@ -330,7 +330,7 @@ class APIControl(Route):
 
             # Clean the chanel ref cache of unreferenced channel ids
             ref_cache = self.channel_cache.get(u"ref", {})
-            for key, channelid in ref_cache.iteritems():
+            for key, channelid in ref_cache.items():
                 if channelid not in valid_channel_refs:
                     del ref_cache[key]
 
@@ -537,7 +537,7 @@ class APIControl(Route):
         # Add data to cache
         check_categories = True
         for video in feed[u"items"]:
-            video_database[video[u"id"].encode("utf8")] = video
+            video_database[str(video[u"id"])] = video
             if check_categories and not video[u"snippet"][u"categoryId"] in category_data:
                 self.update_category_cache()
                 check_categories = False
@@ -613,7 +613,7 @@ class APIControl(Route):
             item.art["thumb"] = snippet[u"thumbnails"][u"medium"][u"url"]
 
             # Fetch Description
-            item.info["plot"] = "[B]%s[/B]\n\n%s" % (channel_details["title"], snippet[u"localized"][u"description"])
+            item.info["plot"] = u"[B]%s[/B]\n\n%s" % (channel_details[u"title"], snippet[u"localized"][u"description"])
 
             # Fetch Studio
             item.info["studio"] = snippet[u"channelTitle"]
@@ -623,7 +623,7 @@ class APIControl(Route):
 
             # Fetch Possible Date
             date = snippet[u"publishedAt"]
-            item.info.date(date[:date.find("T")], "%Y-%m-%d")
+            item.info.date(date[:date.find(u"T")], "%Y-%m-%d")
 
             # Fetch Category
             cat_id = snippet[u"categoryId"]
@@ -639,11 +639,11 @@ class APIControl(Route):
             if duration_str:
                 duration = 0
                 for time_segment, timeType in duration_str:
-                    if timeType == "H":
+                    if timeType == u"H":
                         duration += (int(time_segment) * 3600)
-                    elif timeType == "M":
+                    elif timeType == u"M":
                         duration += (int(time_segment) * 60)
-                    elif timeType == "S":
+                    elif timeType == u"S":
                         duration += (int(time_segment))
 
                 # Set duration
@@ -661,13 +661,12 @@ class APIControl(Route):
             yield item
 
         # Add playlists item to results
-        print enable_playlists, multi_channel
         if enable_playlists and not multi_channel:
             item = Listitem()
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
             item.info["plot"] = "Show all channel playlists."
             item.art["icon"] = "DefaultVideoPlaylists.png"
-            item.art.global_thumb(u"playlist.png")
+            item.art.global_thumb("playlist.png")
             item.set_callback(Playlists, content_id=channel_ids[0], show_all=False)
             yield item
 
@@ -705,7 +704,7 @@ class Playlist(APIControl):
         # Fetch video ids for all public videos
         for item in feed[u"items"]:
             channel_list.append(item[u"snippet"][u"channelId"])
-            video_list.append(item[u"snippet"][u"resourceId"][u"videoId"].encode("utf8"))
+            video_list.append(str(item[u"snippet"][u"resourceId"][u"videoId"]))
 
         # Return the list of video listitems
         results = list(self.videos(channel_list, video_list, enable_playlists))
@@ -810,7 +809,7 @@ class Related(APIControl):
         feed = self.api.search(pageToken=pagetoken, relatedToVideoId=video_id)
         for item in feed[u"items"]:
             channel_list.append(item[u"snippet"][u"channelId"])
-            video_list.append(item[u"id"][u"videoId"].encode("utf8"))
+            video_list.append(str(item[u"id"][u"videoId"]))
 
         # List all the related videos
         results = list(self.videos(channel_list, video_list))

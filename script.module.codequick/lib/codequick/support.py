@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 from binascii import unhexlify
-import urlparse
 import logging
 import json
 import sys
@@ -12,7 +11,7 @@ import sys
 import xbmc
 
 # Package imports
-from codequick.utils import parse_qs, ensure_str
+from codequick.utils import parse_qs, ensure_native_str, urlparse
 
 # Level mapper to convert logging module levels to kodi logger levels
 log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug
@@ -44,11 +43,8 @@ class KodiLogHandler(logging.Handler):
 
         :param logging.LogRecord record: The log event record.
         """
+        formatted_msg = ensure_native_str(self.format(record))
         log_level = record.levelno
-        formatted_msg = self.format(record)
-
-        # Kodi will not except unicode logs
-        formatted_msg = ensure_str(formatted_msg)
 
         # Forward the log record to kodi with translated log level
         xbmc.log(formatted_msg, log_level_map[log_level])
@@ -113,8 +109,8 @@ class Params(dict):
             super(Params, self).__init__(params)
 
             # Construct separate dictionaries for callback and support params
-            for key, value in self.iteritems():
-                if key.startswith("_") and key.endswith("_"):
+            for key, value in self.items():
+                if key.startswith(u"_") and key.endswith(u"_"):
                     self.support_params[key] = value
                 else:
                     self.callback_params[key] = value

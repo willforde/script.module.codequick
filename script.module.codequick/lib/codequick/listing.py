@@ -14,19 +14,19 @@ import xbmcgui
 
 # Package imports
 from codequick.base import Script, build_path, logger_id, dispatcher, auto_sort
-from codequick.utils import safe_path, ensure_str, ensure_unicode
+from codequick.utils import safe_path, ensure_unicode, ensure_native_str, long_type, unicode_type
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
 
 # Listitem thumbnail locations
-local_image = os.path.join(Script.get_info("path"), u"resources", u"media", u"%s").encode("utf8")
-global_image = os.path.join(Script.get_info("path_global"), u"resources", u"media", u"%s").encode("utf8")
+local_image = ensure_native_str(os.path.join(Script.get_info("path"), u"resources", u"media", u"{}"))
+global_image = ensure_native_str(os.path.join(Script.get_info("path_global"), u"resources", u"media", u"{}"))
 
 # Prefetch fanart/icon for use later
 _fanart = Script.get_info("fanart")
-fanart = _fanart.encode("utf8") if os.path.exists(safe_path(_fanart)) else None
-icon = Script.get_info("icon").encode("utf8")
+fanart = ensure_native_str(_fanart) if os.path.exists(safe_path(_fanart)) else None
+icon = ensure_native_str(Script.get_info("icon"))
 
 # Stream type map to ensure proper stream value types
 stream_type_map = {"duration": int,
@@ -38,21 +38,21 @@ stream_type_map = {"duration": int,
 # Listing sort methods & sort mappings.
 # Skips infolables that have no sortmethod and type is string. As by default they will be string anyway
 infolable_map = {"artist": (None, xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
-                 "studio": (ensure_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
-                 "title": (ensure_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
-                 "album": (ensure_str, xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
-                 "code": (ensure_str, xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
+                 "studio": (ensure_native_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
+                 "title": (ensure_native_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
+                 "album": (ensure_native_str, xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE),
+                 "code": (ensure_native_str, xbmcplugin.SORT_METHOD_PRODUCTIONCODE),
                  "count": (int, xbmcplugin.SORT_METHOD_PROGRAM_COUNT),
                  "rating": (float, xbmcplugin.SORT_METHOD_VIDEO_RATING),
-                 "mpaa": (ensure_str, xbmcplugin.SORT_METHOD_MPAA_RATING),
+                 "mpaa": (ensure_native_str, xbmcplugin.SORT_METHOD_MPAA_RATING),
                  "year": (int, xbmcplugin.SORT_METHOD_VIDEO_YEAR),
                  "listeners": (int, xbmcplugin.SORT_METHOD_LISTENERS),
                  "tracknumber": (int, xbmcplugin.SORT_METHOD_TRACKNUM),
                  "episode": (int, xbmcplugin.SORT_METHOD_EPISODE),
-                 "country": (ensure_str, xbmcplugin.SORT_METHOD_COUNTRY),
+                 "country": (ensure_native_str, xbmcplugin.SORT_METHOD_COUNTRY),
                  "genre": (None, xbmcplugin.SORT_METHOD_GENRE),
-                 "date": (ensure_str, xbmcplugin.SORT_METHOD_DATE),
-                 "size": (long, xbmcplugin.SORT_METHOD_SIZE),
+                 "date": (ensure_native_str, xbmcplugin.SORT_METHOD_DATE),
+                 "size": (long_type, xbmcplugin.SORT_METHOD_SIZE),
                  "sortepisode": (int, None),
                  "sortseason": (int, None),
                  "userrating": (int, None),
@@ -84,7 +84,7 @@ SEARCH = 137
 
 class CommonDict(MutableMapping):
     def __init__(self):
-        self._raw_dict = {}
+        self.raw_dict = {}
 
     def __getitem__(self, key):
         """
@@ -96,7 +96,7 @@ class CommonDict(MutableMapping):
         :return: The saved value.
         :raise KeyError: If key is not in the dictionary.
         """
-        value = self._raw_dict[key]
+        value = self.raw_dict[key]
         return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
@@ -106,7 +106,7 @@ class CommonDict(MutableMapping):
         :param str key: The name to set.
         :param value: The value to add to key.
         """
-        self._raw_dict[key] = value
+        self.raw_dict[key] = value
 
     def __delitem__(self, key):
         """
@@ -115,22 +115,22 @@ class CommonDict(MutableMapping):
         :param str key: The key to remove from dictionary.
         :raises KeyError: If key is not in the dictionary.
         """
-        del self._raw_dict[key]
+        del self.raw_dict[key]
 
     def __contains__(self, key):
-        return key in self._raw_dict
+        return key in self.raw_dict
 
     def __len__(self):
-        return len(self._raw_dict)
+        return len(self.raw_dict)
 
     def __iter__(self):
-        return iter(self._raw_dict)
+        return iter(self.raw_dict)
 
     def __str__(self):
-        return str(self._raw_dict)
+        return str(self.raw_dict)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__, self._raw_dict)
+        return "%s(%r)" % (self.__class__, self.raw_dict)
 
 
 class Art(CommonDict):
@@ -147,7 +147,7 @@ class Art(CommonDict):
         :type value: str or unicode
         """
         if value:
-            self._raw_dict[key] = ensure_str(value)
+            self.raw_dict[key] = ensure_native_str(value)
         else:
             logger.debug("Ignoring empty art value: '%s'", key)
 
@@ -158,7 +158,9 @@ class Art(CommonDict):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self._raw_dict["thumb"] = local_image % (ensure_str(image))
+        # Here we can't be sure if 'image' only contains ascii characters
+        # So ensure_native_str is needed
+        self.raw_dict["thumb"] = local_image.format(ensure_native_str(image))
 
     def global_thumb(self, image):
         """
@@ -176,14 +178,16 @@ class Art(CommonDict):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        self._raw_dict["thumb"] = global_image % (ensure_str(image))
+        # Here we know that 'image' should only contain ascii characters
+        # So there is no neeed to use ensure_native_str
+        self.raw_dict["thumb"] = global_image.format(image)
 
     def _close(self):
-        if fanart and "fanart" not in self._raw_dict:
-            self._raw_dict["fanart"] = fanart
-        if "thumb" not in self._raw_dict:
-            self["thumb"] = icon
-        self._listitem.setArt(self._raw_dict)
+        if fanart and "fanart" not in self.raw_dict:
+            self.raw_dict["fanart"] = fanart
+        if "thumb" not in self.raw_dict:
+            self.raw_dict["thumb"] = icon
+        self._listitem.setArt(self.raw_dict)
 
 
 class Info(CommonDict):
@@ -207,7 +211,7 @@ class Info(CommonDict):
         # Convert duration into an integer
         elif key == "duration":
             auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_RUNTIME)
-            self._raw_dict[key] = self._duration(value)
+            self.raw_dict[key] = self._duration(value)
         else:
             # The sort method to set and the type that the infolabel should be
             type_converter, sort_type = infolable_map.get(key, (None, None))
@@ -220,10 +224,18 @@ class Info(CommonDict):
                     msg = "value of '%s' for infolabel '%s', is not of type '%s'"
                     raise TypeError(msg % (value, key, type_converter))
                 else:
-                    self._raw_dict[key] = value
+                    self.raw_dict[key] = value
+
+            elif isinstance(value, str):
+                self.raw_dict[key] = value
+            elif isinstance(value, unicode_type):
+                # Only executes on python 2
+                self.raw_dict[key] = value.encode("utf8")
+            elif isinstance(value, bytes):
+                # Only executes on python 3
+                self.raw_dict[key] = value.decode("utf8")
             else:
-                # Ensure the value is not unicode
-                self._raw_dict[key] = value.encode("utf8") if isinstance(value, unicode) else value
+                self.raw_dict[key] = value
 
             if sort_type:
                 # Set the associated sort method for this infolabel
@@ -240,10 +252,12 @@ class Info(CommonDict):
         The List of date formats, can be found here.
         https://docs.python.org/2/library/time.html#time.strftime
         """
-        converted_date = strptime(date, date_format)
-        self["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2017
-        self["aired"] = strftime("%Y-%m-%d", converted_date)  # 2017-01-01
-        self["year"] = strftime("%Y", converted_date)  # 2017
+        converted_date = strptime(ensure_native_str(date), date_format)
+        self.raw_dict["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2017
+        self.raw_dict["aired"] = strftime("%Y-%m-%d", converted_date)  # 2017-01-01
+        self.raw_dict["year"] = strftime("%Y", converted_date)  # 2017
+        auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_YEAR)
+        auto_sort_add(xbmcplugin.SORT_METHOD_DATE)
 
     @staticmethod
     def _duration(duration):
@@ -255,10 +269,10 @@ class Info(CommonDict):
         :returns: The duration converted to seconds.
         :rtype: int
         """
-        if isinstance(duration, (str, unicode)):
-            if u":" in duration or u";" in duration:
+        if isinstance(duration, (str, unicode_type)):
+            if ":" in duration or ";" in duration:
                 # Split Time By Marker and Convert to Integer
-                time_parts = duration.replace(u";", u":").split(u":")
+                time_parts = duration.replace(";", ":").split(":")
                 time_parts.reverse()
                 duration = 0
                 counter = 1
@@ -274,7 +288,7 @@ class Info(CommonDict):
         return duration
 
     def _close(self):
-        self._listitem.setInfo(self._ctype, self._raw_dict)
+        self._listitem.setInfo(self._ctype, self.raw_dict)
 
 
 class Property(CommonDict):
@@ -291,12 +305,12 @@ class Property(CommonDict):
         :type value: str or unicode
         """
         if value:
-            self._raw_dict[key] = ensure_unicode(value)
+            self.raw_dict[key] = ensure_unicode(value)
         else:
             logger.debug("Ignoring empty property: '%s'", key)
 
     def _close(self):
-        for key, value in self._raw_dict:
+        for key, value in self.raw_dict:
             self._listitem.setProperty(key, value)
 
 
@@ -318,14 +332,14 @@ class Stream(CommonDict):
             return None
 
         # Ensure that value is of required type
-        type_converter = stream_type_map.get(key, ensure_str)
+        type_converter = stream_type_map.get(key, ensure_native_str)
         try:
             value = type_converter(value)
         except ValueError:
             msg = "Value of '%s' for stream info '%s', is not of type '%s'"
             raise TypeError(msg % (value, key, type_converter))
         else:
-            self._raw_dict[key] = value
+            self.raw_dict[key] = value
 
     def hd(self, quality, aspect=None):
         """
@@ -344,7 +358,7 @@ class Stream(CommonDict):
 
         # Set video resolution
         try:
-            self._raw_dict["width"], self._raw_dict["height"] = quality_map[quality]
+            self.raw_dict["width"], self.raw_dict["height"] = quality_map[quality]
         except IndexError:
             raise ValueError("quality id must be within range (0 to 3): '{}'".format(quality))
 
@@ -353,15 +367,15 @@ class Stream(CommonDict):
             self["aspect"] = aspect
 
         # Or set the aspect ratio to 16:9 for HD content and above
-        elif self._raw_dict["height"] >= 720:
-            self._raw_dict["aspect"] = 1.78
+        elif self.raw_dict["height"] >= 720:
+            self.raw_dict["aspect"] = 1.78
 
     def _close(self):
         video = {}
         subtitle = {}
         audio = {"channels": 2}
         # Populate the above dictionary with the appropriate key/value pairs
-        for key, value in self._raw_dict.iteritems():
+        for key, value in self.raw_dict.items():
             rkey = key.split("_")[-1]
             if key in ("video_codec", "aspect", "width", "height", "duration"):
                 video[rkey] = value
@@ -555,7 +569,7 @@ class Listitem(object):
     @property
     def label(self):
         """The listitem label."""
-        return self.listitem.getLabel().decode("utf8")
+        return ensure_unicode(self.listitem.getLabel())
 
     @label.setter
     def label(self, label):
@@ -597,22 +611,22 @@ class Listitem(object):
         if hasattr(callback, "route"):
             self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
-            path = build_path(callback.route.path, self.params._raw_dict)
+            path = build_path(callback.route.path, self.params.raw_dict)
             isfolder = callback.route.is_folder
         else:
             self.listitem.setProperty("isplayable", "true" if callback else "false")
             self.listitem.setProperty("folder", "false")
-            path = ensure_str(callback)
+            path = callback
             isfolder = False
 
         if isfolder:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art._raw_dict:
-                self.art["icon"] = "DefaultFolder.png"
+            if "icon" not in self.art.raw_dict:
+                self.art.raw_dict["icon"] = "DefaultFolder.png"
         else:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art._raw_dict:
-                self.art["icon"] = "DefaultVideo.png"
+            if "icon" not in self.art.raw_dict:
+                self.art.raw_dict["icon"] = "DefaultVideo.png"
 
             # Add Video Specific Context menu items
             self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
@@ -691,7 +705,7 @@ class Listitem(object):
         label = u"%s %i" % (Script.localize(NEXT_PAGE), params["_nextpagecount_"])
         item.info["plot"] = "Show the next page of content."
         item.label = "[B]%s[/B]" % label
-        item.art.global_thumb(u"next.png")
+        item.art.global_thumb("next.png")
         item.params.update(params)
         item.set_callback(dispatcher.callback, **params)
         return item
@@ -710,7 +724,7 @@ class Listitem(object):
         item = cls()
         item.label = Script.localize(RECENT_VIDEOS)
         item.info["plot"] = "Show the most recent videos."
-        item.art.global_thumb(u"recent.png")
+        item.art.global_thumb("recent.png")
         item.set_callback(callback, **params)
         return item
 
@@ -728,7 +742,7 @@ class Listitem(object):
         """
         item = cls()
         item.label = u"[B]%s[/B]" % Script.localize(SEARCH)
-        item.art.global_thumb(u"search.png")
+        item.art.global_thumb("search.png")
         item.info["plot"] = "Search for video content."
         item.set_callback(SavedSearches, route=callback.route.path, **params)
         return item
@@ -748,8 +762,8 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = (label if label else Script.localize(ALLVIDEOS))
-        item.art.global_thumb(u"videos.png")
+        item.label = label if label else Script.localize(ALLVIDEOS)
+        item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
         item.set_callback(YTPlaylist)

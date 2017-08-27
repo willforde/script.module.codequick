@@ -66,7 +66,7 @@ class SavedSearches(Route):
         search_item = Listitem()
         search_item.label = u"[B]%s[/B]" % self.localize(SEARCH)
         search_item.set_callback(self, search=True, **extras)
-        search_item.art.global_thumb(u"search_new.png")
+        search_item.art.global_thumb("search_new.png")
         yield search_item
         
         # Set the callback function to the route that was given
