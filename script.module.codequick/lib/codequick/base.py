@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
-from functools import partial
 from binascii import hexlify
 import logging
 import inspect
@@ -62,46 +61,6 @@ def run_metacalls():
 
         # Log execution time of callbacks
         logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
-
-
-def unittest_caller(route, *args, **kwargs):
-    """
-    Function to allow callbacks to be easily called from unittests.
-    Parent argument will be auto instantiated and passed to callback.
-    This basically acts as a constructor to callback.
-
-    :param Route route: The route path to callback.
-    :param args: Positional arguments to pass to callback.
-    :param kwargs: Keyword arguments to pass to callback.
-    :returns: The response from the callback function.
-    """
-    # Change the selector to match callback route
-    # This will ensure that the plugin paths are currect
-    global selector
-    org_selector = selector
-    selector = route.path
-
-    # Update support params with the params
-    # that are to be passed to callback
-    if args:
-        arg_map = route.args_to_kwargs(args)
-        params.update(arg_map)
-    if kwargs:
-        params.update(kwargs)
-
-    # Instantiate the parent
-    controller_ins = route.parent()
-
-    try:
-        # Now we are ready to call the callback function and return its results
-        return route.callback(controller_ins, *args, **kwargs)
-    finally:
-        # Reset global datasets
-        kodi_logger.debug_msgs = []
-        selector = org_selector
-        metacalls[:] = []
-        auto_sort.clear()
-        params.clear()
 
 
 def build_path(path=None, query=None, **extra_query):
@@ -174,6 +133,44 @@ class Route(object):
 
         return zip(callback_args, args)
 
+    def unittest_caller(self, *args, **kwargs):
+        """
+        Function to allow callbacks to be easily called from unittests.
+        Parent argument will be auto instantiated and passed to callback.
+        This basically acts as a constructor to callback.
+
+        :param args: Positional arguments to pass to callback.
+        :param kwargs: Keyword arguments to pass to callback.
+        :returns: The response from the callback function.
+        """
+        # Change the selector to match callback route
+        # This will ensure that the plugin paths are currect
+        global selector
+        org_selector = selector
+        selector = self.path
+
+        # Update support params with the params
+        # that are to be passed to callback
+        if args:
+            arg_map = self.args_to_kwargs(args)
+            params.update(arg_map)
+        if kwargs:
+            params.update(kwargs)
+
+        # Instantiate the parent
+        controller_ins = self.parent()
+
+        try:
+            # Now we are ready to call the callback function and return its results
+            return self.callback(controller_ins, *args, **kwargs)
+        finally:
+            # Reset global datasets
+            kodi_logger.debug_msgs = []
+            selector = org_selector
+            metacalls[:] = []
+            auto_sort.clear()
+            params.clear()
+
 
 class Dispatcher(object):
     """Class to handle registering and dispatching of callback functions."""
@@ -219,13 +216,13 @@ class Dispatcher(object):
                 # Set the callback as the parent and the run method as the function to call
                 route = Route(callback, callback.run, callback, path)
                 # noinspection PyTypeChecker
-                callback.testcall = staticmethod(partial(unittest_caller, route))
+                callback.test = staticmethod(route.unittest_caller)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Register a function callback
             route = Route(cls, callback, callback, path)
-            callback.testcall = partial(unittest_caller, route)
+            callback.test = route.unittest_caller
 
         # Return original function undecorated
         self.registered_routes[path] = route
