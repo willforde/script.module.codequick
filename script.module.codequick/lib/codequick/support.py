@@ -214,6 +214,7 @@ class Route(object):
 
 class Dispatcher(object):
     """Class to handle registering and dispatching of callback functions."""
+
     def __init__(self):
         # Extract command line arguments passed in from kodi
         self.selector, self.handle, self.params = self.parse_sysargs()

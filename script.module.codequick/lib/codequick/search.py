@@ -22,7 +22,7 @@ class SavedSearches(Route):
     Useful to add search support to addon that will also keep track of previous searches.
     Also contains option via context menu to remove old search terms.
     """
-    
+
     def __init__(self):
         super(SavedSearches, self).__init__()
 
@@ -68,7 +68,7 @@ class SavedSearches(Route):
         search_item.set_callback(self, search=True, **extras)
         search_item.art.global_thumb("search_new.png")
         yield search_item
-        
+
         # Set the callback function to the route that was given
         callback = dispatcher[extras["route"]].callback
         callback_params = extras.copy()
@@ -76,7 +76,7 @@ class SavedSearches(Route):
 
         # Prefetch the localized string for the context menu lable
         str_remove = self.localize(REMOVE)
-        
+
         # List all saved searches
         for search_term in self.search_db:
             item = Listitem()
@@ -89,5 +89,5 @@ class SavedSearches(Route):
             item.params.update(callback_params, search_query=search_term)
             item.set_callback(callback)
             yield item
-        
+
         self.search_db.close()

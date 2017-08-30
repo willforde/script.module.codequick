@@ -123,6 +123,7 @@ class Resolver(Script):
             Unfortunately the kodi YoutubeDL module is python2 only.
             Hopefully it will be ported to python3 when kodi gets upgraded.
         """
+
         def ytdl_logger(record):
             if record.startswith("ERROR:"):
                 # Save error rocord for raising later, outside of the callback
