@@ -13,7 +13,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from codequick.base import Script
+from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
 from codequick.utils import safe_path, ensure_unicode, ensure_native_str, unicode_type, long_type
 

@@ -6,7 +6,7 @@ from codequick.storage import PersistentList
 from codequick.support import dispatcher
 from codequick.listing import Listitem
 from codequick.utils import keyboard
-from codequick.api import Route
+from codequick.route import Route
 
 # Localized string Constants
 ENTER_SEARCH_STRING = 16017

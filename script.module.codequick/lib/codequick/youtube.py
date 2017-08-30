@@ -7,9 +7,10 @@ import json
 import os
 
 # Package imports
+from codequick.route import Route
 from codequick.utils import safe_path
 from codequick.listing import Listitem
-from codequick.api import Route, Resolver
+from codequick.resolver import Resolver
 from codequick.storage import PersistentDict
 from codequick.support import CacheProperty, logger_id
 import urlquick

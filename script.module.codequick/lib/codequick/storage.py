@@ -8,7 +8,7 @@ import sys
 import os
 
 # Package imports
-from codequick.base import Script
+from codequick.script import Script
 from codequick.utils import ensure_unicode
 
 # The addon profile directory
