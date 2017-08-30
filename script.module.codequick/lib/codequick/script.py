@@ -13,6 +13,9 @@ import xbmc
 from codequick.utils import ensure_unicode, ensure_native_str
 from codequick.support import CacheProperty, dispatcher, script_data, addon_data, logger_id
 
+# Logger used by the addons
+addon_logger = logging.getLogger(logger_id)
+
 
 class Settings(object):
     """Settings class to handle the getting and setting of addon settings."""
@@ -138,7 +141,7 @@ class Script(object):
     params = dispatcher.params
 
     # Underlining logger object, for advanced use.
-    logger = logging.getLogger(logger_id)
+    logger = addon_logger
 
     # Handle the add-on was started with, for advanced use.
     handle = dispatcher.handle
@@ -181,7 +184,8 @@ class Script(object):
         callback = (func, args, kwargs)
         dispatcher.metacalls.append(callback)
 
-    def log(self, msg, *args, **kwargs):
+    @staticmethod
+    def log(msg, *args, **kwargs):
         """
         Logs a message with logging level 'lvl'.
 
@@ -204,9 +208,10 @@ class Script(object):
                        If not given, logging level will default to debug.
         """
         lvl = kwargs.pop("lvl", 10)
-        self.logger.log(lvl, msg, *args, **kwargs)
+        addon_logger.log(lvl, msg, *args, **kwargs)
 
-    def notify(self, heading, message, icon=None, display_time=5000, sound=True):
+    @staticmethod
+    def notify(heading, message, icon=None, display_time=5000, sound=True):
         """
         Send a notification to kodi.
 
@@ -221,7 +226,7 @@ class Script(object):
         # is encoded into native str type
         heading = ensure_native_str(heading)
         message = ensure_native_str(message)
-        icon = ensure_native_str(icon if icon else self.icon)
+        icon = ensure_native_str(icon if icon else Script.get_info("icon"))
 
         dialog = xbmcgui.Dialog()
         dialog.notification(heading, message, icon, display_time, sound)
