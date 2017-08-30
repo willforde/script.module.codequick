@@ -22,6 +22,10 @@ start_time = __import__("time").time()
 
 # Package imports
 from codequick.storage import PersistentDict, PersistentList
-from codequick.api import Script, Route, Resolver, run
+from codequick.support import dispatcher as _dispatcher
+from codequick.api import Script, Route, Resolver
 from codequick.listing import Listitem
 from codequick import utils
+
+# Convenience function to call dispatcher
+run = _dispatcher.dispatch

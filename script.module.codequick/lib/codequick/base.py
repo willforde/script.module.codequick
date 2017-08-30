@@ -2,12 +2,7 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
-from binascii import hexlify
 import logging
-import inspect
-import time
-import json
-import re
 
 # Kodi imports
 import xbmcaddon
@@ -15,242 +10,8 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.support import KodiLogHandler, parse_sysargs, CacheProperty
-from codequick.utils import ensure_bytes, ensure_unicode, ensure_native_str, urlparse
-import urlquick
-
-script_data = xbmcaddon.Addon("script.module.codequick")
-addon_data = xbmcaddon.Addon()
-
-plugin_id = addon_data.getAddonInfo("id")
-logger_id = re.sub("[ .]", "-", addon_data.getAddonInfo("name"))
-
-# Setup kodi logging
-kodi_logger = KodiLogHandler()
-base_logger = logging.getLogger()
-base_logger.addHandler(kodi_logger)
-base_logger.propagate = False
-base_logger.setLevel(logging.DEBUG)
-
-# Logger specific to this module
-logger = logging.getLogger("%s.support" % logger_id)
-
-# Extract command line arguments passed in from kodi
-selector, handle, params = parse_sysargs()
-
-# Listitem auto sort methods
-auto_sort = set()
-
-# List of callback functions that will be executed
-# after listitems have been listed
-metacalls = []
-
-
-def run_metacalls():
-    """Execute all callbacks, if any."""
-    if metacalls:
-        # Time before executing callbacks
-        start_time = time.time()
-
-        # Execute each callback one by one
-        for func, args, kwargs in metacalls:
-            try:
-                func(*args, **kwargs)
-            except Exception as e:
-                logger.exception(str(e))
-
-        # Log execution time of callbacks
-        logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
-
-
-def build_path(path=None, query=None, **extra_query):
-    """
-    Build addon url that can be passeed to kodi for kodi to use when calling listitems.
-    
-    :param path: [opt] The route selector path referencing the callback object. (default => current route selector)
-    :param query: [opt] A set of query key/value pairs to add to plugin path.
-    :param extra_query: [opt] Keyword arguments if given will be added to the current set of querys.
-
-    :return: Plugin url for kodi.
-    :rtype: str
-    """
-
-    # If extra querys are given then append the
-    # extra querys to the current set of querys
-    if extra_query:
-        query = params.copy()
-        query.update(extra_query)
-
-    # Encode the query parameters using json
-    if query:
-        query = "_json_=" + ensure_native_str(hexlify(ensure_bytes(json.dumps(query))))
-
-    # Build kodi url with new path and query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path if path else selector, query, ""))
-
-
-class Route(object):
-    """
-    Handle callback route data.
-
-    :param parent: The parent class that will handle the response from callback.
-    :param callback: The callable callback function.
-    :param org_callback: The decorated func/class.
-    :param str path: The route path to func/class.
-
-    :ivar is_playable: True if callback is playable, else False.
-    :ivar is_folder: True if callback is a folder, else False.
-    :ivar org_callback: The decorated func/class.
-    :ivar callback: The callable callback function.
-    :ivar parent: The parent class that will handle the response from callback.
-    :ivar path: The route path to func/class.
-    """
-    __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
-
-    def __init__(self, parent, callback, org_callback, path):
-        self.is_playable = parent.is_playable
-        self.is_folder = parent.is_folder
-        self.org_callback = org_callback
-        self.callback = callback
-        self.parent = parent
-        self.path = path
-
-    # noinspection PyDeprecation
-    def args_to_kwargs(self, args):
-        """
-        Convert positional arguments to keyword arguments.
-
-        :param tuple args: List of positional arguments to extract names for.
-        :returns: A list of tuples consisten of ('arg name', 'arg value)'.
-        :rtype: list
-        """
-        try:
-            # noinspection PyUnresolvedReferences
-            callback_args = inspect.getfullargspec(self.callback).args[1:]
-        except AttributeError:
-            # "inspect.getargspec" is deprecated in python 3
-            callback_args = inspect.getargspec(self.callback).args[1:]
-
-        return zip(callback_args, args)
-
-    def unittest_caller(self, *args, **kwargs):
-        """
-        Function to allow callbacks to be easily called from unittests.
-        Parent argument will be auto instantiated and passed to callback.
-        This basically acts as a constructor to callback.
-
-        :param args: Positional arguments to pass to callback.
-        :param kwargs: Keyword arguments to pass to callback.
-        :returns: The response from the callback function.
-        """
-        # Change the selector to match callback route
-        # This will ensure that the plugin paths are currect
-        global selector
-        org_selector = selector
-        selector = self.path
-
-        # Update support params with the params
-        # that are to be passed to callback
-        if args:
-            arg_map = self.args_to_kwargs(args)
-            params.update(arg_map)
-        if kwargs:
-            params.update(kwargs)
-
-        # Instantiate the parent
-        controller_ins = self.parent()
-
-        try:
-            # Now we are ready to call the callback function and return its results
-            return self.callback(controller_ins, *args, **kwargs)
-        finally:
-            # Reset global datasets
-            kodi_logger.debug_msgs = []
-            selector = org_selector
-            metacalls[:] = []
-            auto_sort.clear()
-            params.clear()
-
-
-class Dispatcher(object):
-    """Class to handle registering and dispatching of callback functions."""
-    def __init__(self):
-        self.registered_routes = {}
-
-    def __getitem__(self, route):
-        """:rtype: Route"""
-        return self.registered_routes[route]
-
-    def __missing__(self, route):
-        raise KeyError("missing required route: '{}'".format(route))
-
-    @property
-    def callback(self):
-        """
-        The original callback function/class.
-
-        Primarily used by 'Listitem.next_page' constructor.
-        :returns: The dispatched callback function/class.
-        """
-        return self[selector].org_callback
-
-    def register(self, callback, cls):
-        """
-        Register route callback function
-
-        :param callback: The callback function.
-        :param cls: Parent class that will handle the callback, if registering a function.
-        :returns: The callback function with extra attributes added, 'route', 'testcall'.
-        """
-        if callback.__name__.lower() == "root":
-            path = callback.__name__.lower()
-        else:
-            path = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
-
-        if path in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(path))
-
-        # Register a class callback
-        elif inspect.isclass(callback):
-            if hasattr(callback, "run"):
-                # Set the callback as the parent and the run method as the function to call
-                route = Route(callback, callback.run, callback, path)
-                # noinspection PyTypeChecker
-                callback.test = staticmethod(route.unittest_caller)
-            else:
-                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
-        else:
-            # Register a function callback
-            route = Route(cls, callback, callback, path)
-            callback.test = route.unittest_caller
-
-        # Return original function undecorated
-        self.registered_routes[path] = route
-        callback.route = route
-        return callback
-
-    def dispatch(self):
-        """Dispatch to selected route path."""
-        try:
-            # Fetch the controling class and callback function/method
-            route = self[selector]
-            logger.debug("Dispatching to route: '%s'", selector)
-            execute_time = time.time()
-
-            # Initialize controller and execute callback
-            controller_ins = route.parent()
-            # noinspection PyProtectedMember
-            controller_ins._execute_route(route.callback)
-        except Exception as e:
-            # Log the error in both the gui and the kodi log file
-            dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), ensure_native_str(Script.get_info("icon")))
-            logger.critical(str(e), exc_info=1)
-        else:
-            from . import start_time
-            logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            run_metacalls()
+from codequick.utils import ensure_unicode, ensure_native_str
+from codequick.support import CacheProperty, dispatcher, script_data, addon_data, logger_id
 
 
 class Settings(object):
@@ -374,13 +135,13 @@ class Script(object):
     NOTIFY_INFO = 'info'
 
     # Dictionary of params passed to callback
-    params = params
+    params = dispatcher.params
 
     # Underlining logger object, for advanced use.
     logger = logging.getLogger(logger_id)
 
     # Handle the add-on was started with, for advanced use.
-    handle = handle
+    handle = dispatcher.handle
 
     setting = Settings()
     """:class:`Settings` object with dictionary like interface of add-on settings."""
@@ -395,8 +156,7 @@ class Script(object):
         :param callback: The callback func/class to register.
         :returns: The response from the callback func/class.
         """
-        logger.debug("Callback parameters: '%s'", params.callback_params)
-        return callback(self, **params.callback_params)
+        return callback(self, **self.params.callback_params)
 
     @classmethod
     def register(cls, callback):
@@ -419,7 +179,7 @@ class Script(object):
         :param kwargs: Keyword arguments that will be passed to callback function.
         """
         callback = (func, args, kwargs)
-        metacalls.append(callback)
+        dispatcher.metacalls.append(callback)
 
     def log(self, msg, *args, **kwargs):
         """
@@ -541,8 +301,5 @@ class Script(object):
     @CacheProperty
     def request(self):
         """A urlquick session."""
+        import urlquick
         return urlquick.Session()
-
-
-# Dispatcher to manage route callbacks
-dispatcher = Dispatcher()

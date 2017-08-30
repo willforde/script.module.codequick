@@ -13,8 +13,9 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
-from codequick.base import Script, build_path, logger_id, dispatcher, auto_sort
-from codequick.utils import safe_path, ensure_unicode, ensure_native_str, long_type, unicode_type
+from codequick.base import Script
+from codequick.support import auto_sort, build_path, logger_id, dispatcher
+from codequick.utils import safe_path, ensure_unicode, ensure_native_str, unicode_type, long_type
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -771,5 +772,5 @@ class Listitem(object):
 
 
 # Import callback functions required for listitem constructs
-from .youtube import Playlist as YTPlaylist
-from .search import SavedSearches
+from codequick.youtube import Playlist as YTPlaylist
+from codequick.search import SavedSearches

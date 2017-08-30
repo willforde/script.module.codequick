@@ -12,14 +12,12 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.base import dispatcher, Script, build_path, logger_id
+from codequick.base import Script
+from codequick.support import build_path, logger_id, auto_sort
 from codequick.utils import unicode_type, ensure_native_str, ensure_unicode
 
 # Logger specific to this module
 logger = logging.getLogger("%s.api" % logger_id)
-
-# Convenience function to call dispatcher
-run = dispatcher.dispatch
 
 # Localized string Constants
 SELECT_PLAYBACK_ITEM = 25006
@@ -372,4 +370,4 @@ class Resolver(Script):
 
 
 # Now we can import the listing module
-from .listing import Listitem, auto_sort
+from codequick.listing import Listitem

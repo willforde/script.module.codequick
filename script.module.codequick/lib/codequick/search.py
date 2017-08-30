@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 
 # Package imports
-from codequick.base import dispatcher
 from codequick.storage import PersistentList
+from codequick.support import dispatcher
 from codequick.listing import Listitem
 from codequick.utils import keyboard
 from codequick.api import Route

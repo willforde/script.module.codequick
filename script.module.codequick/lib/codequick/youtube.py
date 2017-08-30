@@ -7,12 +7,11 @@ import json
 import os
 
 # Package imports
-from codequick.base import logger_id
+from codequick.utils import safe_path
 from codequick.listing import Listitem
 from codequick.api import Route, Resolver
 from codequick.storage import PersistentDict
-from codequick.support import CacheProperty
-from codequick.utils import safe_path
+from codequick.support import CacheProperty, logger_id
 import urlquick
 
 # Logger specific to this module
