@@ -8,7 +8,6 @@ import os
 
 # Package imports
 from codequick.route import Route
-from codequick.utils import safe_path
 from codequick.listing import Listitem
 from codequick.resolver import Resolver
 from codequick.storage import PersistentDict
@@ -372,7 +371,11 @@ class APIControl(Route):
         """
         from shelve import DbfilenameShelf
         filepath = os.path.join(self.get_info("profile"), u"youtube", u"video_data.shelf")
-        video_cache = DbfilenameShelf(safe_path(filepath), protocol=-1, writeback=False)
+        # Can't use safe_path here as DbfilenameShelf will fail when using byte type paths
+        # on python3 when running on posix systems
+        video_cache = DbfilenameShelf(filepath, protocol=-1, writeback=False)
+
+        # Todo: Switch video_cache from Shelf to sqlite
 
         # Mark the video_cache for cleanup when video count is greater than 2000
         if len(video_cache) > 2000:
