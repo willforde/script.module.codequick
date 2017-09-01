@@ -2,8 +2,8 @@
 Offers classes and functions that manipulate the Graphical User Interface through windows,
 dialogs, and various control widgets.
 """
-#from __future__ import print_function
 # Standard Library Imports
+from __future__ import print_function
 import warnings
 
 # Package imports
@@ -402,14 +402,14 @@ class ListItem(dict):
         Returns the listitem label.
         :rtype: str
         """
-        return self.get("label", "")
+        return _support.ensure_native_str(self.get("label", u""))
 
     def getLabel2(self):
         """
         Returns the listitem's second label.
         :rtype: str
         """
-        return self.get("label2", "")
+        return _support.ensure_native_str(self.get("label2", u""))
 
     def setLabel(self, label):
         """
@@ -418,7 +418,7 @@ class ListItem(dict):
         :param label: string or unicode - text string.
         :type label: str or unicode
         """
-        self["label"] = label.encode("utf8") if isinstance(label, unicode) else label
+        self["label"] = _support.ensure_unicode(label)
 
     def setLabel2(self, label2):
         """
@@ -427,7 +427,7 @@ class ListItem(dict):
         :param label2: string or unicode - text string.
         :type label2: str or unicode
         """
-        self["label2"] = label2.encode("utf8") if isinstance(label2, unicode) else label2
+        self["label2"] = _support.ensure_unicode(label2)
 
     def setIconImage(self, iconImage):
         """
@@ -559,7 +559,7 @@ class ListItem(dict):
             self.list.getSelectedItem().setProperty('AspectRatio', '1.85 : 1')
             self.list.getSelectedItem().setProperty('StartOffset', '256.4')
         """
-        self.setdefault("properties", {})[key] = value
+        self.setdefault("properties", {})[key] = _support.ensure_unicode(value)
 
     def getProperty(self, key):
         """Returns a listitem property as a string, similar to an infolabel.
@@ -569,7 +569,7 @@ class ListItem(dict):
         .. note::
             Key is NOT case sensitive.
         """
-        return self.setdefault("properties", {})[key]
+        return _support.ensure_native_str(self.setdefault("properties", {})[key])
 
     def addContextMenuItems(self, items, replaceItems=False):
         """Adds item(s) to the context menu for media lists.
@@ -601,7 +601,7 @@ class ListItem(dict):
 
             self.list.getSelectedItem().setPath(path='ActivateWindow(Weather)')
         """
-        self["path"] = path
+        self["path"] = _support.ensure_unicode(path)
 
     def setArt(self, dictionary):
         """
@@ -637,7 +637,7 @@ class ListItem(dict):
 
         If known prehand, this can avoid xbmc doing ``HEAD`` requests to http servers to figure out file type.
         """
-        self["mimetype"] = mimetype
+        self["mimetype"] = _support.ensure_unicode(mimetype)
 
     def isSelected(self):
         """
@@ -668,7 +668,7 @@ class ListItem(dict):
 
         example::
 
-            listitem.setSubtitles(['special://temp/example.srt', 'http://example.com/example.srt' ])
+            listitem.setSubtitles(['special://temp/example.srt', 'http://example.com/example.srt'])
         """
         self["subtitles"] = subtitleFiles
 
@@ -861,23 +861,23 @@ class Dialog(object):
             dialog = xbmcgui.Dialog()
             d = dialog.input('Enter secret code', type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
         """
-        print "#################"
-        print "Input Dialog: %s" % heading
+        print("#################")
+        print("Input Dialog: %s" % heading)
 
         if type == 0:
-            print "Expected format: Keyboard"
+            print("Expected format: Keyboard")
         elif type == 1:
-            print "Expected format: Number, #"
+            print("Expected format: Number, #")
         elif type == 2:
-            print "Expected format: Date, DD/MM/YYYY"
+            print("Expected format: Date, DD/MM/YYYY")
         elif type == 3:
-            print "Expected format: Time, HH:MM"
+            print("Expected format: Time, HH:MM")
         elif type == 4:
-            print "Expected format: IPAddress, #.#.#.#"
+            print("Expected format: IPAddress, #.#.#.#")
         else:
-            print "Expected format: String"
+            print("Expected format: String")
 
-        print "#################"
+        print("#################")
 
         try:
             # Password hash mode
@@ -901,7 +901,7 @@ class Dialog(object):
                             else:
                                 return ""
                         else:
-                            print "Passwords did not match"
+                            print("Passwords did not match")
 
             elif default:
                 ret = _support.handle_prompt("Please enter text [%s]: ]" % default)
@@ -968,7 +968,7 @@ class Dialog(object):
             dialog = xbmcgui.Dialog()
             dialog.notification('Movie Trailers', 'Finding Nemo download finished.', xbmcgui.NOTIFICATION_INFO, 5000)
         """
-        print "Notification %s: %s" % (heading, message)
+        print("Notification {}: {}".format(heading, message))
 
     def yesno(self, heading, line1, line2='', line3='', nolabel='', yeslabel='', autoclose=0):
         """
@@ -999,15 +999,15 @@ class Dialog(object):
             dialog = xbmcgui.Dialog()
             ret = dialog.yesno('XBMC', 'Do you want to exit this script?')
         """
-        print "#################"
-        print "Yes/No Dialog: %s" % heading
-        print line1
-        print line2
-        print line3
-        print "#################"
-        print "No: %s" % nolabel
-        print "Yes: %s" % yeslabel
-        print "#################"
+        print("#################")
+        print("Yes/No Dialog: %s" % heading)
+        print(line1)
+        print(line2)
+        print(line3)
+        print("#################")
+        print("No: %s" % nolabel)
+        print("Yes: %s" % yeslabel)
+        print("#################")
 
         try:
             ret = _support.handle_prompt("Please enter yes or no: ")
@@ -1042,12 +1042,12 @@ class Dialog(object):
             dialog = xbmcgui.Dialog()
             ok = dialog.ok('XBMC', 'There was an error.')
         """
-        print "#############"
-        print "OK Dialog %s" % heading
-        print line1
-        print line2
-        print line3
-        print "#############"
+        print("#############")
+        print("OK Dialog %s" % heading)
+        print(line1)
+        print(line2)
+        print(line3)
+        print("#############")
         _support.handle_prompt("Please press enter to continue: ")
         return True
 
@@ -1074,20 +1074,20 @@ class Dialog(object):
             dialog = xbmcgui.Dialog()
             ret = dialog.select('Choose a playlist', ['Playlist #1', 'Playlist #2, 'Playlist #3'])
         """
-        print "#################"
-        print "Select Dialog: %s" % heading
-        print "#################"
+        print("#################")
+        print("Select Dialog: %s" % heading)
+        print("#################")
         for count, item in enumerate(list):
             if isinstance(item, ListItem):
-                print "%s. %s" % (count, item.getLabel())
+                print("%s. %s" % (count, item.getLabel()))
             else:
-                print "%s. %s" % (count, item)
-        print "#################"
+                print("%s. %s" % (count, item))
+        print("#################")
 
         try:
             ret = _support.handle_prompt("Please enter a selection 'id': ")
         except(KeyboardInterrupt, EOFError) as e:
-            print e
+            print(e)
             return preselect if preselect is not None else -1
         else:
             return int(ret)
@@ -1192,7 +1192,7 @@ class DialogProgressBG(object):
             pDialog = xbmcgui.DialogProgressBG()
             pDialog.create('Movie Trailers', 'Downloading Monsters Inc. ...')
         """
-        print "Creating background progress dialog box. Not."
+        print("Creating background progress dialog box. Not.")
 
     def isFinished(self):
         """
@@ -1394,7 +1394,7 @@ class Window(object):
         :raises: ``SystemError``: On Internal error.
         :raises: ``RuntimeError``: If no control has focus.
         """
-        return long()
+        return _support.long_type()
 
     def removeControl(self, pControl):
         """Removes the control from this window.
@@ -1419,11 +1419,11 @@ class Window(object):
 
     def getHeight(self):
         """Returns the height of this screen."""
-        return long()
+        return _support.long_type()
 
     def getWidth(self):
         """Returns the width of this screen."""
-        return long()
+        return _support.long_type()
 
     def getResolution(self):
         """Returns the resolution of the screen.
@@ -1452,7 +1452,7 @@ class Window(object):
 
         See: https://github.com/xbmc/xbmc/blob/master/xbmc/guilib/Resolution.h
         """
-        return long()
+        return _support.long_type()
 
     def setCoordinateResolution(self, res):
         """Sets the resolution that the coordinates of all controls are defined in.
@@ -1779,7 +1779,7 @@ class Control(object):
 
             height = self.button.getHeight()
         """
-        return long()
+        return _support.long_type()
 
     def getId(self):
         """
@@ -1789,7 +1789,7 @@ class Control(object):
 
             id = self.button.getId()
         """
-        return long()
+        return _support.long_type()
 
     def getPosition(self):
         """
@@ -1799,7 +1799,7 @@ class Control(object):
 
             pos = self.button.getPosition()
         """
-        return long(), long()
+        return _support.long_type(), _support.long_type()
 
     def getWidth(self):
         """
@@ -1809,19 +1809,19 @@ class Control(object):
 
             width = self.button.getWidth()
         """
-        return long()
+        return _support.long_type()
 
     def getX(self):
         """
         Get X coordinate of a control as an integer.
         """
-        return long()
+        return _support.long_type()
 
     def getY(self):
         """
         Get Y coordinate of a control as an integer.
         """
-        return long()
+        return _support.long_type()
 
     def setAnimations(self, eventAttr):
         """
@@ -2009,7 +2009,7 @@ class ControlLabel(Control):
 
     def getLabel(self):
         """Returns the text value for this label."""
-        return unicode()
+        return _support.unicode_type()
 
 
 # noinspection PyUnusedLocal, PyMethodMayBeStatic
@@ -2100,7 +2100,7 @@ class ControlTextBox(Control):
 
             text = self.text.getText()
         """
-        return unicode()
+        return _support.unicode_type()
 
     def setText(self, text):
         """Set's the text for this textbox.
@@ -2193,11 +2193,11 @@ class ControlButton(Control):
 
     def getLabel(self):
         """Returns the buttons label as a unicode string."""
-        return unicode()
+        return _support.unicode_type()
 
     def getLabel2(self):
         """Returns the buttons label2 as a unicode string."""
-        return unicode()
+        return _support.unicode_type()
 
 
 # noinspection PyUnusedLocal, PyMethodMayBeStatic
@@ -2386,7 +2386,7 @@ class ControlList(Control):
 
         .. note:: Returns ``-1`` for empty lists.
         """
-        return long()
+        return _support.long_type()
 
     def getSelectedItem(self):
         """Returns the selected item as a ListItem object.
@@ -2398,7 +2398,7 @@ class ControlList(Control):
 
     def size(self):
         """Returns the total number of items in this list control as an integer."""
-        return long()
+        return _support.long_type()
 
     def getListItem(self, index):
         """Returns a given ListItem in this List.
@@ -2411,11 +2411,11 @@ class ControlList(Control):
 
     def getItemHeight(self):
         """Returns the control's current item height as an integer."""
-        return long()
+        return _support.long_type()
 
     def getSpace(self):
         """Returns the control's space between items as an integer."""
-        return long()
+        return _support.long_type()
 
     def setStaticContent(self, items):
         """Fills a static list with a list of listitems.
@@ -2639,7 +2639,7 @@ class ControlEdit(Control):
 
             label = self.edit.getLabel()
         """
-        return unicode()
+        return _support.unicode_type()
 
     def getText(self):
         """
@@ -2649,7 +2649,7 @@ class ControlEdit(Control):
 
             value = self.edit.getText()
         """
-        return unicode()
+        return _support.unicode_type()
 
     def setLabel(self, label='', font=None, textColor=None, disabledColor=None, shadowColor=None,
                  focusedColor=None, label2=''):
@@ -2678,7 +2678,7 @@ class ControlEdit(Control):
 
         example::
 
-            self.edit.setText('online')
+            self.edit.longsetText('online')
         """
         pass
 
@@ -2803,11 +2803,11 @@ class Action(object):
 
     def getId(self):
         """Returns the action's current id as a long or 0 if no action is mapped in the xml's."""
-        return long()
+        return _support.long_type()
 
     def getButtonCode(self):
         """Returns the button code for this action."""
-        return long()
+        return _support.long_type()
 
     def getAmount1(self):
         """Returns the first amount of force applied to the thumbstick."""
@@ -2826,7 +2826,7 @@ def getCurrentWindowId():
 
         wid = xbmcgui.getCurrentWindowId()
     """
-    return long()
+    return _support.long_type()
 
 
 def getCurrentWindowDialogId():
@@ -2837,4 +2837,4 @@ def getCurrentWindowDialogId():
 
         wid = xbmcgui.getCurrentWindowDialogId()
     """
-    return long()
+    return _support.long_type()

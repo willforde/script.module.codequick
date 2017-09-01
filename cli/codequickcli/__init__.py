@@ -1,22 +1,10 @@
 # Standard Library Imports
-import urlparse
-import logging
 import sys
 import os
 
 # Package imports
-from codequickcli.support import AddonDB
-
-# Initialize Database of addons
-addon_db = AddonDB()
-
-# Base logger
-logger = logging.getLogger("codequickcli")
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter("%(relativeCreated)-13s %(levelname)7s: %(message)s"))
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-logger.propagate = False
+from codequickcli.addondb import db as addon_db
+from codequickcli.support import urlparse
 
 
 def initialize_addon(callback_url):

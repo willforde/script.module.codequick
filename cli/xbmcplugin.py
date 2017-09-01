@@ -5,7 +5,7 @@ development time and a more consistent user experience.
 """
 
 # Package imports
-from codequickcli.support import plugin_data
+from codequickcli.support import plugin_data as _plugin_data, ensure_unicode as _ensure_unicode
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -79,8 +79,8 @@ def addDirectoryItem(handle, url, listitem, isFolder=False, totalItems=0):
         if not xbmcplugin.addDirectoryItem(int(sys.argv[1]), 'F:\\Trailers\\300.mov', listitem, totalItems=50):
             break
     """
-    data = (url, listitem, isFolder)
-    plugin_data["listitem"].append(data)
+    data = (_ensure_unicode(url), listitem, isFolder)
+    _plugin_data["listitem"].append(data)
     return True
 
 
@@ -110,7 +110,7 @@ def addDirectoryItems(handle, items, totalItems=0):
         if not xbmcplugin.addDirectoryItems(int(sys.argv[1]), [(url, listitem, False,)]:
             raise
     """
-    plugin_data["listitem"].extend(items)
+    _plugin_data["listitem"].extend(items)
     return True
 
 
@@ -141,7 +141,7 @@ def addSortMethod(handle, sortMethod, label2Mask=""):
         xbmcplugin.SORT_METHOD_ALBUM 	            Sort by the album
         xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE 	Sort by the album and ignore "The" before
         xbmcplugin.SORT_METHOD_GENRE 	            Sort by the genre
-        xbmcplugin.SORT_SORT_METHOD_VIDEO_YEAR      Sort by the year
+        xbmcplugin.SORT_METHOD_VIDEO_YEAR           Sort by the year
         xbmcplugin.SORT_METHOD_YEAR 	            Sort by the year
         xbmcplugin.SORT_METHOD_VIDEO_RATING 	    Sort by the video rating
         xbmcplugin.SORT_METHOD_PROGRAM_COUNT 	    Sort by the program count
@@ -183,7 +183,7 @@ def addSortMethod(handle, sortMethod, label2Mask=""):
 
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
     """
-    plugin_data["sortmethods"].append(sortMethod)
+    _plugin_data["sortmethods"].append(sortMethod)
 
 
 # noinspection PyUnusedLocal
@@ -202,8 +202,8 @@ def endOfDirectory(handle, succeeded=True, updateListing=False, cacheToDisc=True
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
     """
-    plugin_data["succeeded"] = succeeded
-    plugin_data["updatelisting"] = updateListing
+    _plugin_data["succeeded"] = succeeded
+    _plugin_data["updatelisting"] = updateListing
 
 
 # noinspection PyUnusedLocal
@@ -241,7 +241,7 @@ def setContent(handle, content):
 
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
     """
-    plugin_data["contenttype"] = content
+    _plugin_data["contenttype"] = _ensure_unicode(content)
 
 
 # noinspection PyUnusedLocal
@@ -257,7 +257,7 @@ def setPluginCategory(handle, category):
 
         xbmcplugin.setPluginCategory(int(sys.argv[1]), 'Comedy')
     """
-    plugin_data["category"] = category
+    _plugin_data["category"] = _ensure_unicode(category)
 
 
 # noinspection PyUnusedLocal
@@ -312,8 +312,8 @@ def setResolvedUrl(handle, succeeded, listitem):
 
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
     """
-    plugin_data["resolved"] = listitem
-    plugin_data["succeeded"] = succeeded
+    _plugin_data["resolved"] = listitem
+    _plugin_data["succeeded"] = succeeded
 
 
 # noinspection PyUnusedLocal

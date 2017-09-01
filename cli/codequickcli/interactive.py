@@ -1,11 +1,11 @@
 # Standard Library Imports
 from multiprocessing import Process, Pipe
-import urlparse
 import re
 
 # Package imports
-import codequickcli.support as support
-from codequickcli import addon_db, initialize_addon
+from codequickcli import support, initialize_addon
+from codequickcli.addondb import db as addon_db
+from codequickcli.support import urlparse
 
 
 def interactive(pluginid, preselect=None):
@@ -31,9 +31,9 @@ def interactive(pluginid, preselect=None):
         # Execute the addon in a separate process
         data = execute_addon(callback_url, entry_point=addon_info.entry_point)
         if data["succeeded"] is False:
-            print "Failed to execute addon. Please check log."
+            print("Failed to execute addon. Please check log.")
             try:
-                raw_input("Press enter to continue:")
+                input("Press enter to continue:")
             except KeyboardInterrupt:
                 break
 
@@ -90,7 +90,7 @@ def execute_addon(callback_url, entry_point):
     while True:
         data = pipe_recv.recv()
         if "prompt" in data:
-            input_data = raw_input(data["prompt"])
+            input_data = input(data["prompt"])
             pipe_recv.send(input_data)
         else:
             break
@@ -164,7 +164,7 @@ def item_selector(listitems, current, preselect):
 
     # Return preselected item or ask user to selection
     if preselect:
-        print "Item %s has been pre-selected.\n" % preselect[0]
+        print("Item %s has been pre-selected.\n" % preselect[0])
         return listitems[preselect.pop(0)]
     else:
         return user_choice(listitems)
@@ -182,7 +182,7 @@ def user_choice(items):
     while True:
         try:
             # Ask user for selection, Returning None if user entered nothing
-            choice = raw_input(prompt)
+            choice = input(prompt)
             if not choice:
                 return None
 
@@ -192,7 +192,7 @@ def user_choice(items):
 
             # Return the item if it's a plugin path
             if item["path"].startswith("plugin://"):
-                print ""
+                print("")
                 return item
             else:
                 prompt = "Selection is not a valid plugin path, Please choose again: "

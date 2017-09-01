@@ -6,7 +6,8 @@ Offers classes and functions that manipulate the add-on settings, information an
 import os
 
 # Package imports
-from codequickcli import addon_db
+from codequickcli import addondb
+from codequickcli.support import ensure_unicode, unicode_type
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -37,7 +38,7 @@ class Addon(object):
     def __init__(self, id=None):
         if id is None:
             id = os.path.basename(os.getcwd())
-        self._data = addon_db[id]
+        self._data = addondb.db[id]
 
     def getAddonInfo(self, id):
         """
@@ -71,7 +72,7 @@ class Addon(object):
 
             locstr = self.Addon.getLocalizedString(32000)
         """
-        return self._data.strings[id].decode("utf8")
+        return ensure_unicode(self._data.strings[id])
 
     def getSetting(self, id):
         """
@@ -85,7 +86,7 @@ class Addon(object):
 
             apikey = self.Addon.getSetting('apikey')
         """
-        return self._data.settings[id].decode("utf8")
+        return ensure_unicode(self._data.settings[id])
 
     def getSettingBool(self, id):
         """
@@ -163,7 +164,7 @@ class Addon(object):
 
             self.Addon.setSetting(id='username', value='teamkodi')
         """
-        self._data.settings[id] = value if isinstance(value, (str, unicode)) else str(value)
+        self._data.settings[id] = ensure_unicode(value)
 
     def setSettingBool(self, id, value):
         """
@@ -249,7 +250,7 @@ class Addon(object):
 
             self.Addon.setSettingString(id='username', value='teamkodi')
         """
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, (str, unicode_type)):
             self.setSetting(id, value)
             return True
         else:

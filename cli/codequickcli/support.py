@@ -1,9 +1,16 @@
 # Standard Library Imports
 import unicodedata
 import hashlib
+import logging
 import sys
 import os
 import re
+
+try:
+    import urllib.parse as urlparse
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    import urlparse
 
 try:
     # noinspection PyUnresolvedReferences
@@ -12,6 +19,7 @@ except NameError:
     long_type = int
 
 PY3 = sys.version_info >= (3, 0)
+data_pipe = None
 
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
@@ -63,6 +71,14 @@ path_map = {"home": KODI_PROFILE_PATH,
 # Data store for addon. Use in xbmcplugin and xbmcgui
 plugin_data = {"succeeded": False, "updatelisting": False, "resolved": None, "contenttype": None,  "category": None,
                "sortmethods": [], "playlist": [], "listitem": []}
+
+# Base logger
+logger = logging.getLogger("cli")
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(logging.Formatter("%(relativeCreated)-13s %(levelname)7s: %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
 
 def ensure_bytes(data):

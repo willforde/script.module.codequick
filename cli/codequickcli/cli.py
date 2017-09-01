@@ -5,7 +5,7 @@ import sys
 
 # Package imports
 from codequickcli.interactive import interactive
-from codequickcli import logger
+from codequickcli.support import logger
 
 # Create Parser to parse the required arguments
 parser = ArgumentParser(description="Execute kodi plugin")
@@ -23,7 +23,7 @@ def main(cli_args=sys.argv[1:]):
         logger.setLevel(logging.DEBUG)
 
     # Convert any preselection into a list of selections
-    preselect = map(int, args.preselect[0].split(",")) if args.preselect else None
+    preselect = list(map(int, args.preselect[0].split(","))) if args.preselect else None
 
     # Execute the addon in interactive mode
     interactive(args.pluginid, preselect)

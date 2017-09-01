@@ -8,25 +8,13 @@ You can also find system information using the functions available in this libra
 import logging
 import random
 import time
-import sys
 import os
+import re
 
-# Kodi user directory
+# Other imports
 import xbmcgui as _xbmcgui
-
-# Package imports
-from codequickcli import addon_db, logger
+from codequickcli.addondb import db as addon_db
 import codequickcli.support as _support
-
-dirname, basename = os.path.split(sys.argv[0])
-if basename == "addon.py":
-    pluginid = os.path.basename(dirname)
-    from codequickcli import cli
-    newargs = sys.argv[:]
-    newargs[0] = pluginid
-    cli.main(newargs)
-    exit(0)
-
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -70,8 +58,14 @@ TRAY_CLOSED_NO_MEDIA = 64
 TRAY_OPEN = 16
 
 # Kodi log levels
-log_levels = (logging.DEBUG, logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
-              logging.CRITICAL, logging.CRITICAL, logging.DEBUG)
+log_levels = (logging.DEBUG,  # xbmc.LOGDEBUG
+              logging.DEBUG,  # xbmc.LOGINFO
+              logging.INFO,  # xbmc.LOGNOTICE
+              logging.WARNING,  # xbmc.LOGWARNING
+              logging.ERROR,  # xbmc.LOGERROR
+              logging.CRITICAL,  # xbmc.LOGSEVERE
+              logging.CRITICAL,  # xbmc.LOGFATAL
+              logging.DEBUG)  # xbmc.LOGNONE
 
 
 def audioResume():
@@ -212,12 +206,24 @@ def getCleanMovieTitle(path, usefoldername=False):
 
     example::
 
-        title, year = xbmc.getCleanMovieTitle('/kodi_path/to/moviefolder/test.avi', True)
+        'file', '' = xbmc.getCleanMovieTitle('/kodi_path/to/moviefolder/file.mkv')
+        'file', '2017' = xbmc.getCleanMovieTitle('/kodi_path/to/moviefolder/file (2017).mkv')
+        'topgun', '' = xbmc.getCleanMovieTitle('/kodi_path/to/topgun/file.mkv', True)
+        'topgun', '2017' = xbmc.getCleanMovieTitle('/kodi_path/to/topgun (2017)/file.mkv', True)
     """
+    path = _support.ensure_native_str(path)
+    directory, title = os.path.split(path)
     if usefoldername:
-        return os.path.basename(os.path.dirname(path))
+        title = os.path.basename(directory)
+
+    year = re.search('\((\d\d\d\d)\)', title)
+    if year:
+        title = title.replace(year.group(), "")
+        year = year.group(1)
     else:
-        return path.rsplit(".", 1)[0], ""
+        year = ""
+
+    return title.rsplit(".", 1)[0].strip(), year
 
 
 # noinspection PyUnusedLocal
@@ -287,7 +293,7 @@ def getGlobalIdleTime():
 
         t = xbmc.getGlobalIdleTime()
     """
-    return long()
+    return _support.long_type()
 
 
 # noinspection PyUnusedLocal
@@ -337,7 +343,7 @@ def getIPAddress():
 
         ip = xbmc.getIPAddress()
     """
-    return b"127.0.0.1"
+    return "127.0.0.1"
 
 
 # noinspection PyUnusedLocal, PyShadowingBuiltins
@@ -362,14 +368,14 @@ def getLanguage(format=ENGLISH_NAME, region=False):
         language = xbmc.getLanguage(xbmc.ENGLISH_NAME)
     """
     if format == ISO_639_1:
-        lang = b"en"
+        lang = "en"
     elif format == ISO_639_2:
-        lang = b"eng"
+        lang = "eng"
     else:
-        lang = b"english"
+        lang = "english"
 
     if region:
-        return b"%s-GB" % lang
+        return "{}-GB".format(lang)
     else:
         return lang
 
@@ -388,7 +394,8 @@ def getLocalizedString(id):
 
         locstr = xbmc.getLocalizedString(6)
     """
-    return addon_db["resource.language.en_gb"].strings[id].decode("utf8")
+    string = addon_db["resource.language.en_gb"].strings[id].decode("utf8")
+    return string.decode("utf8") if isinstance(string, bytes) else string
 
 
 # noinspection PyShadowingBuiltins
@@ -425,7 +432,7 @@ def getSkinDir():
 
         skindir = xbmc.getSkinDir()
     """
-    return b"skin.estuary"
+    return "skin.estuary"
 
 
 def getSupportedMedia(mediaType):
@@ -460,8 +467,8 @@ def getUserAgent():
 
         xbmc.getUserAgent()
     """
-    return b"Kodi/17.0-ALPHA1 (X11; Linux x86_64) Ubuntu/15.10 App_Bitness/64 " \
-           b"Version/17.0-ALPHA1-Git:2015-12-23-5770d28"
+    return "Kodi/17.0-ALPHA1 (X11; Linux x86_64) Ubuntu/15.10 App_Bitness/64 " \
+           "Version/17.0-ALPHA1-Git:2015-12-23-5770d28"
 
 
 def log(msg, level=LOGDEBUG):
@@ -490,7 +497,7 @@ def log(msg, level=LOGDEBUG):
 
         xbmc.log('This is a test string.', level=xbmc.LOGDEBUG)
     """
-    logger.log(log_levels[level], msg)
+    _support.logger.log(log_levels[level], msg)
 
 
 def makeLegalFilename(filename, fatX=True):
@@ -515,6 +522,7 @@ def makeLegalFilename(filename, fatX=True):
 
         filename = xbmc.makeLegalFilename('F: Age: The Meltdown.avi')
     """
+    filename = _support.ensure_native_str(filename)
     if fatX:
         path, filename = os.path.split(filename)
         return os.path.join(path, _support.normalize_filename(filename))
@@ -652,6 +660,7 @@ def translatePath(path):
 
         fpath = xbmc.translatePath('special://masterprofile/script_data')
     """
+    path = _support.ensure_native_str(path)
     # Return the path unmodified if not a special path
     if not path.startswith("special://"):
         return path
@@ -684,6 +693,7 @@ def validatePath(path):
 
         fpath = xbmc.validatePath('Z:\\something/with\\mix/path')
     """
+    path = _support.ensure_native_str(path)
     alt_sep = "\\" if os.sep == "/" else "/"
     return path.replace(alt_sep, os.sep)
 
@@ -1437,6 +1447,7 @@ class InfoTagVideo(object):
         title = tag.getTitle()
         file  = tag.getFile()
     """
+
     def getCast(self):
         """
         To get the cast of the video when available.
@@ -2113,6 +2124,7 @@ class Monitor(object):
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
 class RenderCapture(object):
     """Kodi's render capture."""
+
     def capture(self, width, height):
         """
         Issue capture request.

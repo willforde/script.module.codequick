@@ -2,7 +2,8 @@
 import logging
 
 # Package imports
-from codequickcli import initialize_addon, logger
+from codequickcli import initialize_addon
+from codequickcli.support import logger
 
 
 def initialize(pluginid):
