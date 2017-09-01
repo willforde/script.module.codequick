@@ -12,6 +12,7 @@ from codequick.listing import Listitem
 from codequick.resolver import Resolver
 from codequick.storage import PersistentDict
 from codequick.support import CacheProperty, logger_id
+from codequick.utils import PY3
 import urlquick
 
 # Logger specific to this module
@@ -370,10 +371,14 @@ class APIControl(Route):
         :rtype: dict
         """
         from shelve import DbfilenameShelf
-        filepath = os.path.join(self.get_info("profile"), u"youtube", u"video_data.shelf")
+
+        # Need different database files for python 2/3 as a python2 db will not work on python3
+        filename = u"video_data_py3.db" if PY3 else u"video_data_py2.db"
+        filepath = os.path.join(self.get_info("profile"), u"youtube", filename)
+
         # Can't use safe_path here as DbfilenameShelf will fail when using byte type paths
         # on python3 when running on posix systems
-        video_cache = DbfilenameShelf(filepath, protocol=-1, writeback=False)
+        video_cache = DbfilenameShelf(filepath, protocol=2, writeback=False)
 
         # Todo: Switch video_cache from Shelf to sqlite
 
