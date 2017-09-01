@@ -121,7 +121,8 @@ else:
 
 # Cacheable request types
 _addon_data = __import__("xbmcaddon").Addon()
-CACHE_LOCATION = __import__("xbmc").translatePath(_addon_data.getAddonInfo("profile")).decode("utf8")
+_CACHE_LOCATION = __import__("xbmc").translatePath(_addon_data.getAddonInfo("profile"))
+CACHE_LOCATION = _CACHE_LOCATION.decode("utf8") if isinstance(_CACHE_LOCATION, bytes) else _CACHE_LOCATION
 CACHEABLE_METHODS = (u"GET", u"HEAD", u"POST")
 CACHEABLE_CODES = (200, 203, 204, 300, 301, 302, 303, 307, 308, 410, 414)
 REDIRECT_CODES = (301, 302, 303, 307, 308)
@@ -725,7 +726,7 @@ class Request(object):
 
     def _py2_header_items(self):
         """Return request headers with no unicode value to be compatible with python2"""
-        for key, value in self.headers.iteritems():
+        for key, value in self.headers.items():
             key = key.encode("ascii")
             value = value.encode("iso-8859-1")
             yield key, value
