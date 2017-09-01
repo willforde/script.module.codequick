@@ -12,6 +12,7 @@ import xbmc
 # Package imports
 from codequick.utils import ensure_unicode, ensure_native_str
 from codequick.support import CacheProperty, dispatcher, script_data, addon_data, logger_id
+import urlquick
 
 # Logger used by the addons
 addon_logger = logging.getLogger(logger_id)
@@ -306,5 +307,4 @@ class Script(object):
     @CacheProperty
     def request(self):
         """A urlquick session."""
-        import urlquick
         return urlquick.Session()
