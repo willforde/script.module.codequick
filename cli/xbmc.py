@@ -394,7 +394,7 @@ def getLocalizedString(id):
 
         locstr = xbmc.getLocalizedString(6)
     """
-    string = addon_db["resource.language.en_gb"].strings[id].decode("utf8")
+    string = addon_db["resource.language.en_gb"].strings[id]
     return string.decode("utf8") if isinstance(string, bytes) else string
 
 

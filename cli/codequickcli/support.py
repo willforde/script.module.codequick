@@ -18,6 +18,12 @@ try:
 except NameError:
     long_type = int
 
+try:
+    # noinspection PyUnresolvedReferences
+    input_raw = raw_input
+except NameError:
+    input_raw = input
+
 PY3 = sys.version_info >= (3, 0)
 data_pipe = None
 
