@@ -17,8 +17,7 @@ from codequick.route import Route
 from codequick.utils import safe_path
 from codequick.listing import Listitem
 from codequick.resolver import Resolver
-from codequick.storage import PersistentDict
-from codequick.support import CacheProperty, logger_id
+from codequick.support import logger_id
 import urlquick
 
 # Logger specific to this module
@@ -29,10 +28,21 @@ ALLVIDEOS = 32003
 PLAYLISTS = 136
 
 
+class CustomRow(sqlite3.Row):
+    def __eq__(self, y):
+        return y == self[0]
+
+    def __hash__(self):
+        return hash(self[0])
+
+
 class Database(object):
     def __init__(self):
         filepath = safe_path(os.path.join(Route.get_info("profile"), u"youtube", u"cache.sqlite"))
         self.db = db = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES, timeout=1)
+
+        db.isolation_level = None
+        db.row_factory = CustomRow
         self.cur = cur = db.cursor()
 
         # Performance tweaks
@@ -40,108 +50,100 @@ class Database(object):
         cur.execute('PRAGMA count_changes=OFF')
         cur.execute('PRAGMA synchronous=OFF')
 
-        # Register the adapter and converter
-        sqlite3.register_adapter(dict, self._encode_dict)
-        sqlite3.register_converter("DICT", self._decode_dict)
+        # Create missing channel table
+        cur.execute("""CREATE TABLE IF NOT EXISTS channels
+                    (channel_id TEXT PRIMARY KEY, uploads_id TEXT, fanart TEXT, channel_title TEXT)""")
 
-        # Create any missing tables.
-        cur.execute("CREATE TABLE IF NOT EXISTS videos"
-                    "(key TEXT PRIMARY KEY, date TEXT, value DICT)")
-        cur.execute("CREATE TABLE IF NOT EXISTS channels"
-                    "(key TEXT PRIMARY KEY, fanart TEXT, desc TEXT, uploads TEXT, title TEXT)")
+        # Create missing category table
+        cur.execute("""CREATE TABLE IF NOT EXISTS categories
+                    (id INT PRIMARY KEY, genre TEXT)""")
 
-    @staticmethod
-    def _encode_dict(data):
-        """Encodes dict object into a pickle object."""
-        return sqlite3.Binary(pickle.dumps(data))
-
-    @staticmethod
-    def _decode_dict(data):
-        """Decodes a pickle object into a dict object."""
-        return pickle.loads(data)
-
-    def close(self):
-        self.cur.close()
-        self.db.close()
-
-
-
-
-
-class _Database(object):
-    def __init__(self):
-        filepath = safe_path(os.path.join(Route.get_info("profile"), u"youtube", u"cache.sqlite"))
-        self.db = db = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES, timeout=1)
-        self.cur = cur = db.cursor()
-
-        # Performance tweaks
-        cur.execute('PRAGMA journal_mode=MEMORY')
-        cur.execute('PRAGMA count_changes=OFF')
-        cur.execute('PRAGMA synchronous=OFF')
-
-        # Register the adapter and converter
-        sqlite3.register_adapter(dict, self.encode_dict)
-        sqlite3.register_converter("DICT", self.decode_dict)
-
-        # Create table if it don't exists.
-        cur.execute("CREATE TABLE IF NOT EXISTS videos"
-                    "(key TEXT PRIMARY KEY, date TEXT, value DICT)")
-        cur.execute("CREATE TABLE IF NOT EXISTS channels"
-                    "(key TEXT PRIMARY KEY, fanart TEXT, desc TEXT, uploads TEXT, title TEXT)")
-
-        # Extract all video ids
-        self.data = self.extract_keys()
-
-    @CacheProperty
-    def category_cache(self):
-        path = os.path.join(Route.get_info("profile_global"), u"youtube")
-        return PersistentDict(u"category_data.json", path)
-
-    def extract_keys(self):
-        # Extract all keys from database
-        return frozenset(key[0] for key in self.cur.execute("SELECT key FROM videos"))
-
-    @staticmethod
-    def encode_dict(video):
-        """Encodes dict of video data into a pickle object."""
-        return sqlite3.Binary(pickle.dumps(video))
-
-    @staticmethod
-    def decode_dict(video):
-        """Decodes video data from a pickled object into a dict"""
-        return pickle.loads(video)
-
-    def update_videos(self, videos):
-        # Generator yielding the colume key, data and video
-        videos = ((video[u"id"], video[u"snippet"][u"publishedAt"], video) for video in videos)
-
-        # Do a bulk insert to add all videos at once
-        self.cur.executemany("INSERT INTO videos VALUES(?, ?, ?)", videos)
-        self.db.commit()
-
-        # Update the list of all keys
-        self.data = self.extract_keys()
+        # Create missing video table
+        cur.execute("""CREATE TABLE IF NOT EXISTS videos
+                    (video_id TEXT PRIMARY KEY, title TEXT, thumb TEXT, description TEXT, genre_id INT,
+                    count INT, date TEXT, hd INT, duration INT, channel_id TEXT,
+                    FOREIGN KEY(channel_id) REFERENCES channels(channel_id),
+                    FOREIGN KEY(genre_id) REFERENCES categories(id))""")
 
     def update_channels(self, channels):
-        # Do a bulk insert to add all videos at once
-        self.cur.executemany("INSERT INTO channels VALUES(:key, :fanart, :desc, :uploads, :title)", channels)
-        self.db.commit()
+        self.cur.execute("BEGIN")
+        try:
+            self.cur.executemany("""INSERT INTO channels VALUES(:channel_id, :uploads_id,
+                                 :fanart, :channel_title)""", channels)
+        except:
+            self.db.rollback()
+            raise
+        else:
+            self.db.commit()
+
+    def update_categories(self, categories):
+        self.cur.execute("BEGIN")
+        try:
+            self.cur.executemany("INSERT INTO categories VALUES(?, ?)", categories)
+        except:
+            self.db.rollback()
+            raise
+        else:
+            self.db.commit()
+
+    def update_videos(self, videos):
+        self.cur.execute("BEGIN")
+        try:
+            self.cur.executemany("""INSERT INTO videos VALUES(:video_id, :title, :thumb, :description, :genre_id,
+                                 :count, :date, :hd, :duration, :channel_id)""", videos)
+        except:
+            self.db.rollback()
+            raise
+        else:
+            self.db.commit()
 
     def extract_videos(self, data):
-        return (data[0] for data in self.cur.execute("SELECT value FROM videos WHERE key IN (%s)" % ",".join("?" * len(data)), data))
-    
-    def extract_channels(self, data):
-        return (data[0] for data in self.cur.execute("SELECT * FROM channels WHERE key IN (%s)" % ",".join("?" * len(data)), data))
+        return set(self.cur.execute("""
+        SELECT video_id, title, thumb, description, genre, count, date, hd, duration, videos.channel_id,
+        fanart, channel_title FROM videos INNER JOIN channels ON channels.channel_id = videos.channel_id
+        INNER JOIN categories ON categories.id = videos.genre_id
+        WHERE video_id IN (%s)""" % ",".join("?" * len(data)), data))
+
+    @property
+    def channels(self):
+        """Return all channel ids."""
+        return {data[0]: data[1] for data in self.cur.execute("SELECT channel_id, uploads_id FROM channels")}
+
+    @property
+    def categories(self):
+        """Return all channel ids."""
+        return frozenset(data[0] for data in self.cur.execute("SELECT id FROM categories"))
 
     def close(self):
         self.cur.close()
         self.db.close()
 
-    def __contains__(self, key):
-        return key in self.data
+    def cleanup(self):
+        """Trim down the cache if cache gets too big."""
+        # Registor cleanup if the database has more than 10,000 videos stored
+        if self.cur.execute("SELECT COUNT(*) FROM videos").fetchone()[0] > 10000:
+            logger.debug("Running Youtube Cache Cleanup")
+            self.cur.execute("BEGIN")
 
-    def __len__(self):
-        return len(self.data)
+            try:
+                # Remove all but 2,500 of the most recent videos
+                self.cur.execute("""DELETE FROM videos WHERE video_id IN (select video_id from videos
+                                 ORDER BY date DESC LIMIT -1 OFFSET 2500)""")
+
+                # Remove any leftover channels
+                self.cur.execute("""DELETE FROM channels WHERE channel_id in (SELECT channel_id from channels
+                                 WHERE channel_id not in (SELECT channel_id from videos))""")
+            except:
+                self.db.rollback()
+                raise
+            else:
+                # Vacume the database to reclaim storage space
+                self.db.commit()
+                self.cur.execute("VACUUM")
+            finally:
+                self.close()
+        else:
+            self.close()
 
 
 class API(object):
@@ -157,7 +159,9 @@ class API(object):
         self.req_session.headers["referer"] = "http://www.codequick.com/"
         self.req_session.params = {"maxResults": str(max_results),
                                    "prettyPrint": str(pretty_print).lower(),
-                                   "key": "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}# ""AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"}
+                                   "key": "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}
+
+        # "key": "AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"} Replace the current key with this
 
     def _request(self, url, query):
         """
@@ -234,7 +238,7 @@ class API(object):
         else:
             return self._request(url, query)
 
-    def channels(self, channel_id=None, for_username=None):
+    def channels(self, channel_id):
         """
         Return all available information for giving channel
 
@@ -243,11 +247,7 @@ class API(object):
 
         Refer to 'https://developers.google.com/youtube/v3/docs/channels/list'
 
-        :param channel_id: [opt] ID(s) of the channel for requesting data for.
-        :type channel_id: str or unicode or list or frozenset
-
-        :param for_username: [opt] Username of the channel for requesting information for.
-        :type for_username: unicode or str
+        :param channel_id: ID(s) of the channel for requesting data for.
 
         :returns: Dictionary of channel information.
         :rtype: dict
@@ -255,22 +255,14 @@ class API(object):
         :raises ValueError: If neither channel_id or for_username is given.
         """
         # Set parameters
-        query = {"hl": "en", "part": "contentDetails,brandingSettings,snippet",
+        query = {"hl": "en", "part": "contentDetails,brandingSettings,snippet", "id": channel_id,
                  "fields": "items(id,brandingSettings/image/bannerTvMediumImageUrl,"
-                           "contentDetails/relatedPlaylists/uploads,snippet/localized)"}
-
-        # Add the channel_id or channel name of the channel to params
-        if channel_id:
-            query["id"] = channel_id
-        elif for_username:
-            query["forUsername"] = for_username
-        else:
-            raise ValueError("No valid Argument was giving for channels")
+                           "contentDetails/relatedPlaylists/uploads,snippet/localized/title)"}
 
         # Connect to server and return json response
         return self._connect_v3("channels", query)
 
-    def video_categories(self, cat_id=None, region_code="us"):
+    def video_categories(self, region_code="us"):
         """
         Return the categorie names for giving id(s)
 
@@ -278,9 +270,6 @@ class API(object):
 
         Note:
         If no id(s) are given then all category ids are fetched for given region.
-
-        :param cat_id: [opt] ID(s) of the categories to fetch category names for.
-        :type cat_id: str or unicode or list or frozenset
 
         :param region_code: [opt] The region code for the categories id(s).
         :type region_code: str or unicode
@@ -290,10 +279,6 @@ class API(object):
         """
         # Set parameters
         query = {"fields": "items(id,snippet/title)", "part": "snippet", "hl": "en", "regionCode": region_code}
-
-        # Set mode of fetching, by id or region
-        if cat_id:
-            query["id"] = cat_id
 
         # Fetch video Information
         return self._connect_v3("videoCategories", query)
@@ -341,7 +326,7 @@ class API(object):
         """
         # Set parameters
         query = {"part": "contentDetails,statistics,snippet", "hl": "en", "id": video_id,
-                 "fields": "items(id,snippet(publishedAt,channelId,thumbnails/medium/url,channelTitle,"
+                 "fields": "items(id,snippet(publishedAt,channelId,thumbnails/medium/url,"
                            "categoryId,localized),contentDetails(duration,definition),statistics/viewCount)"}
 
         # Connect to server and return json response
@@ -405,291 +390,153 @@ class APIControl(Route):
     def __init__(self):
         super(APIControl, self).__init__()
         self.db = Database()
-
+        self.register_metacall(self.db.cleanup)
         self.api = API()
-        """:class:`API`: Class for handling api requests"""
 
-    def cache_cleanup(self):
-        """Trim down the cache if cache gets too big."""
-        logger.debug("Running Youtube Cache Cleanup")
-        video_cache = self.video_cache
-        remove_list = []
-        dated = []
-
-        # Filter out videos that are not public
-        for vdata in video_cache.items():
-            status = vdata[u"status"]
-            if status[u"uploadStatus"] == u"processed":
-                dated.append((vdata[u"snippet"][u"publishedAt"], vdata[u"id"], vdata[u"snippet"][u"channelId"]))
-            else:
-                remove_list.append(vdata[u"id"])
-
-        # Sort cache by published date
-        sorted_cache = sorted(dated)
-        valid_channel_refs = set()
-
-        # Remove 1000 of the oldest videos
-        for count, (_, videoid, channelid) in enumerate(sorted_cache):
-            if count < 1000:
-                remove_list.append(videoid)
-            else:
-                # Sense cached item was not removed, mark the channelid as been referenced
-                valid_channel_refs.add(channelid)
-
-        # If there are any videos to remove then remove them and also remove any unreferenced channels
-        if remove_list:
-            # Remove all video that are marked for removel
-            for videoid in remove_list:
-                logger.debug("Removing cached video : '%s'", videoid)
-                del video_cache[videoid]
-
-            # Clean the channel cache of unreferenced channel ids
-            channel_cache = self.channel_cache.get(u"channels", {})
-            for channelid in channel_cache.keys():
-                if channelid not in valid_channel_refs:
-                    del channel_cache[channelid]
-
-            # Clean the chanel ref cache of unreferenced channel ids
-            ref_cache = self.channel_cache.get(u"ref", {})
-            for key, channelid in ref_cache.items():
-                if channelid not in valid_channel_refs:
-                    del ref_cache[key]
-
-            # Close connection to channel cache
-            channel_cache.close()
-
-        # Close connection to cache database
-        video_cache.close()
-
-    @CacheProperty
-    def channel_cache(self):
+    def valid_playlistid(self, contentid):
         """
-        Return channel_data database.
+        Return a valid playlist uuid.
 
-        :returns: The channel_data database.
-        :rtype: dict
+        Contentid can be a channel uuid, playlist uuid or channel uploads uuid.
+        If channel uuid is given, then the required uploads uuid will be fetched
+        from youtube and stored in the cache.
+
+        :param unicode contentid: ID of youtube content to validate, Channel uuid,
+                                  Channel Uploads uuid or Playlist uuid.
+
+        :raises ValueError: If contentid is not one of the required types.
         """
-        dir_path = os.path.join(self.get_info("profile"), u"youtube")
-        return PersistentDict(u"channel_data.json", dir_path)
-
-    def validate_uuid(self, contentid, require_playlist=True):
-        """
-        Convert contentid to a channel/upload/playlist id, depending on require_playlist state.
-
-        Content Type        | playlist_id = False         | playlist_id = True
-        ----------------------------------------------------------------------
-        Channel Name        | Channel ID                  | Uploads ID
-        Channel ID          | Channel ID                  | Uploads ID
-        Channel Uploads ID  | Channel ID                  | Uploads ID
-        Playlist ID         | ValueError                  | Playlist ID
-        
-        :type contentid: unicode
-        :param contentid: ID of youtube content to validate, Channel Name, Channel ID,
-                          Channel Uploads ID or Playlist ID.
-        
-        :type require_playlist: bool
-        :param require_playlist: [opt] True, return a upload/playlist ID (Default). False, return a channelID.
-
-        :raises ValueError: Will be raised if content id is a playlist id and require_playlist is False.
-                            Sense we can not match a playlist id to a channel id. ValueError can also be raised
-                            if there is no mapping from a uploads id to a channel id.
-        """
-        # Quick Access Vars
-        content_code = contentid[:2]
-        channel_cache = self.channel_cache
-        channel_refs = channel_cache.setdefault(u"ref", {})
-        channel_data = channel_cache.setdefault(u"channels", {})
-
-        # Directly return the content id if its a playlistID or uploadsID and playlist_uuid is required
-        if content_code == u"PL" or content_code == u"FL":
-            if require_playlist:
-                return contentid
-            else:
-                raise ValueError("Unable to link a playlist uuid to a channel uuid")
-
-        # Return the channel uploads uuid if playlist_uuid is required else the channels uuid if we have a mapping for
-        # said uploads uuid. Raises ValueError when unable to map the uploads uuid to a channel.
-        elif content_code == u"UU":
-            if require_playlist:
-                return contentid
-            elif contentid in channel_refs:
-                return channel_refs[contentid]
-            else:
-                raise ValueError("Unable to link a channel uploads uuid to a channel uuid")
-
         # Check if content is a channel id
-        elif content_code == u"UC":
-            # Return the channel uuid as is if playlist_uuid is not required
-            if require_playlist is False:
-                return contentid
-
-            # Extract channel upload id fom cache
-            elif contentid in channel_data:
-                return channel_data[contentid][u"uploads"]
-
-            # Request channel data from server and return channels uploads uuid
+        if contentid.startswith("UC"):
+            # Extract channel upload id from cache
+            channel_cache = self.db.channels
+            if contentid in channel_cache:
+                return channel_cache[contentid]
             else:
-                self.update_channel_cache(channel_id=contentid)
-                return channel_data[contentid][u"uploads"]
+                # Channel data is missing from cache
+                # Update cache and return uploads uuid
+                self.update_channel_cache([contentid])
+                return self.db.channels[contentid]
 
+        # PL = Playlist / UU = Channel Uploads / FL = Favorites List
+        elif contentid[:2] in ("PL", "FL", "UU"):
+            return contentid
         else:
-            # If we get here then content id must be a channel name
-            if contentid in channel_refs:
-                # Extract the channel id from cache
-                channelid = channel_refs[contentid]
-                if channelid not in channel_data:
-                    self.update_channel_cache(channel_id=channelid)
-            else:
-                self.update_channel_cache(for_username=contentid)
-                channelid = channel_refs[contentid]
+            raise ValueError("contentid is not of valid type (PL,UU,UC): %s" % contentid)
 
-            # Return the channel uploads uuid if playlist uuid is required else return the channel uuid
-            if require_playlist:
-                return channel_data[channelid][u"uploads"]
-            else:
-                return channelid
+    def update_category_cache(self):
+        """Update on cache of category information."""
+        feed = self.api.video_categories()
+        category_cache = self.db.categories
+        self.db.update_categories((int(item[u"id"]), item[u"snippet"][u"title"])
+                                  for item in feed[u"items"] if int(item[u"id"]) not in category_cache)
 
-    def update_channel_cache(self, channel_id=None, for_username=None):
+    def update_channel_cache(self, ids):
         """
-        Update on disk cache of channel information
+        Update the database of cached channel information.
 
-        :param channel_id: [opt] ID of the channel to request information for.
-        :type channel_id: list or unicode
-
-        :param for_username: [opt] Username of the channel to request information for.
-        :type for_username: str or unicode
-
-        .. note:: If both channel_id and for_username is given then channel_id will take priority.
+        :param ids: ID(s) of the channel to request information for.
+        :type ids: list
         """
-
         # Make channels api request
-        feed = self.api.channels(channel_id, for_username)
+        feed = self.api.channels(ids)
+        processed_channels = []
 
-        # Fetch channel cache
-        channel_cache = self.channel_cache
-        channel_refs = channel_cache.setdefault(u"ref", {})
-        update_list = []
-
-        # Update cache
         for item in feed[u"items"]:
             # Fetch common info
-            data = {"key": item[u"id"],
-                    "title": item[u"snippet"][u"localized"][u"title"],
-                    "desc": item[u"snippet"][u"localized"][u"description"],
-                    "uploads": item[u"contentDetails"][u"relatedPlaylists"][u"uploads"]}
+            data = {"channel_id": item[u"id"],
+                    "channel_title": item[u"snippet"][u"localized"][u"title"],
+                    "uploads_id": item[u"contentDetails"][u"relatedPlaylists"][u"uploads"]}
 
             # Fetch the channel banner if available
             try:
                 data["fanart"] = item[u"brandingSettings"][u"image"][u"bannerTvMediumImageUrl"]
             except KeyError:
-                data["fanart"] = u""
+                data["fanart"] = None
 
-            # Set and save channel info into cache
-            update_list.append(data)
-            channel_refs[data["uploads"]] = item[u"id"]
+            # Add the dict of channel data to list of channels that will be added to database
+            processed_channels.append(data)
 
-        self.db.update_channels(update_list)
-
-        # Also add reference for channel name if given
-        if for_username:
-            channelid = feed[u"items"][0][u"id"]
-            channel_refs[for_username] = channelid
-            logger.debug("Channel ID for channel '%s' is '%s'", for_username, channelid)
-
-        # Sync cache to disk
-        channel_cache.flush()
-
-    def update_category_cache(self, cat_id=None):
-        """
-        Update on disk cache of category information
-
-        :param cat_id: [opt] ID(s) of the categories to fetch category names for.
-        :type cat_id: unicode or list or frozenset
-
-        Note:
-        If no category id is given then all categories names will be fetched.
-        """
-        # Fetch category Information
-        feed = self.api.video_categories(cat_id)
-
-        # Update category cache
-        category_data = self.db.category_cache
-        for item in feed[u"items"]:
-            category_data[item[u"id"]] = item[u"snippet"][u"title"]
-        category_data.flush()
+        self.db.update_channels(processed_channels)
 
     def request_videos(self, ids):
         """
+        Return all requested videos from cache.
 
-        :param list ids: ID(s) of videos to fetch information for.
+        If requested video(s) are not cached, the video data will be
+        downloaded and added to cache.
+
+        :param ids: ID(s) of the videos to request information for.
+        :type ids: list
         """
-        cache_list = []
-        cache = self.db
-        server_list = []
-        for vid in ids:
-            if vid in cache:
-                cache_list.append(vid)
-            else:
-                server_list.append(vid)
-
-        # Fetch all cached videos first
-        if cache_list:
-            videos = self.db.extract_videos(cache_list)
-        else:
-            videos = []
-
-        if server_list:
+        cached_videos = self.db.extract_videos(ids)
+        uncached_ids = [key for key in ids if key not in cached_videos]
+        if uncached_ids:
             # Fetch video information
-            feed = self.api.videos(server_list)
-            category_cache = self.db.category_cache
-            check_cat = True
+            feed = self.api.videos(uncached_ids)
+            duration_search = __import__("re").compile("(\d+)(\w)")
+            category_cache = self.db.categories
+            channel_cache = self.db.channels
+            update_categories = False
+            required_channels = []
+            processed_videos = []
 
-            # Swap out the category id with the actual category name
             for video in feed[u"items"]:
-                catid = video[u"snippet"][u"categoryId"]
-                if catid in category_cache:
-                    video[u"snippet"][u"categoryName"] = category_cache[catid]
+                snippet = video[u"snippet"]
+                content_details = video[u"contentDetails"]
+                data = {"title": snippet[u"localized"][u"title"], "thumb": snippet[u"thumbnails"][u"medium"][u"url"],
+                        "description": snippet[u"localized"][u"description"], "date": snippet[u"publishedAt"],
+                        "count": int(video[u"statistics"][u"viewCount"]), "channel_id": snippet[u"channelId"],
+                        "video_id": video[u"id"], "hd": int(content_details[u"definition"] == u"hd"),
+                        "duration": "", "genre_id": int(snippet[u"categoryId"])}
 
-                # Sense all categories are fetched at once, this if statement should not run again
-                # But if it dose then we have a check that will prevent fetching for something that is not available
-                elif check_cat:
-                    check_cat = False
-                    self.update_category_cache()
-                    if catid in category_cache:
-                        video[u"snippet"][u"categoryName"] = category_cache[catid]
-                else:
-                    video[u"snippet"][u"categoryName"] = catid
+                # Convert duration to what kodi is expecting (duration in seconds)
+                duration_str = content_details[u"duration"]
+                duration_str = duration_search.findall(duration_str)
+                if duration_str:
+                    duration = 0
+                    for time_segment, timeType in duration_str:
+                        if timeType == u"H":
+                            duration += (int(time_segment) * 3600)
+                        elif timeType == u"M":
+                            duration += (int(time_segment) * 60)
+                        elif timeType == u"S":
+                            duration += (int(time_segment))
 
-            # Add data to cache
-            videos.extend(feed[u"items"])
-            self.db.update_videos(videos)
+                    data["duration"] = duration
 
-        return videos
+                # Add the dict of video data to list of video that will be added to database
+                processed_videos.append(data)
 
-    def videos(self, channel_ids, video_ids, enable_playlists=True):
+                if data["channel_id"] not in required_channels and data["channel_id"] not in channel_cache:
+                    required_channels.append(data["channel_id"])
+
+                if update_categories is False and data["genre_id"] not in category_cache:
+                    update_categories = True
+
+            if required_channels:
+                self.update_channel_cache(required_channels)
+            if update_categories:
+                self.update_category_cache()
+
+            # Now we can safelly update the video cache
+            self.db.update_videos(processed_videos)
+            cached = self.db.extract_videos(uncached_ids)
+            cached_videos.update(cached)
+
+        # Return a list of Row objects of video data
+        return cached_videos
+
+    def videos(self, video_ids, multi_channel=False):
         """
         Process VideoIDs and return listitems in a generator
 
-        :param channel_ids: List of all the channels that are associated with the videos.
-        :type channel_ids: list
-
         :param video_ids: List of all the videos to show.
-        :type video_ids: list
-
-        :param enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
-        :type enable_playlists: bool
+        :param bool multi_channel: [opt] Set to True to enable linking to channel playlists. (default => False)
 
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
         """
-        # Fetch data caches
-        channel_cache = self.channel_cache.setdefault(u"channels", {})
-
-        # Check for any missing cache
-        videos = self.request_videos(video_ids)
-        multi_channel = len(frozenset(channel_ids)) > 1
-        self.update_channel_cache(channel_ids)
-
         # Check that the quality setting is set to HD or greater
         try:
             ishd = self.setting.get_int("video_quality", addon_id="script.module.youtube.dl")
@@ -697,141 +544,67 @@ class APIControl(Route):
             ishd = True
 
         # Process videos
-        duration_search = __import__("re").compile("(\d+)(\w)")
-        for channel_id, video_data in zip(channel_ids, videos):
+        for video_data in self.request_videos(video_ids):
             # Create listitem object
             item = Listitem()
 
-            # Fetch video snippet & content_details
-            snippet = video_data[u"snippet"]
-            content_details = video_data[u"contentDetails"]
-            channel_details = channel_cache[channel_id]
-
             # Fetch Title
-            item.label = snippet[u"localized"][u"title"]
+            item.label = video_data["title"]
 
             # Add channel Fanart
-            item.art["fanart"] = channel_details[u"fanart"]
+            item.art["fanart"] = video_data["fanart"]
 
             # Fetch video Image url
-            item.art["thumb"] = snippet[u"thumbnails"][u"medium"][u"url"]
+            item.art["thumb"] = video_data["thumb"]
 
             # Fetch Description
-            item.info["plot"] = u"[B]%s[/B]\n\n%s" % (channel_details[u"title"], snippet[u"localized"][u"description"])
+            item.info["plot"] = u"[B]%s[/B]\n\n%s" % (video_data["channel_title"], video_data["description"])
 
             # Fetch Studio
-            item.info["studio"] = snippet[u"channelTitle"]
+            item.info["studio"] = video_data["channel_title"]
 
             # Fetch Viewcount
-            item.info["count"] = video_data[u"statistics"][u"viewCount"]
+            item.info["count"] = video_data["count"]
 
             # Fetch Possible Date
-            date = snippet[u"publishedAt"]
+            date = video_data["date"]
             item.info.date(date[:date.find(u"T")], "%Y-%m-%d")
 
             # Fetch Category
-            item.info["genre"] = snippet[u"categoryName"]
+            item.info["genre"] = video_data["genre"]
 
             # Set Quality and Audio Overlays
-            item.stream.hd(bool(content_details[u"definition"] == u"hd" and ishd))
+            item.stream.hd(bool(ishd and video_data["hd"]))
 
-            # Fetch Duration
-            duration_str = content_details[u"duration"]
-            duration_str = duration_search.findall(duration_str)
-            if duration_str:
-                duration = 0
-                for time_segment, timeType in duration_str:
-                    if timeType == u"H":
-                        duration += (int(time_segment) * 3600)
-                    elif timeType == u"M":
-                        duration += (int(time_segment) * 60)
-                    elif timeType == u"S":
-                        duration += (int(time_segment))
-
-                # Set duration
-                item.info["duration"] = duration
+            # Set duration
+            item.info["duration"] = video_data["duration"]
 
             # Add Context item to link to related videos
-            item.context.related(Related, video_id=video_data[u"id"])
+            item.context.related(Related, video_id=video_data["video_id"])
 
             # Add Context item for youtube channel if videos from more than one channel are ben listed
             if multi_channel:
-                item.context.container(u"Go to: %s" % snippet[u"channelTitle"], Playlist, contentid=channel_id)
+                item.context.container(u"Go to: %s" % video_data["channel_title"], Playlist,
+                                       contentid=video_data["channel_id"])
 
             # Return the listitem
-            item.set_callback(play_video, video_id=video_data[u"id"])
+            item.set_callback(play_video, video_id=video_data["video_id"])
             yield item
-
-        # Add playlists item to results
-        if enable_playlists and not multi_channel:
-            item = Listitem()
-            item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
-            item.info["plot"] = "Show all channel playlists."
-            item.art["icon"] = "DefaultVideoPlaylists.png"
-            item.art.global_thumb("playlist.png")
-            item.set_callback(Playlists, content_id=channel_ids[0], show_all=False)
-            yield item
-
-
-@Route.register
-class Playlist(APIControl):
-    def run(self, contentid, pagetoken=None, enable_playlists=True, loop=False):
-        """
-        List all video within youtube playlist
-
-        :param contentid: Channel id, channel name or playlist id to list videos for.
-        :type contentid: unicode
-
-        :param pagetoken: [opt] The page token representing the next page of content.
-        :type pagetoken: unicode
-
-        :param enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
-        :type enable_playlists: bool
-
-        :param loop: [opt] Return all the videos within playlist. (Default => False)
-        :type loop: bool
-
-        :returns: A generator of listitems.
-        :rtype: :class:`types.GeneratorType`
-        """
-        # Fetch channel uploads uuid
-        playlist_id = self.validate_uuid(contentid, require_playlist=True)
-
-        # Request data feed
-        enable_playlists = False if pagetoken else enable_playlists
-        feed = self.api.playlist_items(playlist_id, pagetoken, loop)
-        channel_list = []
-        video_list = []
-
-        # Fetch video ids for all public videos
-        for item in feed[u"items"]:
-            if item[u"status"][u"privacyStatus"] == u"public":
-                channel_list.append(item[u"snippet"][u"channelId"])
-                video_list.append(item[u"snippet"][u"resourceId"][u"videoId"])
-            else:
-                logger.debug("Skipping non plublic video: '%s'", item[u"snippet"][u"resourceId"][u"videoId"])
-
-        # Return the list of video listitems
-        results = list(self.videos(channel_list, video_list, enable_playlists))
-        if u"nextPageToken" in feed:
-            next_item = Listitem.next_page(contentid=contentid, pagetoken=feed[u"nextPageToken"])
-            results.append(next_item)
-        return results
 
 
 @Route.register
 class Playlists(APIControl):
-    def run(self, content_id, show_all=True, pagetoken=None, loop=False):
+    def run(self, channel_id, show_all=True, pagetoken=None, loop=False):
         """
         List all playlist for giving channel
 
-        :param content_id: Channel uuid or channel name to list playlists for
-        :type content_id: unicode
+        :param channel_id: Channel id to list playlists for.
+        :type channel_id: unicode
 
         :param show_all: [opt] Add link to all of the channels videos if True. (default => True)
         :type show_all: bool
 
-        :param pagetoken: The token for the next page of results
+        :param pagetoken: [opt] The token for the next page of results.
         :type pagetoken: str or unicode
 
         :param loop: [opt] Return all the playlist for channel. (Default => False)
@@ -840,22 +613,21 @@ class Playlists(APIControl):
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
         """
-        # Fetch channel uuid
-        channel_id = self.validate_uuid(content_id, require_playlist=False)
+        # Make sure that we have a valid channel id
+        if not channel_id.startswith("UC"):
+            raise ValueError("channel_id is not valid: %s" % channel_id)
 
         # Fetch fanart image for channel
-        channel_cache = self.channel_cache.setdefault(u"channels", {})
-        if channel_id in channel_cache:
-            fanart = channel_cache[channel_id][u"fanart"]
-        else:
-            fanart = None
+        fanart = self.db.cur.execute("SELECT fanart FROM channels WHERE channel_id = ?", (channel_id,)).fetchone()
+        if fanart:
+            fanart = fanart[0]
 
         # Fetch channel playlists feed
         feed = self.api.playlists(channel_id, pagetoken, loop)
 
         # Add next Page entry if pagetoken is found
         if u"nextPageToken" in feed:
-            yield Listitem.next_page(content_id=content_id, show_all=False, pagetoken=feed[u"nextPageToken"])
+            yield Listitem.next_page(channel_id=channel_id, show_all=False, pagetoken=feed[u"nextPageToken"])
 
         # Display a link for listing all channel videos
         # This is usefull when the root of a addon is the playlist directory
@@ -894,6 +666,62 @@ class Playlists(APIControl):
 
 
 @Route.register
+class Playlist(APIControl):
+    def run(self, contentid, pagetoken=None, enable_playlists=True, loop=False):
+        """
+        List all video within youtube playlist
+
+        :param contentid: Channel id or playlist id to list videos for.
+        :type contentid: unicode
+
+        :param pagetoken: [opt] The page token representing the next page of content.
+        :type pagetoken: unicode
+
+        :param enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => False)
+        :type enable_playlists: bool
+
+        :param loop: [opt] Return all the videos within playlist. (Default => False)
+        :type loop: bool
+
+        :returns: A generator of listitems.
+        :rtype: :class:`types.GeneratorType`
+        """
+        # Fetch channel uploads uuid
+        playlist_id = self.valid_playlistid(contentid)
+
+        # Request data feed
+        feed = self.api.playlist_items(playlist_id, pagetoken, loop)
+        channel_list = set()
+        video_list = []
+
+        # Fetch video ids for all public videos
+        for item in feed[u"items"]:
+            if item[u"status"][u"privacyStatus"] == u"public":
+                channel_list.add(item[u"snippet"][u"channelId"])
+                video_list.append(item[u"snippet"][u"resourceId"][u"videoId"])
+            else:
+                logger.debug("Skipping non plublic video: '%s'", item[u"snippet"][u"resourceId"][u"videoId"])
+
+        # Return the list of video listitems
+        results = list(self.videos(video_list, multi_channel=len(channel_list) > 1))
+        if u"nextPageToken" in feed:
+            next_item = Listitem.next_page(contentid=contentid, pagetoken=feed[u"nextPageToken"])
+            results.append(next_item)
+
+        # Add playlists item to results
+        if enable_playlists and contentid.startswith("UC") and pagetoken is None:
+            item = Listitem()
+            item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
+            item.info["plot"] = "Show all channel playlists."
+            item.art["icon"] = "DefaultVideoPlaylists.png"
+            item.art.global_thumb("playlist.png")
+            item.set_callback(Playlists, channel_id=contentid, show_all=False)
+            results.append(item)
+
+        return results
+
+
+@Route.register
 class Related(APIControl):
     def run(self, video_id, pagetoken=None):
         """
@@ -908,16 +736,12 @@ class Related(APIControl):
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
         """
-        video_list = []
-        channel_list = []
         self.update_listing = True
         feed = self.api.search(pageToken=pagetoken, relatedToVideoId=video_id)
-        for item in feed[u"items"]:
-            channel_list.append(item[u"snippet"][u"channelId"])
-            video_list.append(str(item[u"id"][u"videoId"]))
+        video_list = (item[u"id"][u"videoId"] for item in feed[u"items"])
 
         # List all the related videos
-        results = list(self.videos(channel_list, video_list))
+        results = list(self.videos(video_list, multi_channel=True))
         if u"nextPageToken" in feed:
             next_item = Listitem.next_page(video_id=video_id, pagetoken=feed[u"nextPageToken"])
             results.append(next_item)

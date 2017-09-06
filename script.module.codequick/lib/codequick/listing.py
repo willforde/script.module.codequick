@@ -753,7 +753,7 @@ class Listitem(object):
         """
         A Listitem constructor to add a youtube channel to addon.
 
-        :param content_id: Channel name, channel id or playlist id to list videos from.
+        :param content_id: Channel id or playlist id of video content.
         :type content_id: str or unicode
 
         :param label: [opt] Label of listitem. (default => 'All Videos').
