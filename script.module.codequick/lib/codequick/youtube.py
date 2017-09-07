@@ -7,11 +7,6 @@ import sqlite3
 import json
 import os
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
 # Package imports
 from codequick.route import Route
 from codequick.utils import safe_path
