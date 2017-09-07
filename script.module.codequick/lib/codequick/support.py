@@ -99,40 +99,6 @@ class CacheProperty(object):
             return self
 
 
-class Params(dict):
-    """
-    Parse the query string giving by kodi into a dictionary.
-    Also splits the params into callback/support params.
-
-    :param str raw_params: The query string passeed in from kodi.
-    :ivar dict callback_params: Parameters that will be forward to callback function.
-    :ivar dict support_params: Parameters used for internal functions.
-    """
-
-    def __init__(self, raw_params):
-        super(Params, self).__init__()
-        self.callback_params = {}
-        self.support_params = {}
-
-        if raw_params:
-            if raw_params.startswith("_json_="):
-                # Decode params using binascii & json
-                raw_params = json.loads(binascii.unhexlify(raw_params[7:]))
-            else:
-                # Decode params using urlparse.parse_qs
-                raw_params = parse_qs(raw_params)
-
-            # Populate dict of params
-            super(Params, self).__init__(raw_params)
-
-            # Construct separate dictionaries for callback and support params
-            for key, value in self.items():
-                if key.startswith(u"_") and key.endswith(u"_"):
-                    self.support_params[key] = value
-                else:
-                    self.callback_params[key] = value
-
-
 class Route(object):
     """
     Handle callback route data.
@@ -217,7 +183,13 @@ class Dispatcher(object):
 
     def __init__(self):
         # Extract command line arguments passed in from kodi
-        self.selector, self.handle, self.params = self.parse_sysargs()
+        self.selector = "root"
+        self.handle = -1
+
+        self.params = {}
+        self.callback_params = {}
+        self.support_params = {}
+
         self.selector_org = self.selector
         self.registered_routes = {}
 
@@ -231,8 +203,7 @@ class Dispatcher(object):
         self.metacalls[:] = []
         self.params.clear()
 
-    @staticmethod
-    def parse_sysargs():
+    def parse_sysargs(self):
         """
         Extract route selector & callback params from the command line arguments received from kodi.
 
@@ -250,14 +221,29 @@ class Dispatcher(object):
         # Extract command line arguments and remove leading '/' from selector
         _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
         route = route.split("/", 1)[-1]
-        return route if route else "root", int(sys.argv[1]), Params(raw_params)
 
-    def __getitem__(self, route):
-        """:rtype: Route"""
-        return self.registered_routes[route]
+        self.selector = route if route else "root"
+        self.handle = int(sys.argv[1])
+        if raw_params:
+            self.parse_params(raw_params)
 
-    def __missing__(self, route):
-        raise KeyError("missing required route: '{}'".format(route))
+    def parse_params(self, raw_params):
+        if raw_params.startswith("_json_="):
+            # Decode params using binascii & json
+            raw_params = json.loads(binascii.unhexlify(raw_params[7:]))
+        else:
+            # Decode params using urlparse.parse_qs
+            raw_params = parse_qs(raw_params)
+
+        # Populate dict of params
+        self.params.update(raw_params)
+
+        # Construct separate dictionaries for callback and support params
+        for key, value in self.params.items():
+            if key.startswith(u"_") and key.endswith(u"_"):
+                self.support_params[key] = value
+            else:
+                self.callback_params[key] = value
 
     @property
     def callback(self):
@@ -306,11 +292,13 @@ class Dispatcher(object):
 
     def dispatch(self):
         """Dispatch to selected route path."""
+        self.parse_sysargs()
+
         try:
             # Fetch the controling class and callback function/method
             route = self[self.selector]
             logger.debug("Dispatching to route: '%s'", self.selector)
-            logger.debug("Callback parameters: '%s'", self.params.callback_params)
+            logger.debug("Callback parameters: '%s'", self.callback_params)
             execute_time = time.time()
 
             # Initialize controller and execute callback
@@ -343,6 +331,13 @@ class Dispatcher(object):
 
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
+
+    def __getitem__(self, route):
+        """:rtype: Route"""
+        return self.registered_routes[route]
+
+    def __missing__(self, route):
+        raise KeyError("missing required route: '{}'".format(route))
 
 
 def build_path(path=None, query=None, **extra_query):

@@ -138,20 +138,16 @@ class Script(object):
     NOTIFY_ERROR = 'error'
     NOTIFY_INFO = 'info'
 
-    # Dictionary of params passed to callback
-    params = dispatcher.params
-
     # Underlining logger object, for advanced use.
     logger = addon_logger
-
-    # Handle the add-on was started with, for advanced use.
-    handle = dispatcher.handle
 
     setting = Settings()
     """:class:`Settings` object with dictionary like interface of add-on settings."""
 
     def __init__(self):
-        self._title = self.params.get(u"_title_", u"")
+        self._title = dispatcher.support_params.get(u"_title_", u"")
+        self.handle = dispatcher.handle
+        self.params = dispatcher.params
 
     def _execute_route(self, callback):
         """
@@ -160,7 +156,7 @@ class Script(object):
         :param callback: The callback func/class to register.
         :returns: The response from the callback func/class.
         """
-        return callback(self, **self.params.callback_params)
+        return callback(self, **dispatcher.callback_params)
 
     @classmethod
     def register(cls, callback):

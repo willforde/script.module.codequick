@@ -698,8 +698,8 @@ class Listitem(object):
         """
         # Add support params to callback params
         params["_updatelisting_"] = True
-        params["_title_"] = Script.params.get(u"_title_", u"")
-        params["_nextpagecount_"] = Script.params.get(u"_nextpagecount_", 1) + 1
+        params["_title_"] = dispatcher.support_params.get(u"_title_", u"")
+        params["_nextpagecount_"] = dispatcher.support_params.get(u"_nextpagecount_", 1) + 1
 
         # Create listitem instance
         item = cls()
