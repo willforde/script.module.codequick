@@ -61,37 +61,28 @@ class Database(object):
                     FOREIGN KEY(channel_id) REFERENCES channels(channel_id),
                     FOREIGN KEY(genre_id) REFERENCES categories(id))""")
 
-    def update_channels(self, channels):
+    def execute(self, execute_obj, sqlquery, args=""):
         self.cur.execute("BEGIN")
         try:
-            self.cur.executemany("""INSERT INTO channels VALUES(:channel_id, :uploads_id,
-                                 :fanart, :channel_title)""", channels)
+            execute_obj(sqlquery, args)
         except:
             self.db.rollback()
             raise
         else:
             self.db.commit()
+
+    def update_channels(self, channels):
+        sqlquery = "INSERT INTO channels VALUES(:channel_id, :uploads_id, :fanart, :channel_title)"
+        self.execute(self.cur.executemany, sqlquery, channels)
 
     def update_categories(self, categories):
-        self.cur.execute("BEGIN")
-        try:
-            self.cur.executemany("INSERT INTO categories VALUES(?, ?)", categories)
-        except:
-            self.db.rollback()
-            raise
-        else:
-            self.db.commit()
+        sqlquery = "INSERT INTO categories VALUES(?, ?)"
+        self.execute(self.cur.executemany, sqlquery, categories)
 
     def update_videos(self, videos):
-        self.cur.execute("BEGIN")
-        try:
-            self.cur.executemany("""INSERT INTO videos VALUES(:video_id, :title, :thumb, :description, :genre_id,
-                                 :count, :date, :hd, :duration, :channel_id)""", videos)
-        except:
-            self.db.rollback()
-            raise
-        else:
-            self.db.commit()
+        sqlquery = """INSERT INTO videos VALUES(:video_id, :title, :thumb, :description,
+                      :genre_id, :count, :date, :hd, :duration, :channel_id)"""
+        self.execute(self.cur.executemany, sqlquery, videos)
 
     def extract_videos(self, data):
         return set(self.cur.execute("""
@@ -119,27 +110,21 @@ class Database(object):
         # Registor cleanup if the database has more than 10,000 videos stored
         if self.cur.execute("SELECT COUNT(*) FROM videos").fetchone()[0] > 10000:
             logger.debug("Running Youtube Cache Cleanup")
-            self.cur.execute("BEGIN")
 
-            try:
-                # Remove all but 2,500 of the most recent videos
-                self.cur.execute("""DELETE FROM videos WHERE video_id IN (select video_id from videos
-                                 ORDER BY date DESC LIMIT -1 OFFSET 2500)""")
+            # Remove all but 2,500 of the most recent videos
+            sqlquery = """DELETE FROM videos WHERE video_id IN (select video_id from videos
+                          ORDER BY date DESC LIMIT -1 OFFSET 2500)"""
+            self.execute(self.cur.execute, sqlquery)
 
-                # Remove any leftover channels
-                self.cur.execute("""DELETE FROM channels WHERE channel_id in (SELECT channel_id from channels
-                                 WHERE channel_id not in (SELECT channel_id from videos))""")
-            except:
-                self.db.rollback()
-                raise
-            else:
-                # Vacume the database to reclaim storage space
-                self.db.commit()
-                self.cur.execute("VACUUM")
-            finally:
-                self.close()
-        else:
-            self.close()
+            # Remove any leftover channels
+            sqlquery = """DELETE FROM channels WHERE channel_id in (SELECT channel_id from channels
+                          WHERE channel_id not in (SELECT channel_id from videos))"""
+            self.execute(self.cur.execute, sqlquery)
+
+            # Compact the database using vacuum
+            self.cur.execute("VACUUM")
+
+        self.close()
 
 
 class API(object):
