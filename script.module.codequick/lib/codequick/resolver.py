@@ -118,7 +118,7 @@ class Resolver(Script):
         :returns: The extracted video url
         :rtype: str
 
-        ..note::
+        .. note::
 
             Unfortunately the kodi YoutubeDL module is python2 only.
             Hopefully it will be ported to python3 when kodi gets upgraded.
