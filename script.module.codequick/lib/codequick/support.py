@@ -18,12 +18,7 @@ import xbmc
 # Package imports
 from codequick.utils import parse_qs, ensure_native_str, ensure_bytes, urlparse
 
-# Level mapper to convert logging module levels to kodi logger levels
-log_level_map = {10: xbmc.LOGDEBUG,    # logger.debug
-                 20: xbmc.LOGNOTICE,   # logger.info
-                 30: xbmc.LOGWARNING,  # logger.warning
-                 40: xbmc.LOGERROR,    # logger.error
-                 50: xbmc.LOGFATAL}    # logger.critical
+
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -38,6 +33,20 @@ logger = logging.getLogger("%s.support" % logger_id)
 auto_sort = set()
 
 
+class LoggingMap(dict):
+    def __init__(self):
+        super(LoggingMap, self).__init__()
+        self[10] = xbmc.LOGDEBUG    # logger.debug
+        self[20] = xbmc.LOGNOTICE   # logger.info
+        self[30] = xbmc.LOGWARNING  # logger.warning
+        self[40] = xbmc.LOGERROR    # logger.error
+        self[50] = xbmc.LOGFATAL    # logger.critical
+
+    def __missing__(self, key):
+        """Return log notice for any unexpected log level."""
+        return xbmc.LOGNOTICE
+
+
 class KodiLogHandler(logging.Handler):
     """
     Custom Logger Handler to forward logs to Kodi.
@@ -48,10 +57,10 @@ class KodiLogHandler(logging.Handler):
 
     :ivar debug_msgs: Local store of degub messages.
     """
-
     def __init__(self):
         super(KodiLogHandler, self).__init__()
         self.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
+        self.log_level_map = LoggingMap()
         self.debug_msgs = []
 
     def emit(self, record):
@@ -64,7 +73,7 @@ class KodiLogHandler(logging.Handler):
         log_level = record.levelno
 
         # Forward the log record to kodi with translated log level
-        xbmc.log(formatted_msg, log_level_map[log_level])
+        xbmc.log(formatted_msg, self.log_level_map[log_level])
 
         # Keep a history of all debug records so they can be logged later if a critical error occurred
         # Kodi by default, won't show debug messages unless debug logging is enabled
