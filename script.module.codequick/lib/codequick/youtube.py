@@ -34,7 +34,7 @@ class CustomRow(sqlite3.Row):
 class Database(object):
     def __init__(self):
         filepath = safe_path(os.path.join(Route.get_info("profile"), u"youtube", u"cache.sqlite"))
-        self.db = db = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES, timeout=1)
+        self.db = db = sqlite3.connect(filepath, timeout=1)
 
         db.isolation_level = None
         db.row_factory = CustomRow
