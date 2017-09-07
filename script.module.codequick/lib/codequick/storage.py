@@ -29,6 +29,8 @@ class _PersistentBase(object):
     :type read_only: bool
     """
 
+    # Todo: Remvoe data_dir parameter and build it into filename, only use data_dir when filename is a relitive path
+
     def __init__(self, filename, data_dir=None, read_only=False):
         super(_PersistentBase, self).__init__()
         self._read_only = read_only
