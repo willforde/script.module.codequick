@@ -120,7 +120,7 @@ def urljoin_partial(base_url):
     :param base_url: The absolute url to use as the base.
     :returns: A partial function that accepts a relative url and returns a full absolute url.
     
-    .. Example::
+    .. Example:
         
         url_constructor = urljoiner("https://google.ie/")
         

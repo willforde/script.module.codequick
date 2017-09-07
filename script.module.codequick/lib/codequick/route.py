@@ -131,7 +131,7 @@ class Route(Script):
         :param int methods: One or more kodi sort mehtods.
         :param bool override: [opt] keyword argument to override the auto selected sort methods. (default => False)
 
-        .. Example::
+        .. Example:
 
             plugin.add_sort_methods(xbmc.SORT_METHOD_DATE, xbmc.SORT_METHOD_DURATION, override=True)
         """

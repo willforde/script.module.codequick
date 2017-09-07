@@ -65,7 +65,7 @@ class Resolver(Script):
         :returns: The Listitem that kodi will play
         :rtype: xbmcgui.ListItem
 
-        .. Example::
+        .. Example:
 
             plugin.create_loopback("http://example.com/a5ed59gk.mkv", video_set=["kd90k3lx", "j5yj9y7p", "1djy6k7e"])
         """
