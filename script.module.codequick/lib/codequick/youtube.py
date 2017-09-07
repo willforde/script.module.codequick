@@ -9,7 +9,7 @@ import os
 
 # Package imports
 from codequick.route import Route
-from codequick.utils import safe_path
+from codequick.utils import safe_path, PY3
 from codequick.listing import Listitem
 from codequick.resolver import Resolver
 from codequick.support import logger_id
@@ -33,8 +33,9 @@ class CustomRow(sqlite3.Row):
 
 class Database(object):
     def __init__(self):
-        filepath = safe_path(os.path.join(Route.get_info("profile"), u"youtube", u"cache.sqlite"))
-        self.db = db = sqlite3.connect(filepath, timeout=1)
+        # Unfortunately with python 3, sqlite3.connect might fail if system local is 'c_type'(ascii)
+        filepath = os.path.join(Route.get_info("profile"), u"youtube", u"cache.sqlite")
+        self.db = db = sqlite3.connect(filepath if PY3 else safe_path(filepath), timeout=1)
 
         db.isolation_level = None
         db.row_factory = CustomRow
