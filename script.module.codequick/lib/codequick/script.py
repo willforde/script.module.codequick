@@ -43,6 +43,24 @@ class Settings(object):
         # noinspection PyTypeChecker
         addon_data.setSetting(key, ensure_unicode(value))
 
+    @staticmethod
+    def get(key, addon_id=None):
+        """
+        Returns the value of a setting as a unicode string.
+
+        :param str key: Id of the setting to access.
+        :param str addon_id: [opt] Id of another addon to extract settings from.
+
+        :raises RuntimeError: If addon_id is given and there is no addon with given id.
+
+        :return: Setting as a unicode string.
+        :rtype: unicode
+        """
+        if addon_id:
+            return xbmcaddon.Addon(addon_id).getSetting(key)
+        else:
+            return addon_data.getSetting(key)
+
     def get_boolean(self, key, addon_id=None):
         """
         Returns the value of a setting as a boolean.
@@ -85,24 +103,6 @@ class Settings(object):
         :rtype: float
         """
         return float(self.get(key, addon_id))
-
-    @staticmethod
-    def get(key, addon_id=None):
-        """
-        Returns the value of a setting as a unicode string.
-
-        :param str key: Id of the setting to access.
-        :param str addon_id: [opt] Id of another addon to extract settings from.
-
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
-
-        :return: Setting as a unicode string.
-        :rtype: unicode
-        """
-        if addon_id:
-            return xbmcaddon.Addon(addon_id).getSetting(key)
-        else:
-            return addon_data.getSetting(key)
 
 
 class Script(object):
