@@ -505,8 +505,10 @@ class Listitem(object):
 
         This is a dictionary like object that allows you to add various image values. e.g. thumb, fanart.
 
-        The full list of art values, can be found here.
-        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
+        .. seealso::
+        
+            The full list of art values, can be found here.\n
+            https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
 
         Usage::
         
@@ -517,7 +519,7 @@ class Listitem(object):
 
         self.stream = Stream(listitem)
         """
-        :class:`Stream` object for adding stream details.
+        :class:`codequick.listing.Stream` object for adding stream details.
 
         This is a dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
         

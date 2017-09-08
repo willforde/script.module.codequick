@@ -117,7 +117,6 @@ class Script(object):
     :cvar ERROR: Error logging level.
     :cvar WARNING: Warning logging level.
     :cvar CRITICAL: Critical logging level.
-
     :cvar NOTIFY_WARNING: Notification Warning icon.
     :cvar NOTIFY_ERROR: Notification Error icon.
     :cvar NOTIFY_INFO: Notification Info icon.
@@ -142,7 +141,7 @@ class Script(object):
     logger = addon_logger
 
     setting = Settings()
-    """:class:`Settings` object with dictionary like interface of add-on settings."""
+    """:class:`Settings<codequick.script.Settings>` object with dictionary like interface of add-on settings."""
 
     def __init__(self):
         self._title = dispatcher.support_params.get(u"_title_", u"")
