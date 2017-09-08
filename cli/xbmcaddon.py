@@ -38,6 +38,8 @@ class Addon(object):
     def __init__(self, id=None):
         if id is None:
             id = os.path.basename(os.getcwd())
+            if not (id.startswith("plugin.") or id.startswith("script.")):
+                id = "script.module.codequick"
         self._data = addondb.db[id]
 
     def getAddonInfo(self, id):

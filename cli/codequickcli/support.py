@@ -183,3 +183,5 @@ def handle_prompt(prompt):
         return data_pipe.recv()
     else:
         return input(prompt)
+
+

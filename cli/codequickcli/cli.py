@@ -9,8 +9,8 @@ from codequickcli.support import logger
 
 # Create Parser to parse the required arguments
 parser = ArgumentParser(description="Execute kodi plugin")
-parser.add_argument("pluginid", help="The id of the plugin or a plugin path to run")
-parser.add_argument("-l", "--logging", help="Show the logging output", action="store_true")
+parser.add_argument("pluginid", help="The id of the plugin")
+parser.add_argument("-l", "--logging", help="Show debug logging output", action="store_true")
 parser.add_argument("-p", "--preselect", help="A comma seporated list of pre selections", nargs=1)
 
 

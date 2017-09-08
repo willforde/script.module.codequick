@@ -10,8 +10,13 @@ Welcome to CodeQuick's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: codequick
+.. autoclass:: codequick.script.Script
    :members:
+
+.. autoclass:: codequick.script.Settings
+   :members:
+   :special-members: __getitem__, __setitem__
+
 
 Indices and tables
 ==================

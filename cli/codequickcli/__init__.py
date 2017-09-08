@@ -20,3 +20,11 @@ def initialize_addon(callback_url):
     # Change to the addon directory
     os.chdir(addon_info.path)
     sys.path.insert(0, addon_info.path)
+
+
+# Extract plugin add from the calling script that can be found in sys.argv
+plugin_id = os.path.basename(os.path.dirname(sys.argv[0]))
+if plugin_id.startswith("plugin."):
+    clifile = "/home/willforde/.local/bin/codequickcli %s" % plugin_id
+    exit_code = os.system(clifile)
+    exit(exit_code)
