@@ -65,9 +65,9 @@ class Database(object):
         self.cur.execute("BEGIN")
         try:
             execute_obj(sqlquery, args)
-        except:
+        except Exception as e:
             self.db.rollback()
-            raise
+            raise e
         else:
             self.db.commit()
 
@@ -162,7 +162,7 @@ class API(object):
         else:
             try:
                 message = response[u"error"][u"errors"][0][u"message"]
-            except:
+            except KeyError:
                 raise RuntimeError("Youtube V3 API return an error response")
             else:
                 raise RuntimeError("Youtube V3 API return an error response: %s" % message)
