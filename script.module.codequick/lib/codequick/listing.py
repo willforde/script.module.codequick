@@ -458,7 +458,7 @@ class Listitem(object):
     """
 
     def __init__(self, ctype="video"):
-        self._path = ""
+        self.callback = ""
 
         self.listitem = listitem = xbmcgui.ListItem()
         """The underlining kodi listitem object, for advanced use."""
@@ -605,12 +605,12 @@ class Listitem(object):
             args_map = callback.route.args_to_kwargs(args)
             kwargs.update(args_map)
 
-        self._path = callback
+        self.callback = callback
         self.params.update(kwargs)
 
     # noinspection PyProtectedMember
     def _close(self):
-        callback = self._path
+        callback = self.callback
         if hasattr(callback, "route"):
             self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
