@@ -11,14 +11,14 @@ from codequickcli.support import logger
 parser = ArgumentParser(description="Execute kodi plugin")
 parser.add_argument("pluginid", help="The id of the plugin")
 parser.add_argument("-l", "--logging", help="Show debug logging output", action="store_true")
-parser.add_argument("-p", "--preselect", help="A comma seporated list of pre selections", nargs=1)
+parser.add_argument("-p", "--preselect", help="Comma separated list of pre selections", nargs=1)
 
 
 def main(cli_args=sys.argv[1:]):
     # Parse the cli arguments
     args = parser.parse_args(cli_args)
 
-    # Enable logging for debug messages if logging flag was given
+    # Enable debug logging if logging flag was given
     if args.logging:
         logger.setLevel(logging.DEBUG)
 
@@ -29,5 +29,7 @@ def main(cli_args=sys.argv[1:]):
     interactive(args.pluginid, preselect)
 
 
+# This is only here for development
+# Allows this script to be call directly
 if __name__ == "__main__":
     main()

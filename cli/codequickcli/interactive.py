@@ -6,7 +6,6 @@ import re
 # Package imports
 from codequickcli import support, initialize_addon
 from codequickcli.addondb import db as addon_db
-from codequickcli.support import urlparse, input_raw
 
 
 def interactive(pluginid, preselect=None):
@@ -19,7 +18,7 @@ def interactive(pluginid, preselect=None):
     # TODO: Add support for content_type when plugins have muilti providers e.g. video, music.
 
     if pluginid.startswith("plugin://"):
-        addon_info = addon_db[urlparse.urlsplit(pluginid).hostname]
+        addon_info = addon_db[support.urlparse.urlsplit(pluginid).hostname]
         callback_url = pluginid
     else:
         addon_info = addon_db[pluginid]
@@ -34,7 +33,7 @@ def interactive(pluginid, preselect=None):
         if data["succeeded"] is False:
             print("Failed to execute addon. Please check log.")
             try:
-                input_raw("Press enter to continue:")
+                support.input_raw("Press enter to continue:")
             except KeyboardInterrupt:
                 break
 
@@ -91,7 +90,7 @@ def execute_addon(callback_url, entry_point):
     while True:
         data = pipe_recv.recv()
         if "prompt" in data:
-            input_data = input_raw(data["prompt"])
+            input_data = support.input_raw(data["prompt"])
             pipe_recv.send(input_data)
         else:
             break
@@ -183,7 +182,7 @@ def user_choice(items):
     while True:
         try:
             # Ask user for selection, Returning None if user entered nothing
-            choice = input_raw(prompt)
+            choice = support.input_raw(prompt)
             if not choice:
                 return None
 
