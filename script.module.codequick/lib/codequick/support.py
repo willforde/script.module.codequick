@@ -18,8 +18,6 @@ import xbmc
 # Package imports
 from codequick.utils import parse_qs, ensure_native_str, ensure_bytes, urlparse
 
-
-
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
 
@@ -179,7 +177,7 @@ class Route(object):
 
         try:
             # Now we are ready to call the callback function and return its results
-            return self.callback(controller_ins, *args, **kwargs)
+            return list(self.callback(controller_ins, *args, **kwargs))
         finally:
             # Reset global datasets
             kodi_logger.debug_msgs = []
