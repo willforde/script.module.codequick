@@ -166,11 +166,7 @@ def safe_path(path):
     :param path: The path to convert.
     :return: Returns the path as unicode or utf8 encoded string.
     """
-    # Ensure unicode if running windows
-    if sys.platform.startswith("win"):
-        return ensure_unicode(path)
-    else:
-        return ensure_bytes(path)
+    return ensure_unicode(path) if sys.platform.startswith("win") else ensure_bytes(path)
 
 
 def ensure_bytes(data):
