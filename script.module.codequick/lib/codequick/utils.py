@@ -157,34 +157,37 @@ def strip_tags(html):
     return re.sub("<[^<]+?>", "", html)
 
 
-def safe_path(path):
+def safe_path(path, encoding="utf8"):
     """
     Convert path into a encoding that best suits the platform os.
     Unicode when on windows, utf8 when on linux/bsd.
 
     :type path: bytes or unicode
     :param path: The path to convert.
+    :param encoding: The encoding to use when needed.
     :return: Returns the path as unicode or utf8 encoded string.
     """
-    return ensure_unicode(path) if sys.platform.startswith("win") else ensure_bytes(path)
+    return ensure_unicode(path, encoding) if sys.platform.startswith("win") else ensure_bytes(path, encoding)
 
 
-def ensure_bytes(data):
+def ensure_bytes(data, encoding="utf8"):
     """
     Ensures that given string is returned as a UTF-8 encoded string.
 
     :param data: String to convert if needed.
+    :param encoding: The encoding to use when needed.
     :returns: The given string as UTF-8.
     :rtype: bytes
     """
-    return data if isinstance(data, bytes) else unicode_type(data).encode("utf8")
+    return data if isinstance(data, bytes) else unicode_type(data).encode(encoding)
 
 
-def ensure_native_str(data):
+def ensure_native_str(data, encoding="utf8"):
     """
     Ensures that given string is returned as a native str type, bytes on python2 or unicode on python3.
 
     :param data: String to convert if needed.
+    :param encoding: The encoding to use when needed.
     :returns: The given string as UTF-8.
     :rtype: str
     """
@@ -192,20 +195,21 @@ def ensure_native_str(data):
         return data
     elif isinstance(data, unicode_type):
         # Only executes on python 2
-        return data.encode("utf8")
+        return data.encode(encoding)
     elif isinstance(data, bytes):
         # Only executes on python 3
-        return data.decode("utf8")
+        return data.decode(encoding)
     else:
         str(data)
 
 
-def ensure_unicode(data):
+def ensure_unicode(data, encoding="utf8"):
     """
     Ensures that given string is return as a unicode string.
 
     :param data: String to convert if needed.
+    :param encoding: The encoding to use when needed.
     :returns: The given string as unicode.
     :rtype: unicode
     """
-    return data.decode("utf8") if isinstance(data, bytes) else unicode_type(data)
+    return data.decode(encoding) if isinstance(data, bytes) else unicode_type(data)
