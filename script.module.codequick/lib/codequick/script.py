@@ -10,8 +10,8 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import ensure_unicode, ensure_native_str
-from codequick.support import CacheProperty, dispatcher, script_data, addon_data, logger_id
+from codequick.utils import CacheProperty, ensure_unicode, ensure_native_str
+from codequick.support import dispatcher, script_data, addon_data, logger_id
 import urlquick
 
 # Logger used by the addons

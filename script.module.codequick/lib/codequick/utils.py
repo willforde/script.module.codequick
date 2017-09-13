@@ -26,6 +26,28 @@ PY3 = sys.version_info >= (3, 0)
 unicode_type = type(u"")
 
 
+class CacheProperty(object):
+    """
+    Converts a class method into a property.
+
+    When property is accessed for the first time, the result is computed and returned.
+    The class property is then replaced with an instance attribute with the computed result.
+    """
+
+    def __init__(self, func):
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+        self._func = func
+
+    def __get__(self, instance, owner):
+        if instance:
+            attr = self._func(instance)
+            setattr(instance, self.__name__, attr)
+            return attr
+        else:
+            return self
+
+
 def keyboard(heading, default="", hidden=False):
     """
     Show keyboard dialog for user input.
