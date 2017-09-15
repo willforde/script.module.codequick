@@ -3,11 +3,8 @@
 Offers classes and functions that manipulate the add-on settings, information and localization.
 """
 
-# Standard Library Imports
-import os
-
 # Package imports
-from codequickcli.support import avail_addons
+from codequickcli.support import avail_addons, plugin_id
 from codequickcli.utils import ensure_native_str, ensure_unicode
 
 __author__ = 'Team Kodi <http://kodi.tv>'
@@ -36,14 +33,9 @@ class Addon(object):
         self.Addon = xbmcaddon.Addon('script.foo.bar')
     """
 
-    def __init__(self, id=None):
-        if id is None:
-            id = os.path.basename(os.getcwd())
-            if not (id.startswith("plugin.") or id.startswith("script.")):
-                id = "script.module.codequick"
-
+    def __init__(self, id=plugin_id):
         if id in avail_addons:
-            self._data = avail_addons.db[id]
+            self._data = avail_addons[id]
         else:
             raise RuntimeError("unknown addon id '{}'".format(id))
 

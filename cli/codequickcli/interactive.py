@@ -7,7 +7,7 @@ import os
 
 # Package imports
 from codequickcli.utils import urlparse, input_raw, ensure_native_str
-from codequickcli.support import initializer
+from codequickcli import support
 
 
 def interactive(pluginpath, preselect=None):
@@ -102,7 +102,7 @@ def subprocess(pipe_send, pluginpath, callback_url):
     :param unicode pluginpath: The path to the plugin to execute.
     :param str callback_url: The url containing the route path and callback params.
     """
-    addon_data = initializer(pluginpath)
+    addon_data = support.initializer(pluginpath)
     support.data_pipe = pipe_send
 
     # TODO: Add support for content_type when plugins have muilti providers e.g. video, music.

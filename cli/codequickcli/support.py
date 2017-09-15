@@ -28,6 +28,30 @@ logger.propagate = False
 # Dictionary of available addons
 kodi_paths = OrderedDict()
 avail_addons = dict()
+data_pipe = None
+plugin_id = ""
+
+# Data store for addon. Use in xbmcplugin and xbmcgui
+plugin_data = {"succeeded": False, "updatelisting": False, "resolved": None, "contenttype": None,  "category": None,
+               "sortmethods": [], "playlist": [], "listitem": []}
+
+# Region settings. Used by xbmc.getRegion
+region_settings = {"datelong": "%A, %d %B %Y", "dateshort": "%d/%m/%Y",
+                   "time": "%H:%M:%S", "meridiem": "PM", "speedunit": "km/h"}
+
+# Dict of supported media types that kodi is able to play. Used by xbmc.getSupportedMedia
+supported_media = {"video": ".m4v|.3g2|.3gp|.nsv|.tp|.ts|.ty|.strm|.pls|.rm|.rmvb|.mpd|.m3u|.m3u8|.ifo|.mov|.qt|.divx"
+                            "|.xvid|.bivx|.vob|.nrg|.img|.iso|.pva|.wmv|.asf|.asx|.ogm|.m2v|.avi|.bin|.dat|.mpg|.mpeg"
+                            "|.mp4|.mkv|.mk3d|.avc|.vp3|.svq3|.nuv|.viv|.dv|.fli|.flv|.rar|.001|.wpl|.zip|.vdr|.dvr"
+                            "-ms|.xsp|.mts|.m2t|.m2ts|.evo|.ogv|.sdp|.avs|.rec|.url|.pxml|.vc1|.h264|.rcv|.rss|.mpls"
+                            "|.webm|.bdmv|.wtv|.pvr|.disc",
+                   "music": ".nsv|.m4a|.flac|.aac|.strm|.pls|.rm|.rma|.mpa|.wav|.wma|.ogg|.mp3|.mp2|.m3u|.gdm|.imf"
+                            "|.m15|.sfx|.uni|.ac3|.dts|.cue|.aif|.aiff|.wpl|.ape|.mac|.mpc|.mp+|.mpp|.shn|.zip|.rar"
+                            "|.wv|.dsp|.xsp|.xwav|.waa|.wvs|.wam|.gcm|.idsp|.mpdsp|.mss|.spt|.rsd|.sap|.cmc|.cmr|.dmc"
+                            "|.mpt|.mpd|.rmt|.tmc|.tm8|.tm2|.oga|.url|.pxml|.tta|.rss|.wtv|.mka|.tak|.opus|.dff|.dsf"
+                            "|.cdda",
+                   "picture": ".png|.jpg|.jpeg|.bmp|.gif|.ico|.tif|.tiff|.tga|.pcx|.cbz|.zip|.cbr|.rar|.rss|.webp"
+                              "|.jp2|.apng"}
 
 
 def initializer(plugin_path):
@@ -36,15 +60,8 @@ def initializer(plugin_path):
 
     :param plugin_path: The path to the plugin that will be executed.
     """
-    system_dir = os.path.join(ensure_unicode(os.path.dirname(__file__), sys.getfilesystemencoding()), u"system")
-    kodi_paths["kodi_source_path"] = system_dir
-    kodi_paths["kodi_profile_path"] = mock_env = os.path.join(plugin_path, u".kodi")
-    kodi_paths["kodi_addon_path"] = addon_dir = os.path.join(mock_env, u"addons")
-    kodi_paths["kodi_package_path"] = os.path.join(addon_dir, u"packages")
-    kodi_paths["kodi_temp_path"] = os.path.join(mock_env, u"temp")
-    kodi_paths["kodi_system_path"] = os.path.join(mock_env, u"system")
-    kodi_paths["kodi_userdata_path"] = userdata_dir = os.path.join(mock_env, u"userdata")
-    kodi_paths["kodi_data_path"] = os.path.join(userdata_dir, u"addon_data")
+    global plugin_id
+    system_dir, addon_dir = setup_paths(plugin_path)
     plugin_id = os.path.basename(plugin_path)
 
     # Ensure that all directories exists
@@ -60,12 +77,53 @@ def initializer(plugin_path):
 
     # Preload all existing addons
     for plugin_file in find_addons(system_dir, addon_dir):
-        addon = Addon.from_file(plugin_file)
-        avail_addons[addon.id] = addon
+        req_addon = Addon.from_file(plugin_file)
+        avail_addons[req_addon.id] = req_addon
 
     # Populate mock environment of required addons
     process_dependencies(addon.requires)
     return addon
+
+
+def setup_paths(plugin_path):
+    # Location of support files
+    system_dir = os.path.join(ensure_unicode(os.path.dirname(__file__), sys.getfilesystemencoding()), u"system")
+    kodi_paths["support"] = system_dir
+
+    # Kodi path structure
+    kodi_paths["home"] = home = os.path.join(plugin_path, u".kodi")
+    kodi_paths["addons"] = addon_dir = os.path.join(home, u"addons")
+    kodi_paths["packages"] = os.path.join(addon_dir, u"packages")
+    kodi_paths["temp"] = temp_dir = os.path.join(home, u"temp")
+    kodi_paths["system"] = os.path.join(home, u"system")
+    kodi_paths["profile"] = userdata = os.path.join(home, u"userdata")
+    kodi_paths["data"] = os.path.join(userdata, u"addon_data")
+    kodi_paths["database"] = os.path.join(userdata, u"Database")
+    kodi_paths["thumbnails"] = os.path.join(userdata, u"Thumbnails")
+    kodi_paths["playlists"] = playlists = os.path.join(userdata, u"playlists")
+    kodi_paths["musicplaylists"] = os.path.join(playlists, u"music")
+    kodi_paths["videoplaylists"] = os.path.join(playlists, u"video")
+
+    # Ensure that all directories exists
+    for path in kodi_paths.values():
+        path = safe_path(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+    # Rest of kodi's special paths
+    kodi_paths["logpath"] = os.path.join(temp_dir, u"kodi.log")
+    kodi_paths["masterprofile"] = userdata
+    kodi_paths["masterprofile"] = userdata
+    kodi_paths["userdata"] = userdata
+    kodi_paths["subtitles"] = temp_dir
+    kodi_paths["recordings"] = temp_dir
+    kodi_paths["screenshots"] = temp_dir
+    kodi_paths["cdrips"] = temp_dir
+    kodi_paths["skin"] = temp_dir
+    kodi_paths["xbmc"] = home
+
+    # Return the support system directory and addon directory
+    return system_dir, addon_dir
 
 
 def find_addons(*dirs):
@@ -146,7 +204,7 @@ class Addon(object):
 
         # The metadata of the add-on
         self._metadata = self._xml.find("./extension[@point='xbmc.addon.metadata']")
-        self.profile = os.path.join(kodi_paths["kodi_data_path"], self.id)
+        self.profile = os.path.join(kodi_paths["data"], self.id)
         self.path = u""
 
     def register_module(self):
@@ -295,13 +353,13 @@ class Repo(object):
     repo_url = "http://mirrors.kodi.tv/addons/krypton/{}"
 
     def __init__(self):
-        self._addon_dir = kodi_paths["kodi_addon_path"]
-        self._package_dir = kodi_paths["kodi_package_path"]
+        self._addon_dir = kodi_paths["addons"]
+        self._package_dir = kodi_paths["packages"]
         self._session = requests.session()
         self.db = {}
 
         # Check if an update is scheduled
-        self.update_file = safe_path(os.path.join(kodi_paths["kodi_temp_path"], u"update_check"))
+        self.update_file = safe_path(os.path.join(kodi_paths["temp"], u"update_check"))
         if self.update_required():
             self.update()
 
@@ -511,3 +569,11 @@ class Settings(dict):
         raw_xml = minidom.parseString(ETree.tostring(tree)).toprettyxml(indent=" "*4, encoding="utf8")
         with open(self._settings_path, "wb") as stream:
             stream.write(raw_xml)
+
+
+def handle_prompt(prompt):
+    if data_pipe:
+        data_pipe.send({"prompt": prompt})
+        return data_pipe.recv()
+    else:
+        return input(prompt)

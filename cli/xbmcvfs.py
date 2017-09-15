@@ -7,7 +7,7 @@ import shutil
 import os
 
 # Other imports
-from codequickcli.support import safe_path as _safe_path
+from codequickcli.utils import safe_path
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -30,7 +30,7 @@ def copy(source, destination):
         success = xbmcvfs.copy(source, destination)
     """
     try:
-        shutil.copyfile(_safe_path(source), _safe_path(destination))
+        shutil.copyfile(safe_path(source), safe_path(destination))
     except shutil.Error:
         return False
     else:
@@ -51,7 +51,7 @@ def deleteFile(file):
         success = xbmcvfs.deleteFile(file)
     """
     try:
-        os.remove(_safe_path(file))
+        os.remove(safe_path(file))
     except EnvironmentError:
         return False
     else:
@@ -70,7 +70,7 @@ def exists(path):
 
         success = xbmcvfs.exists(path)
     """
-    return os.path.exists(_safe_path(path))
+    return os.path.exists(safe_path(path))
 
 
 def listdir(path):
@@ -87,7 +87,7 @@ def listdir(path):
     """
     dirs = []
     files = []
-    path = _safe_path(path)
+    path = safe_path(path)
     for item_name in os.listdir(path):
         item_path = os.path.join(path, item_name)
         if os.path.isfile(item_path):
@@ -112,7 +112,7 @@ def mkdir(path):
         success = xbmcvfs.mkdir(path)
     """
     try:
-        os.mkdir(_safe_path(path))
+        os.mkdir(safe_path(path))
     except EnvironmentError:
         return False
     else:
@@ -134,7 +134,7 @@ def mkdirs(path):
         success = xbmcvfs.mkdirs(path)
     """
     try:
-        os.makedirs(_safe_path(path))
+        os.makedirs(safe_path(path))
     except EnvironmentError:
         return False
     else:
@@ -159,7 +159,7 @@ def rename(file, newFile):
         success = xbmcvfs.rename(file,newFileName)
     """
     try:
-        os.rename(_safe_path(file), _safe_path(newFile))
+        os.rename(safe_path(file), safe_path(newFile))
     except EnvironmentError:
         return False
     else:
@@ -179,7 +179,7 @@ def rmdir(path):
         success = xbmcvfs.rmdir(path)
     """
     try:
-        os.rmdir(_safe_path(path))
+        os.rmdir(safe_path(path))
     except EnvironmentError:
         return False
     else:
@@ -202,7 +202,7 @@ class File(object):
     """
 
     def __init__(self, filepath, mode=None):
-        self._filepath = _safe_path(filepath)
+        self._filepath = safe_path(filepath)
         self._file = open(self._filepath, mode if mode else "r")
 
     def close(self):
@@ -314,7 +314,7 @@ class Stat(object):
     """
 
     def __init__(self, path):
-        self._stat = os.stat(_safe_path(path))
+        self._stat = os.stat(safe_path(path))
 
     def st_atime(self):
         """

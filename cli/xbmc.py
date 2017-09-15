@@ -14,8 +14,7 @@ import re
 
 # Other imports
 import xbmcgui as _xbmcgui
-import codequickcli.support as _support
-from codequickcli.support import avail_addons, logger
+from codequickcli.support import region_settings, supported_media, avail_addons, logger, plugin_data, kodi_paths
 from codequickcli.utils import ensure_native_str, long_type, normalize_filename
 
 __author__ = 'Team Kodi <http://kodi.tv>'
@@ -418,7 +417,7 @@ def getRegion(id):
 
         date_long_format = xbmc.getRegion('datelong')
     """
-    return _support.region_settings[id]
+    return region_settings[id]
 
 
 def getSkinDir():
@@ -455,7 +454,7 @@ def getSupportedMedia(mediaType):
 
         mTypes = xbmc.getSupportedMedia('video')
     """
-    return _support.supported_media[mediaType]
+    return supported_media[mediaType]
 
 
 def getUserAgent():
@@ -671,7 +670,7 @@ def translatePath(path):
     special_path, path = path.split("/", 3)[2:]
 
     # Fetch realpath from the path mapper
-    realpath = _support.path_map.get(special_path)
+    realpath = kodi_paths.get(special_path)
     if realpath is None:
         raise ValueError("%s is not a valid root dir." % special_path)
     else:
@@ -1155,11 +1154,11 @@ class PlayList(object):
         x.__getitem__(y) <==> x[y]
         :rtype: ListItem
         """
-        return _support.plugin_data["playlist"][item]
+        return plugin_data["playlist"][item]
 
     def __len__(self):
         """x.__len__() <==> len(x)"""
-        return len(_support.plugin_data["playlist"])
+        return len(plugin_data["playlist"])
 
     def add(self, url, listitem=None, index=-1):
         """Adds a new file to the playlist.
@@ -1183,10 +1182,10 @@ class PlayList(object):
 
         if index:
             self.playlistItems.insert(index, listitem)
-            _support.plugin_data["playlist"].insert(index, listitem)
+            plugin_data["playlist"].insert(index, listitem)
         else:
             self.playlistItems.append(listitem)
-            _support.plugin_data["playlist"].append(listitem)
+            plugin_data["playlist"].append(listitem)
 
     def load(self, filename):
         """
@@ -1210,16 +1209,16 @@ class PlayList(object):
 
     def clear(self):
         """Clear all items in the playlist."""
-        _support.plugin_data["playlist"] = []
+        plugin_data["playlist"] = []
         self.playlistItems = []
 
     def shuffle(self):
         """Shuffle the playlist."""
-        random.shuffle(_support.plugin_data["playlist"])
+        random.shuffle(plugin_data["playlist"])
 
     def unshuffle(self):
         """Unshuffle the playlist."""
-        _support.plugin_data["playlist"] = self.playlistItems
+        plugin_data["playlist"] = self.playlistItems
 
     def size(self):
         """Returns the total number of PlayListItems in this playlist."""

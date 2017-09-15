@@ -5,7 +5,8 @@ development time and a more consistent user experience.
 """
 
 # Package imports
-from codequickcli.support import plugin_data as _plugin_data, ensure_unicode as _ensure_unicode
+from codequickcli.support import plugin_data
+from codequickcli.utils import ensure_unicode
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -79,8 +80,8 @@ def addDirectoryItem(handle, url, listitem, isFolder=False, totalItems=0):
         if not xbmcplugin.addDirectoryItem(int(sys.argv[1]), 'F:\\Trailers\\300.mov', listitem, totalItems=50):
             break
     """
-    data = (_ensure_unicode(url), listitem, isFolder)
-    _plugin_data["listitem"].append(data)
+    data = (ensure_unicode(url), listitem, isFolder)
+    plugin_data["listitem"].append(data)
     return True
 
 
@@ -110,7 +111,7 @@ def addDirectoryItems(handle, items, totalItems=0):
         if not xbmcplugin.addDirectoryItems(int(sys.argv[1]), [(url, listitem, False,)]:
             raise
     """
-    _plugin_data["listitem"].extend(items)
+    plugin_data["listitem"].extend(items)
     return True
 
 
@@ -183,7 +184,7 @@ def addSortMethod(handle, sortMethod, label2Mask=""):
 
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
     """
-    _plugin_data["sortmethods"].append(sortMethod)
+    plugin_data["sortmethods"].append(sortMethod)
 
 
 # noinspection PyUnusedLocal
@@ -202,8 +203,8 @@ def endOfDirectory(handle, succeeded=True, updateListing=False, cacheToDisc=True
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), cacheToDisc=False)
     """
-    _plugin_data["succeeded"] = succeeded
-    _plugin_data["updatelisting"] = updateListing
+    plugin_data["succeeded"] = succeeded
+    plugin_data["updatelisting"] = updateListing
 
 
 # noinspection PyUnusedLocal
@@ -241,7 +242,7 @@ def setContent(handle, content):
 
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
     """
-    _plugin_data["contenttype"] = _ensure_unicode(content)
+    plugin_data["contenttype"] = ensure_unicode(content)
 
 
 # noinspection PyUnusedLocal
@@ -257,7 +258,7 @@ def setPluginCategory(handle, category):
 
         xbmcplugin.setPluginCategory(int(sys.argv[1]), 'Comedy')
     """
-    _plugin_data["category"] = _ensure_unicode(category)
+    plugin_data["category"] = ensure_unicode(category)
 
 
 # noinspection PyUnusedLocal
@@ -312,8 +313,8 @@ def setResolvedUrl(handle, succeeded, listitem):
 
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
     """
-    _plugin_data["resolved"] = listitem
-    _plugin_data["succeeded"] = succeeded
+    plugin_data["resolved"] = listitem
+    plugin_data["succeeded"] = succeeded
 
 
 # noinspection PyUnusedLocal
