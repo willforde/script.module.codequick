@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 import logging
+import os
 
 # Kodi imports
 import xbmcaddon
@@ -10,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import CacheProperty, ensure_unicode, ensure_native_str
+from codequick.utils import CacheProperty, ensure_unicode, ensure_native_str, safe_path
 from codequick.support import dispatcher, script_data, addon_data, logger_id
 import urlquick
 
@@ -276,8 +277,16 @@ class Script(object):
         if resp[:10] == "special://":
             resp = xbmc.translatePath(resp)
 
-        # return the property as unicode
-        return resp.decode("utf8") if isinstance(resp, bytes) else resp
+        # Convert response to unicode
+        resp = resp.decode("utf8") if isinstance(resp, bytes) else resp
+
+        # Create any missing directory
+        if key.startswith("profile"):
+            path = safe_path(resp)
+            if not os.path.exists(path):
+                os.mkdir(path)
+
+        return resp
 
     @CacheProperty
     def icon(self):
