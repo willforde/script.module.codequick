@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Offers classes and functions that provide information about the media currently
 playing and that allow manipulation of the media player (such as starting a new song).
@@ -13,8 +14,9 @@ import re
 
 # Other imports
 import xbmcgui as _xbmcgui
-from codequickcli.addondb import db as addon_db
 import codequickcli.support as _support
+from codequickcli.support import avail_addons, logger
+from codequickcli.utils import ensure_native_str, long_type, normalize_filename
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -106,7 +108,7 @@ def convertLanguage(language, format):
     :returns: Converted Language string
     :rtype: str
 
-    example::
+    example::normalize_filename
 
         language = xbmc.convertLanguage(English, xbmc.ISO_639_2)
     """
@@ -211,7 +213,7 @@ def getCleanMovieTitle(path, usefoldername=False):
         'topgun', '' = xbmc.getCleanMovieTitle('/kodi_path/to/topgun/file.mkv', True)
         'topgun', '2017' = xbmc.getCleanMovieTitle('/kodi_path/to/topgun (2017)/file.mkv', True)
     """
-    path = _support.ensure_native_str(path)
+    path = ensure_native_str(path)
     directory, title = os.path.split(path)
     if usefoldername:
         title = os.path.basename(directory)
@@ -293,7 +295,7 @@ def getGlobalIdleTime():
 
         t = xbmc.getGlobalIdleTime()
     """
-    return _support.long_type()
+    return long_type()
 
 
 # noinspection PyUnusedLocal
@@ -394,7 +396,7 @@ def getLocalizedString(id):
 
         locstr = xbmc.getLocalizedString(6)
     """
-    string = addon_db["resource.language.en_gb"].strings[id]
+    string = avail_addons["resource.language.en_gb"].strings[id]
     return string.decode("utf8") if isinstance(string, bytes) else string
 
 
@@ -497,7 +499,7 @@ def log(msg, level=LOGDEBUG):
 
         xbmc.log('This is a test string.', level=xbmc.LOGDEBUG)
     """
-    _support.logger.log(log_levels[level], msg)
+    logger.log(log_levels[level], msg)
 
 
 def makeLegalFilename(filename, fatX=True):
@@ -522,12 +524,12 @@ def makeLegalFilename(filename, fatX=True):
 
         filename = xbmc.makeLegalFilename('F: Age: The Meltdown.avi')
     """
-    filename = _support.ensure_native_str(filename)
+    filename = ensure_native_str(filename)
     if fatX:
         path, filename = os.path.split(filename)
-        return os.path.join(path, _support.normalize_filename(filename))
+        return os.path.join(path, normalize_filename(filename))
     else:
-        return _support.normalize_filename(filename)
+        return normalize_filename(filename)
 
 
 # noinspection PyUnusedLocal
@@ -660,7 +662,7 @@ def translatePath(path):
 
         fpath = xbmc.translatePath('special://masterprofile/script_data')
     """
-    path = _support.ensure_native_str(path)
+    path = ensure_native_str(path)
     # Return the path unmodified if not a special path
     if not path.startswith("special://"):
         return path
@@ -693,7 +695,7 @@ def validatePath(path):
 
         fpath = xbmc.validatePath('Z:\\something/with\\mix/path')
     """
-    path = _support.ensure_native_str(path)
+    path = ensure_native_str(path)
     alt_sep = "\\" if os.sep == "/" else "/"
     return path.replace(alt_sep, os.sep)
 

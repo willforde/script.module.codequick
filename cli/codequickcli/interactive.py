@@ -1,39 +1,38 @@
 # Standard Library Imports
 from __future__ import unicode_literals
 from multiprocessing import Process, Pipe
+import sys
 import re
+import os
 
 # Package imports
-from codequickcli import support, initialize_addon
-from codequickcli.addondb import db as addon_db
+from codequickcli.utils import urlparse, input_raw, ensure_native_str
+from codequickcli.support import initializer
 
 
-def interactive(pluginid, preselect=None):
+def interactive(pluginpath, preselect=None):
     """
     Execute a given kodi plugin
 
-    :param str pluginid: The add-on id
+    :param unicode pluginpath: The path to the plugin to execute.
     :param list preselect: A list of pre selection to make.
     """
-    # TODO: Add support for content_type when plugins have muilti providers e.g. video, music.
+    plugin_id = os.path.basename(pluginpath)
+    callback_url = base_url = u"plugin://{}/".format(plugin_id)
 
-    if pluginid.startswith("plugin://"):
-        addon_info = addon_db[support.urlparse.urlsplit(pluginid).hostname]
-        callback_url = pluginid
-    else:
-        addon_info = addon_db[pluginid]
-        callback_url = "plugin://%s/" % addon_info.id
-
-    # Keep track of parents so we can have a '..' option
+    # Keep track of parents so we can have a '..' option to go back
     parent_stack = []
 
     while callback_url is not None:
+        if not callback_url.startswith(base_url):
+            raise RuntimeError("callback url is outside the scope of this addon: {}".format(callback_url))
+
         # Execute the addon in a separate process
-        data = execute_addon(callback_url, entry_point=addon_info.entry_point)
+        data = execute_addon(pluginpath, callback_url)
         if data["succeeded"] is False:
             print("Failed to execute addon. Please check log.")
             try:
-                support.input_raw("Press enter to continue:")
+                input_raw("Press enter to continue:")
             except KeyboardInterrupt:
                 break
 
@@ -66,31 +65,27 @@ def interactive(pluginid, preselect=None):
             break
 
 
-def execute_addon(callback_url, entry_point):
+def execute_addon(pluginpath, callback_url):
     """
     Executes a add-on in a separate process.
 
+    :param unicode pluginpath: The path to the plugin to execute.
     :param str callback_url: The url containing the route path and callback params.
-    :param str entry_point: The entry point of the addon e.g. addon.py, default.py.
     :returns: A dictionary of listitems and other related results.
     :rtype: dict
     """
-    # The interactive mode will only work with addons that have an entry point e.g. addon.py
-    if entry_point is None:
-        raise RuntimeError("No emtry point specified, An addon entry point must exist within the addon.xml")
-
     # Pips to handle passing of data from addon process to controler
     pipe_recv, pipe_send = Pipe(duplex=True)
 
     # Create the new process that will execute the addon
-    p = Process(target=subprocess, args=[pipe_send, callback_url, entry_point])
+    p = Process(target=subprocess, args=[pipe_send, pluginpath, callback_url])
     p.start()
 
     # Wait till we receive data from the addon process
     while True:
         data = pipe_recv.recv()
         if "prompt" in data:
-            input_data = support.input_raw(data["prompt"])
+            input_data = input_raw(data["prompt"])
             pipe_recv.send(input_data)
         else:
             break
@@ -99,19 +94,25 @@ def execute_addon(callback_url, entry_point):
     return data
 
 
-def subprocess(pipe_send, callback_url, entry_point):
+def subprocess(pipe_send, pluginpath, callback_url):
     """
     Imports and executes the addon
 
     :param pipe_send: The communication object used for sending data back to the initiator.
+    :param unicode pluginpath: The path to the plugin to execute.
     :param str callback_url: The url containing the route path and callback params.
-    :param str entry_point: The entry point of the addon e.g. addon.py, default.py.
     """
-    initialize_addon(callback_url)
+    addon_data = initializer(pluginpath)
     support.data_pipe = pipe_send
 
+    # TODO: Add support for content_type when plugins have muilti providers e.g. video, music.
+
+    # Splits callback into route selector & params, patch sys.argv to emulate what is expected
+    scheme, pluginid, selector, params, _ = urlparse.urlsplit(ensure_native_str(callback_url))
+    sys.argv = (urlparse.urlunsplit([scheme, pluginid, selector, "", ""]), -1, "?%s" % params if params else "")
+
     try:
-        addon = __import__(entry_point)
+        addon = __import__(addon_data.entry_point)
         addon.run()
     finally:
         # Send back the results from the addon
@@ -182,7 +183,7 @@ def user_choice(items):
     while True:
         try:
             # Ask user for selection, Returning None if user entered nothing
-            choice = support.input_raw(prompt)
+            choice = input_raw(prompt)
             if not choice:
                 return None
 

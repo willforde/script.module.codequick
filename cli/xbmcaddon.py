@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Offers classes and functions that manipulate the add-on settings, information and localization.
 """
@@ -6,8 +7,8 @@ Offers classes and functions that manipulate the add-on settings, information an
 import os
 
 # Package imports
-from codequickcli import addondb
-from codequickcli.support import ensure_unicode, unicode_type
+from codequickcli.support import avail_addons
+from codequickcli.utils import ensure_native_str, ensure_unicode
 
 __author__ = 'Team Kodi <http://kodi.tv>'
 __credits__ = 'Team Kodi'
@@ -40,7 +41,11 @@ class Addon(object):
             id = os.path.basename(os.getcwd())
             if not (id.startswith("plugin.") or id.startswith("script.")):
                 id = "script.module.codequick"
-        self._data = addondb.db[id]
+
+        if id in avail_addons:
+            self._data = avail_addons.db[id]
+        else:
+            raise RuntimeError("unknown addon id '{}'".format(id))
 
     def getAddonInfo(self, id):
         """
@@ -60,7 +65,7 @@ class Addon(object):
 
             version = self.Addon.getAddonInfo('version')
         """
-        return getattr(self._data, id, "")
+        return ensure_native_str(getattr(self._data, id, ""))
 
     def getLocalizedString(self, id):
         """
@@ -74,7 +79,7 @@ class Addon(object):
 
             locstr = self.Addon.getLocalizedString(32000)
         """
-        return ensure_unicode(self._data.strings[id])
+        return self._data.strings[id]
 
     def getSetting(self, id):
         """
@@ -88,7 +93,7 @@ class Addon(object):
 
             apikey = self.Addon.getSetting('apikey')
         """
-        return ensure_unicode(self._data.settings[id])
+        return self._data.settings[id]
 
     def getSettingBool(self, id):
         """
@@ -166,7 +171,8 @@ class Addon(object):
 
             self.Addon.setSetting(id='username', value='teamkodi')
         """
-        self._data.settings[id] = ensure_unicode(value)
+        self._data.settings[id] = value
+        return True
 
     def setSettingBool(self, id, value):
         """
@@ -252,8 +258,5 @@ class Addon(object):
 
             self.Addon.setSettingString(id='username', value='teamkodi')
         """
-        if isinstance(value, (str, unicode_type)):
-            self.setSetting(id, value)
-            return True
-        else:
-            return False
+        self._data.settings[id] = ensure_unicode(value)
+        return True
