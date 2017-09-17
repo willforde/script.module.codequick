@@ -234,4 +234,7 @@ def ensure_unicode(data, encoding="utf8"):
     :returns: The given string as unicode.
     :rtype: unicode
     """
-    return data.decode(encoding) if isinstance(data, bytes) else unicode_type(data)
+    if isinstance(data, bytes):
+        return data.decode(encoding)
+    else:
+        return unicode_type(data)
