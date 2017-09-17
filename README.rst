@@ -4,4 +4,4 @@
 CodeQuick
 ---------
 
-WIP
+Kodi addon framework: WIP
