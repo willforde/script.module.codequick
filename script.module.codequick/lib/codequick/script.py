@@ -15,6 +15,8 @@ from codequick.utils import CacheProperty, ensure_unicode, ensure_native_str, sa
 from codequick.support import dispatcher, script_data, addon_data, logger_id
 import urlquick
 
+__all__ = ["Script", "Settings"]
+
 # Logger used by the addons
 addon_logger = logging.getLogger(logger_id)
 
@@ -118,9 +120,9 @@ class Script(object):
     :cvar ERROR: Error logging level.
     :cvar WARNING: Warning logging level.
     :cvar CRITICAL: Critical logging level.
-    :cvar NOTIFY_WARNING: Notification Warning icon.
-    :cvar NOTIFY_ERROR: Notification Error icon.
-    :cvar NOTIFY_INFO: Notification Info icon.
+    :cvar NOTIFY_WARNING: Warning notification icon.
+    :cvar NOTIFY_ERROR: Error notification icon.
+    :cvar NOTIFY_INFO: Info notification icon.
     """
     # Set the listitem types to that of a script
     is_playable = False

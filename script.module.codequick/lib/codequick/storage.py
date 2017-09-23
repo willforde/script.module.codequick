@@ -3,13 +3,19 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 from hashlib import sha1
-import json
 import sys
 import os
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 # Package imports
 from codequick.script import Script
 from codequick.utils import ensure_unicode
+
+__all__ = ["PersistentDict", "PersistentList"]
 
 # The addon profile directory
 profile_dir = Script.get_info("profile")
@@ -19,27 +25,25 @@ class _PersistentBase(object):
     """
     Base class to handle persistent file handling.
 
-    :param filename: Filename of persistence storage file.
-    :type filename: str or unicode
-
-    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
-    :type data_dir: str or unicode
-
-    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
-    :type read_only: bool
+    :param name: Filename of persistence storage file.
+    :type name: str or unicode
     """
 
-    # Todo: Remvoe data_dir parameter and build it into filename, only use data_dir when filename is a relitive path
-
-    def __init__(self, filename, data_dir=None, read_only=False):
+    def __init__(self, name):
         super(_PersistentBase, self).__init__()
-        self._read_only = read_only
         self._stream = None
         self._hash = None
 
-        # Ensure that filepath is either bytes or unicode depending on platform type, windows, linux or bsd.
-        data_dir = ensure_unicode(data_dir) if data_dir else profile_dir
-        self._filepath = os.path.join(data_dir, ensure_unicode(filename))
+        # Filename is already a fullpath
+        if os.path.sep in name:
+            self._filepath = ensure_unicode(name)
+            data_dir = os.path.dirname(self._filepath)
+        else:
+            # Filename must be relative, joining profile directory with filename
+            self._filepath = os.path.join(profile_dir, ensure_unicode(name))
+            data_dir = profile_dir
+
+        # Ensure that filepath is bytes when platform type is linux/bsd
         if not sys.platform.startswith("win"):
             self._filepath = self._filepath.encode("utf8")
             data_dir = data_dir.encode("utf8")
@@ -52,27 +56,23 @@ class _PersistentBase(object):
         """Load in existing data from disk."""
         # Load storage file if exists
         if os.path.exists(self._filepath):
-            if self._read_only:
-                file_obj = open(self._filepath, "rb")
-                content = file_obj.read()
-                file_obj.close()
-            else:
-                self._stream = file_obj = open(self._filepath, "rb+")
-                content = file_obj.read()
+            self._stream = file_obj = open(self._filepath, "rb+")
+            content = file_obj.read()
 
             # Calculate hash of current file content
             self._hash = sha1(content).hexdigest()
 
             # Load content and update storage
-            return json.loads(content)
+            return pickle.loads(content)
 
     def flush(self):
-        """Syncrnize data to disk."""
-        if self._read_only:
-            return None
+        """
+        Syncrnize data back to disk.
 
+        Data will only be written to disk if contents has changed.
+        """
         # Serialize the storage data
-        content = json.dumps(self, indent=4, separators=(",", ":"))
+        content = pickle.dumps(self, protocol=2)
         current_hash = sha1(content).hexdigest()
 
         # Compare saved hash with current hash, to detect if content has changed
@@ -90,8 +90,7 @@ class _PersistentBase(object):
             self._stream.flush()
 
     def close(self):
-        """Synchronize and close file object."""
-        self.flush()
+        """Close file object."""
         if self._stream:
             self._stream.close()
             self._stream = None
@@ -105,25 +104,29 @@ class _PersistentBase(object):
 
 class PersistentDict(_PersistentBase, dict):
     """
-    Persistent storage with a dictionary interface.
+    Persistent storage with a :class:`dictionary<dict>` like interface.
 
-    Json is used as the backend to serialize the data to disk.
-    This class is also designed as a context manager, to enable the use of the 'with' statement.
+    This class inherits all methods from the build-in data type :class:`dict`.
 
-    .. note:: Sense json is used as the backend, all objects within this dict, must be json serializable.
+    ``name`` can be the filename of a file, or the full path to a file.
+    The add-on profile directory will be the default location for files, unless a full path is given.
 
-    :param filename: Filename of persistence storage file.
-    :type filename: str or unicode
+    .. note:: This class is also designed as a context manager.
 
-    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
-    :type data_dir: str or unicode
+    :param name: Filename or path to storage file.
+    :type name: str or unicode
 
-    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
-    :type read_only: bool
+    :Example:
+        >>> db = PersistentDict("dictfile.pickle")
+        >>> db["testdata"] = "testvalue"
+        >>> print(db)
+        {"testdata": "testvalue"}
+        >>> db.flush()
+        >>> db.close()
     """
 
-    def __init__(self, filename, data_dir=None, read_only=False):
-        super(PersistentDict, self).__init__(filename, data_dir, read_only)
+    def __init__(self, name):
+        super(PersistentDict, self).__init__(name)
         current_data = self._load()
         if current_data:
             self.update(current_data)
@@ -131,25 +134,30 @@ class PersistentDict(_PersistentBase, dict):
 
 class PersistentList(_PersistentBase, list):
     """
-    Persistent storage with a list interface.
+    Persistent storage with a :class:`list` like interface.
 
-    Json is used as the backend to serialize the data to disk.
-    This class is also designed as a context manager, to enable the use of the 'with' statement.
+    This class inherits all methods from the build-in data type :class:`list`.
 
-    .. note:: Sence json is used as the backend, all objects within this dict, must be json serializable.
+    ``name`` can be the filename of a file, or the full path to a file.
+    The add-on profile directory will be the default location for files, unless a full path is given.
 
-    :param filename: Filename of persistence storage file.
-    :type filename: str or unicode
+    .. note:: This class is also designed as a context manager.
 
-    :param data_dir: [opt] Directory where persistence storage file is located. Defaults to profile directory.
-    :type data_dir: str or unicode
+    :param name: Filename or path to storage file.
+    :type name: str or unicode
 
-    :param read_only: [opt] Open the file in read only mode, Disables writeback. (default => False)
-    :type read_only: bool
+    :Example:
+        >>> db = PersistentList("listfile.pickle")
+        >>> db.append("testvalue")
+        >>> db.extend(["test1", "test2"])
+        >>> print(db)
+        ["testvalue", "test1", "test2"]
+        >>> db.flush()
+        >>> db.close()
     """
 
-    def __init__(self, filename, data_dir=None, read_only=False):
-        super(PersistentList, self).__init__(filename, data_dir, read_only)
+    def __init__(self, name):
+        super(PersistentList, self).__init__(name)
         current_data = self._load()
         if current_data:
             self.extend(current_data)

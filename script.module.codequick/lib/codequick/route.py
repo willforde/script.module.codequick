@@ -14,6 +14,8 @@ from codequick.script import Script
 from codequick.support import logger_id, auto_sort
 from codequick.utils import ensure_native_str
 
+__all__ = ["Route"]
+
 # Logger specific to this module
 logger = logging.getLogger("%s.route" % logger_id)
 

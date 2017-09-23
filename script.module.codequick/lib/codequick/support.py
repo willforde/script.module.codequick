@@ -121,14 +121,17 @@ class Route(object):
         :returns: A list of tuples consisten of ('arg name', 'arg value)'.
         :rtype: list
         """
+        callback_args = self.arg_names()[1:]
+        return zip(callback_args, args)
+
+    def arg_names(self):
+        """Return a list of argument names, positional and keyword arguments."""
         try:
             # noinspection PyUnresolvedReferences
-            callback_args = inspect.getfullargspec(self.callback).args[1:]
+            return inspect.getfullargspec(self.callback).args
         except AttributeError:
             # "inspect.getargspec" is deprecated in python 3
-            callback_args = inspect.getargspec(self.callback).args[1:]
-
-        return zip(callback_args, args)
+            return inspect.getargspec(self.callback).args
 
     def unittest_caller(self, *args, **kwargs):
         """

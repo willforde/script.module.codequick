@@ -12,6 +12,7 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+from addondev import initializer
 import sys
 import os
 
@@ -19,6 +20,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../script.module.codequick/lib'))
+initializer(os.path.abspath('../script.module.codequick'))
 
 
 # -- General configuration ------------------------------------------------
@@ -168,4 +170,4 @@ texinfo_documents = [
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/2', None)}

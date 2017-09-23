@@ -25,13 +25,29 @@ PY3 = sys.version_info >= (3, 0)
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
 
+__all__ = ["CacheProperty", "keyboard", "parse_qs", "urljoin_partial", "strip_tags",
+           "safe_path", "ensure_bytes", "ensure_native_str", "ensure_unicode"]
+
 
 class CacheProperty(object):
     """
-    Converts a class method into a property.
+    Decorator that converts a class method into a class property and caches the response on first access.
 
-    When property is accessed for the first time, the result is computed and returned.
-    The class property is then replaced with an instance attribute with the computed result.
+    When the class property is accessed for the first time, the result is computed and returned.
+    The property is then replaced with an instance attribute with the computed result.
+
+    :example:
+        >>> import random
+        >>> class Test(object):
+        >>>     @CacheProperty
+        >>>     def data_id(self):
+        >>>         return random.random()
+        >>>
+        >>> obj = Test()
+        >>> print(obj.data_id)
+        0.39391705700202373
+        >>> print(obj.data_id)
+        0.39391705700202373
     """
 
     def __init__(self, func):
@@ -50,15 +66,15 @@ class CacheProperty(object):
 
 def keyboard(heading, default="", hidden=False):
     """
-    Show keyboard dialog for user input.
+    Show a keyboard dialog with default text heading and hidden input flag if supplied.
 
     :param heading: Keyboard heading.
-    :type heading: bytes or unicode
+    :type heading: str or unicode
 
     :param default: [opt] Default text.
-    :type default: bytes or unicode
+    :type default: str or unicode
 
-    :param hidden: [opt] True for hidden text entry.
+    :param hidden: [opt] ``True`` for hidden text entry.
     :type hidden: bool
 
     :return: Returns the user input as unicode.
@@ -89,22 +105,28 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     are unicode values for each name
 
     The optional argument keep_blank_values is a flag indicating whether blank values in percent-encoded queries
-    should be treated as blank strings. A true value indicates that blanks should be retained as blank strings.
-    The default false value indicates that blank values are to be ignored and treated as if they were not included.
+    should be treated as blank strings. A ``True`` value indicates that blanks should be retained as blank strings.
+    The default ``False`` value indicates that blank values are to be ignored and treated as if they were not included.
 
     The optional argument strict_parsing is a flag indicating what to do with parsing errors.
-    If false (the default), errors are silently ignored. If true, errors raise a ValueError exception.
+    If ``False`` (the default), errors are silently ignored. If ``True``, errors raise a ValueError exception.
 
     :param qs: Percent-encoded query string to be parsed, or a url with a query string.
-    :type qs: bytes or unicode
+    :type qs: str or unicode
 
-    :param bool keep_blank_values: True to keep blank values, else discard.
-    :param bool strict_parsing: True to raise ValueError if there are parsing errors, else silently ignore.
+    :param bool keep_blank_values: ``True`` to keep blank values, else discard.
+    :param bool strict_parsing: ``True`` to raise ValueError if there are parsing errors, else silently ignore.
 
-    :return: Returns a dict of key/value pairs with the values as unicode.
+    :return: Returns a dict of key/value pairs, with all keys and values as unicode.
     :rtype: dict
 
     :raises ValueError: If duplicate query field names exists.
+
+    :example:
+        >>> parse_qs("http://example.com/path?q=search&safe=no")
+        {u"q": u"search", u"safe": u"no"}
+        >>> parse_qs(u"q=search&safe=no")
+        {u"q": u"search", u"safe": u"no"}
     """
     params = {}
     qs = ensure_native_str(qs)
@@ -131,25 +153,25 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
 
 def urljoin_partial(base_url):
     """
-    Construct a full (absolute) URL by combining a base URL with another URL. Informally,
-    this uses components of the base URL, in particular the addressing scheme, the network location and (part of)
-    the path, to provide missing components in the relative URL.
+    Construct a full (absolute) URL by combining a base URL with another URL.
+
+    This is useful when parsing html as the majority of links would be relative links.
+
+    Informally, this uses components of the base URL, in particular the addressing scheme,
+    the network location and (part of) the path, to provide missing components in the relative URL.
 
     Returns a new partial object which when called will pass base_url to urlparse.urljoin along with the
     supplied relative URL.
 
-    :type base_url: bytes or unicode
+    :type base_url: str or unicode
     :param base_url: The absolute url to use as the base.
     :returns: A partial function that accepts a relative url and returns a full absolute url.
     
-    .. Example:
-        
-        url_constructor = urljoiner("https://google.ie/")
-        
-        url_constructor("/path/to/something")
+    :example:
+        >>> url_constructor = urljoin_partial("https://google.ie/")
+        >>> url_constructor("/path/to/something")
         "https://google.ie/path/to/something"
-
-        url_constructor("/gmail")
+        >>> url_constructor("/gmail")
         "https://google.ie/gmail"
     """
     base_url = ensure_unicode(base_url)
@@ -169,10 +191,14 @@ def urljoin_partial(base_url):
 
 def strip_tags(html):
     """
-    Strips out html code and return plan text.
+    Strips out html tags and return plain text.
 
     :param html: HTML with text to extract.
     :type html: bytes or unicode
+
+    :example:
+        >>> strip_tags('<a href="http://example.com/">I linked to <i>example.com</i></a>')
+        "I linked to example.com"
     """
     # This will fail under python3 when html is of type bytes
     # This is ok sence you will have much bigger problems if you are still using bytes on python3
@@ -181,24 +207,29 @@ def strip_tags(html):
 
 def safe_path(path, encoding="utf8"):
     """
-    Convert path into a encoding that best suits the platform os.
-    Unicode when on windows, utf8 when on linux/bsd.
+    Returns path as type ``bytes`` or ``unicode`` base on platform os.
 
-    :type path: bytes or unicode
+    Unicode when on windows, bytes when on linux/bsd.
+
+    This is needed because a path operation may fail on windows if path is of type ``bytes`` and it's contains
+    non ascii characters. Same if path is of type ``unicode`` on linux and locale is set to
+    'C'(ascii) instead of something like 'UTF-8'.
+
+    :type path: str or unicode
     :param path: The path to convert.
-    :param encoding: The encoding to use when needed.
-    :return: Returns the path as unicode or utf8 encoded string.
+    :param str encoding: [opt] The encoding to use when needed.
+    :return: Returns the path as unicode or bytes base on platform os.
     """
     return ensure_unicode(path, encoding) if sys.platform.startswith("win") else ensure_bytes(path, encoding)
 
 
 def ensure_bytes(data, encoding="utf8"):
     """
-    Ensures that given string is returned as a UTF-8 encoded string.
+    Ensures that given string is returned as type ``bytes``.
 
     :param data: String to convert if needed.
-    :param encoding: The encoding to use when needed.
-    :returns: The given string as UTF-8.
+    :param str encoding: [opt] The encoding to use if needed..
+    :returns: The given string as type ``bytes``
     :rtype: bytes
     """
     return data if isinstance(data, bytes) else unicode_type(data).encode(encoding)
@@ -206,11 +237,11 @@ def ensure_bytes(data, encoding="utf8"):
 
 def ensure_native_str(data, encoding="utf8"):
     """
-    Ensures that given string is returned as a native str type, bytes on python2 or unicode on python3.
+    Ensures that given string is returned as a native ``str`` type, ``bytes`` on python2, ``unicode`` on python3.
 
     :param data: String to convert if needed.
-    :param encoding: The encoding to use when needed.
-    :returns: The given string as UTF-8.
+    :param str encoding: [opt] The encoding to use if needed..
+    :returns: The given string as a native ``str`` type.
     :rtype: str
     """
     if isinstance(data, str):
@@ -227,11 +258,11 @@ def ensure_native_str(data, encoding="utf8"):
 
 def ensure_unicode(data, encoding="utf8"):
     """
-    Ensures that given string is return as a unicode string.
+    Ensures that given string is return as type ``unicode``.
 
     :param data: String to convert if needed.
-    :param encoding: The encoding to use when needed.
-    :returns: The given string as unicode.
+    :param str encoding: [opt] The encoding to use if needed..
+    :returns: The given string as type ``unicode``.
     :rtype: unicode
     """
     if isinstance(data, bytes):

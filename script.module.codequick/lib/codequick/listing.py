@@ -17,6 +17,8 @@ from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
 from codequick.utils import safe_path, ensure_unicode, ensure_native_str, unicode_type, long_type
 
+__all__ = ["Listitem", "Context", "Stream", "Property", "Info", "Art", "Params"]
+
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
 
@@ -83,7 +85,19 @@ NEXT_PAGE = 33078
 SEARCH = 137
 
 
-class CommonDict(MutableMapping):
+class Params(MutableMapping):
+    """
+    Dictionary like object for parameters that will be passed to the callback object.
+
+    This class inherits all methods from :class:`collections.MutableMapping`.
+
+    .. note:: All parameters have to be json serializable. i.e. str, list, dict, bool.
+
+    :example:
+        >>> item = Listitem()
+        >>> item.params['videoid'] = 'kqmdIV_gBfo'
+    """
+
     def __init__(self):
         self.raw_dict = {}
 
@@ -134,7 +148,24 @@ class CommonDict(MutableMapping):
         return "%s(%r)" % (self.__class__, self.raw_dict)
 
 
-class Art(CommonDict):
+class Art(Params):
+    """
+    This class inherits all methods from :class:`collections.MutableMapping`.
+
+    This is a dictionary like object that allows you to add various image values. e.g. thumb, fanart.
+
+    .. seealso::
+
+        The full list of art values, can be found here.\n
+        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
+
+    Usage::
+
+        item.art['thumb"] = 'http://www.example.ie/image.jpg'
+        item.art['fanart"] = 'http://www.example.ie/fanart.jpg'
+        item.art.local_thumb('local_art.png')
+    """
+
     def __init__(self, listitem):
         super(Art, self).__init__()
         self._listitem = listitem
@@ -191,7 +222,31 @@ class Art(CommonDict):
         self._listitem.setArt(self.raw_dict)
 
 
-class Info(CommonDict):
+class Info(Params):
+    """
+    This class inherits all methods from :class:`collections.MutableMapping`.
+
+    This is a dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
+
+    Sort methods will be automaticly selected and the object type will
+    be converted to what is required for each infolabel.
+
+    'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
+    'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
+
+    .. note:: Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
+    .. note:: Any unicode values will be converted to 'UTF-8' encoded strings.
+
+    The full list of listitem infoLabels, can be found at.
+    https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
+
+    Examples::
+
+        item.info['genre'] = 'Science Fiction'
+        item.info['size'] = 256816
+        item.info.date('june 27, 2017', '%B %d, %Y'))
+    """
+
     def __init__(self, listitem, ctype):
         super(Info, self).__init__()
         self._listitem = listitem
@@ -292,7 +347,21 @@ class Info(CommonDict):
         self._listitem.setInfo(self._ctype, self.raw_dict)
 
 
-class Property(CommonDict):
+class Property(Params):
+    """
+    This class inherits all methods from :class:`collections.MutableMapping`.
+
+    This is a dictionary like object that allows you to add listitem properties. e.g. StartOffset
+
+    Some of these are treated internally by Kodi, such as the 'StartOffset' property,
+    which is the offset in seconds at which to start playback of an item. Others may be used
+    in the skin to add extra information, such as 'WatchedCount' for tvshow items.
+
+    Examples::
+
+        item.property['StartOffset'] = '256.4'
+    """
+
     def __init__(self, listitem):
         super(Property, self).__init__()
         self._listitem = listitem
@@ -315,7 +384,30 @@ class Property(CommonDict):
             self._listitem.setProperty(key, value)
 
 
-class Stream(CommonDict):
+class Stream(Params):
+    """
+    This class inherits all methods from :class:`collections.MutableMapping`.
+
+    This is a dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
+
+    Stream Values::
+
+        video_codec        : string (h264)
+        aspect             : float (1.78)
+        width              : integer (1280)
+        height             : integer (720)
+        channels           : integer (2)
+        audio_codec        : string (AAC)
+        audio_language     : string (en)
+        subtitle_language  : string (en)
+
+    Example::
+
+        item.stream['video_codec'] = 'h264'
+        item.stream['audio_codec'] = 'aac'
+        item.stream.hd(2, aspect=1.78) # 1080p
+    """
+
     def __init__(self, listitem):
         super(Stream, self).__init__()
         self._listitem = listitem
@@ -397,6 +489,18 @@ class Stream(CommonDict):
 
 
 class Context(list):
+    """
+    This class inherits all methods from the build-in data type :class:`list`.
+
+    This is a list containing tuples, consisting of label/function pairs.
+
+    label: str or unicode - item's label.
+    function: str or unicode - any built-in function to perform e.g. XBMC.Container.Update
+
+    The full list of built-in functions can be found here.
+    http://kodi.wiki/view/List_of_Built_In_Functions
+    """
+
     def __init__(self, listitem):
         super(Context, self).__init__()
         self._listitem = listitem
@@ -435,155 +539,48 @@ class Listitem(object):
     The list item control is used for creating item lists in Kodi.
 
     :param str ctype: Type of content been listed. e.g. video, music, pictures or game.
-
-    Usage::
-
-        for elem in root_elem.iterfind("li"):
-            a_tag = elem.find("a")
-
-            # Create new listitem object
-            item = ListItem()
-
-            # Set label of listitem
-            item.set_label(a_tag.text)
-
-            # Set thumbnail image
-            item.art["thumb"] = elem.find("img").get("src")
-
-            # Set callback function with arguments
-            item.set_callback(some_callback_func, cat=a_tag.get("href"))
-
-            # Return the listitem object
-            yield item
     """
 
     def __init__(self, ctype="video"):
         self.callback = ""
 
+        #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
-        """The underlining kodi listitem object, for advanced use."""
 
-        self.params = CommonDict()
-        """
-        Dictionary like object for parameters that will be passed to the callback object.
-        
-        Parameters can be any json serializable object e.g. str, list, dict.
-        
-        Example::
-        
-            item.params['videoid'] = 'kqmdIV_gBfo'
-        """
+        #: :class:`listing.Params<codequick.listing.Params>` object for adding callback parameters.
+        self.params = Params()
 
+        #: :class:`listing.Info<codequick.listing.Info>` object for adding infoLabels.
         self.info = Info(listitem, ctype)
-        """
-        :class:`Info` object for adding infoLabels:
-        
-        This is a dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
-        
-        Sort methods will be automaticly selected and the object type will
-        be converted to what is required for each infolabel.
-        
-        'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
-        'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
 
-        .. note:: Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
-        .. note:: Any unicode values will be converted to 'UTF-8' encoded strings.
-
-        The full list of listitem infoLabels, can be found at.
-        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
-        
-        Examples::
-        
-            item.info['genre'] = 'Science Fiction'
-            item.info['size'] = 256816
-            item.info.date('june 27, 2017', '%B %d, %Y'))
-        """
-
+        #: :class:`listing.Art<codequick.listing.Art>` object for adding listitem art.
         self.art = Art(listitem)
-        """
-        :class:`Art` object for adding listitem's art.
 
-        This is a dictionary like object that allows you to add various image values. e.g. thumb, fanart.
-
-        .. seealso::
-        
-            The full list of art values, can be found here.\n
-            https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
-
-        Usage::
-        
-            item.art['thumb"] = 'http://www.example.ie/image.jpg'
-            item.art['fanart"] = 'http://www.example.ie/fanart.jpg'
-            item.art.local_thumb('local_art.png')
-        """
-
+        #: :class:`listing.Stream<codequick.listing.Stream>` object for adding stream details.
         self.stream = Stream(listitem)
-        """
-        :class:`codequick.listing.Stream` object for adding stream details.
 
-        This is a dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
-        
-        Stream Values::
-        
-            video_codec        : string (h264)
-            aspect             : float (1.78)
-            width              : integer (1280)
-            height             : integer (720)
-            channels           : integer (2)
-            audio_codec        : string (AAC)
-            audio_language     : string (en)
-            subtitle_language  : string (en)
-        
-        Example::
-        
-            item.stream['video_codec'] = 'h264'
-            item.stream['audio_codec'] = 'aac'
-            item.stream.hd(2, aspect=1.78) # 1080p
-        """
-
+        #: :class:`listing.Property<codequick.listing.Property>` object for adding listitem properties.
         self.property = Property(listitem)
-        """
-        :class:`Property` object for adding listitem properties.
 
-        This is a dictionary like object that allows you to add listitem properties. e.g. StartOffset
-        
-        Some of these are treated internally by Kodi, such as the 'StartOffset' property,
-        which is the offset in seconds at which to start playback of an item. Others may be used
-        in the skin to add extra information, such as 'WatchedCount' for tvshow items.
-
-        Examples::
-        
-            item.property['StartOffset'] = '256.4'
-        """
-
+        #: :class:`listing.Context<codequick.listing.Context>` object for context menu items.
         self.context = Context(listitem)
-        """
-        :class:`list` object for context menu items.
-
-        This is a list containing tuples, consisting of label/function pairs.
-        
-        label: str or unicode - item's label.
-        function: str or unicode - any built-in function to perform e.g. XBMC.Container.Update
-
-        The full list of built-in functions can be found here.
-        http://kodi.wiki/view/List_of_Built_In_Functions
-        """
 
     @property
     def label(self):
-        """The listitem label."""
+        """
+        The listitem label property.
+
+        Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
+
+        :example:
+            >>> item = Listitem()
+            >>> item.label = "Video Title"
+        """
         return ensure_unicode(self.listitem.getLabel())
 
     @label.setter
     def label(self, label):
-        """
-        Sets the listitem's label.
-
-        Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
-
-        :param label: The label of the listitem.
-        :type label: str or unicode
-        """
+        """Sets the listitem's label."""
         self.listitem.setLabel(label)
         unformatted_label = strip_formatting("", label)
         self.params["_title_"] = unformatted_label
@@ -593,10 +590,9 @@ class Listitem(object):
         """
         Sets the callback function or playable path.
 
-        Arguments can be any json serializable object e.g. str, list, dict.
+        .. note:: All parameters have to be json serializable. i.e. str, list, dict, bool.
         
         :param callback: The function to callback or a playable path to a video.
-        :type callback: :class:`types.FunctionType` or :class:`codequick.Base` or str or unicode
         :param args: Positional arguments that will be passed to callback.
         :param kwargs: Keyword arguments that will be passed to callback.
         """
@@ -657,7 +653,7 @@ class Listitem(object):
         """
         Constructor to create a listitem.
 
-        This method will create and populate a listitem from a set of listitem values.
+        This method will create and populate a listitem from a set of given values.
 
         :type label: str or unicode
         :param label: The listitem's label.
@@ -694,9 +690,16 @@ class Listitem(object):
     @classmethod
     def next_page(cls, **params):
         """
-        A Listitem constructor for adding Next Page listitem.
+        Constructor for adding Next Page.
 
-        :param params: [opt] Keyword arguments of params that will be added to the current set of callback params.
+        Add a listitem that will link to the next page of items. The current running callback will be called with
+        all of the params that are given here.
+
+        :param params: Keyword arguments of params that will be added to the current set of callback params.
+
+        :example:
+            >>> item = Listitem()
+            >>> item.next_page(url="http://example.com/videos?page2")
         """
         # Add support params to callback params
         params["_updatelisting_"] = True
@@ -714,13 +717,46 @@ class Listitem(object):
         return item
 
     @classmethod
+    def youtube(cls, content_id, label=None, enable_playlists=True):
+        """
+        Constructor to add a youtube channel to addon.
+
+        This listitem will list all videos from a youtube channel or playlist. All videos also have a
+        related videos option via context menu. If content_id is a channel id and enable_playlists
+        is ``True`` then a link to the channel playlists will also be added to the list of videos.
+
+        :param content_id: Channel id or playlist id of video content.
+        :type content_id: str or unicode
+
+        :param label: [opt] Label of listitem. (default => 'All Videos').
+        :type label: str or unicode
+
+        :param bool enable_playlists: [opt] Set to ``False`` to disable linking to channel playlists.
+                                      (default => ``True``)
+
+        :example:
+            >>> item = Listitem()
+            >>> item.youtube("UC4QZ_LsYcvcq7qOsOhpAX4A")
+        """
+        # Youtube exists, Creating listitem link
+        item = cls()
+        item.label = label if label else Script.localize(ALLVIDEOS)
+        item.art.global_thumb("videos.png")
+        item.params["contentid"] = content_id
+        item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
+        item.set_callback(YTPlaylist)
+        return item
+
+    @classmethod
     def recent(cls, callback, **params):
         """
-        A Listitem constructor for adding Recent Folder listitem.
+        Constructor for adding Recent Folder.
+
+        This is really more of a convenience method that creates the listitem with name, thumbnail and plot
+        already preset for the user.
 
         :param callback: The callback function.
         :type callback: :class:`types.FunctionType`
-
         :param params: Keyword arguments of parameters that will be passed to the callback function.
         """
         # Create listitem instance
@@ -734,42 +770,26 @@ class Listitem(object):
     @classmethod
     def search(cls, callback, **params):
         """
-        A Listitem constructor to add saved search Support to addon.
+        Constructor to add saved search Support to addon.
+
+        This will first link to a sub folder that lists all saved search terms.
+        From here, search terms can be created or removed.
+        When a selection is made, the callback function that was given will be executed with all params forwarded on.
+        Except with one extra param, 'search_query' witch is the search term that was selected.
 
         :param callback: Function that will be called when the listitem is activated.
         :param params: Keyword arguments that will be farwarded on to callback.
-
-        Example::
-
-            Listitem.search(video_search, "https://www.google.com/?q=%s")
+        :raises ValueError: If the given callback function does not have a 'search_query' parameter.
         """
+        # Check that callback function has required parameter(search_query).
+        if "search_query" not in callback.route.arg_names():
+            raise ValueError("callback function is missing required argument: 'search_query'")
+
         item = cls()
         item.label = u"[B]%s[/B]" % Script.localize(SEARCH)
         item.art.global_thumb("search.png")
         item.info["plot"] = "Search for video content."
         item.set_callback(SavedSearches, route=callback.route.path, **params)
-        return item
-
-    @classmethod
-    def youtube(cls, content_id, label=None, enable_playlists=True):
-        """
-        A Listitem constructor to add a youtube channel to addon.
-
-        :param content_id: Channel id or playlist id of video content.
-        :type content_id: str or unicode
-
-        :param label: [opt] Label of listitem. (default => 'All Videos').
-        :type label: str or unicode
-
-        :param bool enable_playlists: [opt] Set to True to enable linking to channel playlists. (default => True)
-        """
-        # Youtube exists, Creating listitem link
-        item = cls()
-        item.label = label if label else Script.localize(ALLVIDEOS)
-        item.art.global_thumb("videos.png")
-        item.params["contentid"] = content_id
-        item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
-        item.set_callback(YTPlaylist)
         return item
 
 

@@ -15,6 +15,8 @@ from codequick.script import Script
 from codequick.support import build_path, logger_id
 from codequick.utils import unicode_type, ensure_unicode
 
+__all__ = ["Resolver"]
+
 # Logger specific to this module
 logger = logging.getLogger("%s.resolver" % logger_id)
 

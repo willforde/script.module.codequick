@@ -27,7 +27,7 @@ class SavedSearches(Route):
         super(SavedSearches, self).__init__()
 
         # Persistent list of currently saved searches
-        self.search_db = PersistentList(u"_searches_.json")
+        self.search_db = PersistentList(u"_searches.pickle")
 
     def run(self, remove=None, search=False, **extras):
         """List all saved searches."""
@@ -70,9 +70,8 @@ class SavedSearches(Route):
         yield search_item
 
         # Set the callback function to the route that was given
-        callback = dispatcher[extras["route"]].callback
         callback_params = extras.copy()
-        del callback_params["route"]
+        callback = dispatcher[callback_params.pop("route")].callback
 
         # Prefetch the localized string for the context menu lable
         str_remove = self.localize(REMOVE)
