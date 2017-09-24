@@ -17,7 +17,7 @@ from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
 from codequick.utils import safe_path, ensure_unicode, ensure_native_str, unicode_type, long_type
 
-__all__ = ["Listitem", "Context", "Stream", "Property", "Info", "Art", "Params"]
+__all__ = ["Listitem", "Art", "Info", "Stream", "Context", "Property", "Params"]
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -86,18 +86,6 @@ SEARCH = 137
 
 
 class Params(MutableMapping):
-    """
-    Dictionary like object for parameters that will be passed to the callback object.
-
-    This class inherits all methods from :class:`collections.MutableMapping`.
-
-    .. note:: All parameters have to be json serializable. i.e. str, list, dict, bool.
-
-    :example:
-        >>> item = Listitem()
-        >>> item.params['videoid'] = 'kqmdIV_gBfo'
-    """
-
     def __init__(self):
         self.raw_dict = {}
 
@@ -150,20 +138,25 @@ class Params(MutableMapping):
 
 class Art(Params):
     """
+    Dictionary like object that allows you to add various images. e.g. thumb, fanart.
+
     This class inherits all methods from :class:`collections.MutableMapping`.
 
-    This is a dictionary like object that allows you to add various image values. e.g. thumb, fanart.
+    Expected art values are.
+        * thumb
+        * poster
+        * banner
+        * fanart
+        * clearart
+        * clearlogo
+        * landscape
+        * icon
 
-    .. seealso::
-
-        The full list of art values, can be found here.\n
-        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#gad3f9b9befa5f3d2f4683f9957264dbbe
-
-    Usage::
-
-        item.art['thumb"] = 'http://www.example.ie/image.jpg'
-        item.art['fanart"] = 'http://www.example.ie/fanart.jpg'
-        item.art.local_thumb('local_art.png')
+    :example:
+        >>> item = Listitem()
+        >>> item.art["icon"] = "http://www.example.ie/icon.png"
+        >>> item.art["fanart"] = "http://www.example.ie/fanart.jpg"
+        >>> item.art.local_thumb("thumbnail.png")
     """
 
     def __init__(self, listitem):
@@ -171,13 +164,6 @@ class Art(Params):
         self._listitem = listitem
 
     def __setitem__(self, key, value):
-        """
-        Custom setter that converts unicode values to 'utf8' encoded strings.
-
-        :param str key: The art name to set e.g. thumb, icon or fanart.
-        :param value: The path to the image.
-        :type value: str or unicode
-        """
         if value:
             self.raw_dict[key] = ensure_native_str(value)
         else:
@@ -185,7 +171,7 @@ class Art(Params):
 
     def local_thumb(self, image):
         """
-        Set the thumbnail image to a image file located in the add-on 'resources/media' directory.
+        Set the thumbnail image to a image file, located in the add-on resources/media directory.
         
         :param image: Filename of the image.
         :type image: str or unicode
@@ -196,16 +182,15 @@ class Art(Params):
 
     def global_thumb(self, image):
         """
-        Set the thumbnail image to a image file located in the codequick 'resources/media' directory.
+        Set the thumbnail image to a image file, located in the codequick resources/media directory.
         
-        Below is a list of available global thumbnail images::
-
-            next.png        - Arrow pointing to the right.
-            videos.png      - Circle with a play button in the middle.
-            search.png      - An image of a magnifying glass.
-            search_new.png  - A magnifying glass with plus symbol in the middle.
-            playlist.png    - Image of three bulleted lines.
-            recent.png      - Image of a clock.
+        The available global thumbnail images are.
+            * next.png        - Arrow pointing to the right.
+            * videos.png      - Circle with a play button in the middle.
+            * search.png      - An image of a magnifying glass.
+            * search_new.png  - A magnifying glass with plus symbol in the middle.
+            * playlist.png    - Image of three bulleted lines.
+            * recent.png      - Image of a clock.
 
         :param image: Filename of the image.
         :type image: str or unicode
@@ -224,42 +209,37 @@ class Art(Params):
 
 class Info(Params):
     """
-    This class inherits all methods from :class:`collections.MutableMapping`.
+    Dictionary like object that allows you to add listitem infoLabels
 
-    This is a dictionary like object that allows you to add listitem infoLabels. e.g. duration, genre, size.
+    InfoLabels are like metadata for listitems. e.g. duration, genre, size, rating and or plot.
+    They are also used for sorting purposes, sort methods will be automaticly selected.
 
-    Sort methods will be automaticly selected and the object type will
-    be converted to what is required for each infolabel.
+    Some infolabels need to be of a given type e.g. size as long, rating as float.
+    For the most part, this conversion will be done automatically.
 
-    'duration' will be converted to integer and sort method will be set to 'SORT_METHOD_VIDEO_RUNTIME'.
-    'size' will be converted to long and sort method will be set to 'SORT_METHOD_SIZE'.
+    Example of what would happen is.
+        * 'duration' would be converted to ``int`` and 'SORT_METHOD_VIDEO_RUNTIME' sort method will be selected.
+        * 'size' would be converted to ``long`` and 'SORT_METHOD_SIZE' sort method will be selected.
+
+    .. seealso:: The full list of listitem infoLabels can be found at.\n
+        https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
 
     .. note:: Duration infolabel value, can be either in seconds or as a 'hh:mm:ss' string.
-    .. note:: Any unicode values will be converted to 'UTF-8' encoded strings.
 
-    The full list of listitem infoLabels, can be found at.
-    https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
+    This class inherits all methods from :class:`collections.MutableMapping`.
 
-    Examples::
-
-        item.info['genre'] = 'Science Fiction'
-        item.info['size'] = 256816
-        item.info.date('june 27, 2017', '%B %d, %Y'))
+    :examples:
+        >>> item = Listitem()
+        >>> item.info['genre'] = 'Science Fiction'
+        >>> item.info['size'] = 256816
     """
 
-    def __init__(self, listitem, ctype):
+    def __init__(self, listitem, content_type):
         super(Info, self).__init__()
         self._listitem = listitem
-        self._ctype = ctype
+        self._ctype = content_type
 
     def __setitem__(self, key, value):
-        """
-        Custom setter that converts values to required type, if known.
-        Also converts unicode values to 'utf8' encoded strings.
-        
-        :param str key: The infolabel name to set e.g. duration, genre or size.
-        :param value: The infolabel value.
-        """
         if value is None or value == "":
             logger.debug("Ignoring empty infolable: '%s'", key)
             return None
@@ -299,14 +279,18 @@ class Info(Params):
 
     def date(self, date, date_format):
         """
-        Set the date of the infolabel.
+        Set the date of the listitem.
         
-        :param date: The date of the inforlabel item.
+        :param date: The date for the listitem.
         :type date: str or unicode
         :param str date_format: The format of the date as a strftime directive e.g. 'june 27, 2017' => '%B %d, %Y'
         
-        The List of date formats, can be found here.
-        https://docs.python.org/2/library/time.html#time.strftime
+        .. seealso:: The List of date formats can be found at.\n
+                    https://docs.python.org/2/library/time.html#time.strftime
+
+        :example:
+            >>> item = Listitem()
+            >>> item.info.date('june 27, 2017', '%B %d, %Y')
         """
         converted_date = strptime(ensure_native_str(date), date_format)
         self.raw_dict["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2017
@@ -348,32 +332,11 @@ class Info(Params):
 
 
 class Property(Params):
-    """
-    This class inherits all methods from :class:`collections.MutableMapping`.
-
-    This is a dictionary like object that allows you to add listitem properties. e.g. StartOffset
-
-    Some of these are treated internally by Kodi, such as the 'StartOffset' property,
-    which is the offset in seconds at which to start playback of an item. Others may be used
-    in the skin to add extra information, such as 'WatchedCount' for tvshow items.
-
-    Examples::
-
-        item.property['StartOffset'] = '256.4'
-    """
-
     def __init__(self, listitem):
         super(Property, self).__init__()
         self._listitem = listitem
 
     def __setitem__(self, key, value):
-        """
-        Add listitem property.
-
-        :param str key: The name of the property.
-        :param value: The property value.
-        :type value: str or unicode
-        """
         if value:
             self.raw_dict[key] = ensure_unicode(value)
         else:
@@ -386,26 +349,26 @@ class Property(Params):
 
 class Stream(Params):
     """
+    Dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
+
+    Expected stream values are.
+        * video_codec        - string (h264)
+        * aspect             - float (1.78)
+        * width              - integer (1280)
+        * height             - integer (720)
+        * channels           - integer (2)
+        * audio_codec        - string (AAC)
+        * audio_language     - string (en)
+        * subtitle_language  - string (en)
+
+    Type convertion will be done automatically so manual convertion is not required.
+
     This class inherits all methods from :class:`collections.MutableMapping`.
 
-    This is a dictionary like object that allows you to add stream details. e.g. video_codec, audio_codec.
-
-    Stream Values::
-
-        video_codec        : string (h264)
-        aspect             : float (1.78)
-        width              : integer (1280)
-        height             : integer (720)
-        channels           : integer (2)
-        audio_codec        : string (AAC)
-        audio_language     : string (en)
-        subtitle_language  : string (en)
-
-    Example::
-
-        item.stream['video_codec'] = 'h264'
-        item.stream['audio_codec'] = 'aac'
-        item.stream.hd(2, aspect=1.78) # 1080p
+    :example:
+        >>> item = Listitem()
+        >>> item.stream['video_codec'] = 'h264'
+        >>> item.stream['audio_codec'] = 'aac'
     """
 
     def __init__(self, listitem):
@@ -413,13 +376,6 @@ class Stream(Params):
         self._listitem = listitem
 
     def __setitem__(self, key, value):
-        """
-        Custom setter that converts unicode values to 'utf8' encoded strings.
-
-        :param str key: The key of the stream detail.
-        :param value: The value of the stream detail.
-        :type value: str or unicode
-        """
         if value is None:
             logger.debug("Ignoring empty stream detail value for: '%s'", key)
             return None
@@ -438,12 +394,21 @@ class Stream(Params):
         """
         Convenient method to set required stream info to show SD/HD/4K logos.
 
-        The values witch are set are width, height and aspect.
-        When no aspect ratio is given, then a ratio of '1.78'(16:9) is set when the quality is greater than SD.
+        The values witch are set are 'width', 'height' and 'aspect'.
+        When no aspect ratio is given, then a ratio of '1.78'(16:9) is set when the quality is HD or greater.
 
-        :type quality: bool or int
-        :param quality: Quality of the stream e.g. 0=480p, 1=720p, 2=1080p, 3=4K.
+        Quality options are.
+            * 0 = 480p
+            * 1 = 720p
+            * 2 = 1080p
+            * 3 = 4K.
+
+        :param int quality: Quality of the stream.
         :param float aspect: [opt] The aspect ratio of the video.
+
+        :example:
+            >>> item = Listitem()
+            >>> item.stream.hd(2, aspect=1.78) # 1080p
         """
         # Skip if value is None(Unknown), useful when passing a variable with unkown value
         if quality is None:
@@ -492,13 +457,10 @@ class Context(list):
     """
     This class inherits all methods from the build-in data type :class:`list`.
 
-    This is a list containing tuples, consisting of label/function pairs.
+    This is a list containing tuples consisting of label/function pairs.
 
-    label: str or unicode - item's label.
-    function: str or unicode - any built-in function to perform e.g. XBMC.Container.Update
-
-    The full list of built-in functions can be found here.
-    http://kodi.wiki/view/List_of_Built_In_Functions
+    .. seealso:: The full list of built-in functions can be found at.\n
+                 http://kodi.wiki/view/List_of_Built_In_Functions
     """
 
     def __init__(self, listitem):
@@ -507,9 +469,9 @@ class Context(list):
 
     def related(self, callback, **query):
         """
-        Convenient method to add a related videos context menu container item.
+        Convenient method to add a related videos context menu item.
 
-        Keyword arguments can be any json serializable object e.g. str, list, dict.
+        All this really does is set the label of the menu item for you.
         
         :param callback: The function that will be called when menu item is activated.
         :param query: [opt] Keyword arguments that will be passed on to callback function.
@@ -518,10 +480,8 @@ class Context(list):
 
     def container(self, label, callback, **query):
         """
-        Convenient method to add a context menu container item.
+        Convenient method to add a context menu item.
 
-        Keyword arguments can be any json serializable object e.g. str, list, dict.
-        
         :param label: The label of the context menu item.
         :param callback: The function that will be called when menu item is activated.
         :param query: [opt] Keyword arguments that will be passed on to callback function.
@@ -536,41 +496,70 @@ class Context(list):
 
 class Listitem(object):
     """
-    The list item control is used for creating item lists in Kodi.
+    The listitem control is used for creating folder/video items within kodi.
 
-    :param str ctype: Type of content been listed. e.g. video, music, pictures or game.
+    :param str content_type: [opt] Type of content been listed. e.g. video, music, pictures.
     """
 
-    def __init__(self, ctype="video"):
+    def __init__(self, content_type="video"):
         self.callback = ""
 
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
 
-        #: :class:`listing.Params<codequick.listing.Params>` object for adding callback parameters.
-        self.params = Params()
+        self.info = Info(listitem, content_type)
+        """
+        Dictionary like object for adding infoLabels.
+        See :class:`listing.Info<codequick.listing.Info>` for more details.
+        """
 
-        #: :class:`listing.Info<codequick.listing.Info>` object for adding infoLabels.
-        self.info = Info(listitem, ctype)
-
-        #: :class:`listing.Art<codequick.listing.Art>` object for adding listitem art.
         self.art = Art(listitem)
+        """
+        Dictionary like object for adding listitem art.
+        See :class:`listing.Art<codequick.listing.Art>` for more details.
+        """
 
-        #: :class:`listing.Stream<codequick.listing.Stream>` object for adding stream details.
         self.stream = Stream(listitem)
+        """
+        Dictionary like object for adding stream details.
+        See :class:`listing.Stream<codequick.listing.Stream>` for more details.
+        """
 
-        #: :class:`listing.Property<codequick.listing.Property>` object for adding listitem properties.
-        self.property = Property(listitem)
-
-        #: :class:`listing.Context<codequick.listing.Context>` object for context menu items.
         self.context = Context(listitem)
+        """
+        Dictionary like object for context menu items.
+        See :class:`listing.Context<codequick.listing.Context>` for more details.
+        """
+
+        self.params = Params()
+        """
+        Dictionary like object for parameters that will be passed to the callback object.
+
+        :example:
+            >>> item = Listitem()
+            >>> item.params['videoid'] = 'kqmdIV_gBfo'
+        """
+
+        self.property = Property(listitem)
+        """
+        Dictionary like object that allows you to add listitem properties. e.g. StartOffset
+
+        Some of these are treated internally by Kodi, such as the 'StartOffset' property,
+        which is the offset in seconds at which to start playback of an item. Others may be used
+        in the skin to add extra information, such as 'WatchedCount' for tvshow items.
+
+        :examples:
+            >>> item = Listitem()
+            >>> item.property['StartOffset'] = '256.4'
+        """
 
     @property
     def label(self):
         """
         The listitem label property.
 
-        Refor to: 'http://kodi.wiki/view/Label_Formatting' for full label formating options.
+        .. seealso:: A full list of label formating options can be found at.\n
+                     http://kodi.wiki/view/Label_Formatting
 
         :example:
             >>> item = Listitem()
@@ -588,11 +577,12 @@ class Listitem(object):
 
     def set_callback(self, callback, *args, **kwargs):
         """
-        Sets the callback function or playable path.
+        Set the callback object.
 
-        .. note:: All parameters have to be json serializable. i.e. str, list, dict, bool.
-        
-        :param callback: The function to callback or a playable path to a video.
+        The callback object can be any registered Route/Resolver callback function or class.
+        Or callback can be a playable url.
+
+        :param callback: The function to callback or a playable url.
         :param args: Positional arguments that will be passed to callback.
         :param kwargs: Keyword arguments that will be passed to callback.
         """
