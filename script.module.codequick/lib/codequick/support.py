@@ -5,8 +5,8 @@ from __future__ import absolute_import
 import binascii
 import logging
 import inspect
+import pickle
 import time
-import json
 import sys
 import re
 
@@ -16,7 +16,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import parse_qs, ensure_native_str, ensure_bytes, urlparse
+from codequick.utils import parse_qs, ensure_native_str, urlparse
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -218,9 +218,9 @@ class Dispatcher(object):
             self.parse_params(raw_params)
 
     def parse_params(self, raw_params):
-        if raw_params.startswith("_json_="):
+        if raw_params.startswith("_pickle_="):
             # Decode params using binascii & json
-            raw_params = json.loads(binascii.unhexlify(raw_params[7:]))
+            raw_params = pickle.loads(binascii.unhexlify(raw_params[9:]))
         else:
             # Decode params using urlparse.parse_qs
             raw_params = parse_qs(raw_params)
@@ -350,7 +350,7 @@ def build_path(path=None, query=None, **extra_query):
 
     # Encode the query parameters using json
     if query:
-        query = "_json_=" + ensure_native_str(binascii.hexlify(ensure_bytes(json.dumps(query))))
+        query = "_pickle_=" + ensure_native_str(binascii.hexlify(pickle.dumps(query)))
 
     # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, path if path else dispatcher.selector, query, ""))

@@ -72,7 +72,7 @@ class _PersistentBase(object):
         Data will only be written to disk if contents has changed.
         """
         # Serialize the storage data
-        content = pickle.dumps(self, protocol=2)
+        content = pickle.dumps(self, protocol=2)  # Protocol 2 is used for python2/3 compatibility
         current_hash = sha1(content).hexdigest()
 
         # Compare saved hash with current hash, to detect if content has changed
