@@ -47,7 +47,7 @@ class Settings(object):
         addon_data.setSetting(key, ensure_unicode(value))
 
     @staticmethod
-    def get(key, addon_id=None):
+    def get_string(key, addon_id=None):
         """
         Returns the value of a setting as a unicode string.
 
@@ -64,7 +64,8 @@ class Settings(object):
         else:
             return addon_data.getSetting(key)
 
-    def get_boolean(self, key, addon_id=None):
+    @staticmethod
+    def get_boolean(key, addon_id=None):
         """
         Returns the value of a setting as a boolean.
 
@@ -76,10 +77,11 @@ class Settings(object):
         :return: Setting as a boolean.
         :rtype: bool
         """
-        setting = self.get(key, addon_id).lower()
+        setting = Settings.get_string(key, addon_id).lower()
         return setting == u"true" or setting == u"1"
 
-    def get_int(self, key, addon_id=None):
+    @staticmethod
+    def get_int(key, addon_id=None):
         """
         Returns the value of a setting as a integer.
 
@@ -91,9 +93,10 @@ class Settings(object):
         :return: Setting as a integer.
         :rtype: int
         """
-        return int(self.get(key, addon_id))
+        return int(Settings.get_string(key, addon_id))
 
-    def get_number(self, key, addon_id=None):
+    @staticmethod
+    def get_number(key, addon_id=None):
         """
         Returns the value of a setting as a float.
 
@@ -105,7 +108,7 @@ class Settings(object):
         :return: Setting as a float.
         :rtype: float
         """
-        return float(self.get(key, addon_id))
+        return float(Settings.get_string(key, addon_id))
 
 
 class Script(object):
@@ -113,16 +116,8 @@ class Script(object):
     This class is used to create Script callbacks. Script callbacks are callbacks that
     just execute code and return nothing.
 
-    This class is also used as the base for all other types of callbacks i.e. Route and Resolver.
-
-    :cvar INFO: Info logging level.
-    :cvar DEBUG: Debug logging level.
-    :cvar ERROR: Error logging level.
-    :cvar WARNING: Warning logging level.
-    :cvar CRITICAL: Critical logging level.
-    :cvar NOTIFY_WARNING: Warning notification icon.
-    :cvar NOTIFY_ERROR: Error notification icon.
-    :cvar NOTIFY_INFO: Info notification icon.
+    This class is also used as the base for all other types of callbacks i.e.
+    :class:`Route<codequick.route.Route>` and :class:`Resolver<codequick.resolver.Resolver>`.
     """
     # Set the listitem types to that of a script
     is_playable = False
@@ -140,11 +135,14 @@ class Script(object):
     NOTIFY_ERROR = 'error'
     NOTIFY_INFO = 'info'
 
-    # Underlining logger object, for advanced use.
+    #: Underlining logger object, for advanced use.
     logger = addon_logger
 
     setting = Settings()
-    """:class:`Settings<codequick.script.Settings>` object with dictionary like interface of add-on settings."""
+    """
+    Dictionary like interface of add-on settings,
+    See :class:`script.Settings<codequick.script.Settings>` for more details.
+    """
 
     def __init__(self):
         self._title = dispatcher.support_params.get(u"_title_", u"")
@@ -163,22 +161,23 @@ class Script(object):
     @classmethod
     def register(cls, callback):
         """
-        Decorator used to register callback function/class.
+        Decorator used to register callback functions.
 
-        :param callback: The callback func/class to register.
-        :returns: The callback func/class with route data as a attribute.
+        :param callback: The callback function to register.
+        :returns: The original callback function.
         """
         return dispatcher.register(callback, cls=cls)
 
     @staticmethod
     def register_metacall(func, *args, **kwargs):
         """
-        Register a callback function that will be executed after kodi has finished listing all listitems.
-        Sence callback function is called after the listitems have been shown, it will not slow anything down.
+        Register a function that will be executed after kodi has finished listing all listitems.
+        Sence the function is called after the listitems have been shown, it will not slow anything down.
         Very useful for fetching extra metadata without slowing down the listing of content.
 
-        :param func: Function that will be called of endOfDirectory.
-        :param kwargs: Keyword arguments that will be passed to callback function.
+        :param func: Function that will be called after endOfDirectory is called.
+        :param args: Positional arguments that will be passed to function.
+        :param kwargs: Keyword arguments that will be passed to function.
         """
         callback = (func, args, kwargs)
         dispatcher.metacalls.append(callback)
@@ -186,17 +185,16 @@ class Script(object):
     @staticmethod
     def log(msg, *args, **kwargs):
         """
-        Logs a message with logging level 'lvl'.
+        Logs a message with logging level of 'lvl'.
 
-        Logging Levels:
-        DEBUG 	    10
-        INFO 	    20
-        WARNING 	30
-        ERROR 	    40
-        CRITICAL 	50
+        Logging Levels.
+            * :attr:`Script.DEBUG<codequick.script.Script.DEBUG>`
+            * :attr:`Script.INFO<codequick.script.Script.INFO>`
+            * :attr:`Script.WARNING<codequick.script.Script.WARNING>`
+            * :attr:`Script.ERROR<codequick.script.Script.ERROR>`
+            * :attr:`Script.CRITICAL<codequick.script.Script.CRITICAL>`
 
         .. Note::
-
             When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
             will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
             log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
@@ -204,7 +202,7 @@ class Script(object):
         :param msg: The message format string.
         :param args: Arguments which are merged into msg using the string formatting operator.
         :param kwargs: Only one keyword argument is inspected: 'lvl', the logging level of the logger.
-                       If not given, logging level will default to debug.
+                       If not given, logging level will default to 10(Debug).
         """
         lvl = kwargs.pop("lvl", 10)
         addon_logger.log(lvl, msg, *args, **kwargs)
@@ -214,11 +212,21 @@ class Script(object):
         """
         Send a notification to kodi.
 
-        :param str heading: Dialog heading label.
-        :param str message: Dialog message label.
-        :param str icon: [opt] Icon image to use. Other options are 'NOTIFY_INFO', 'NOTIFY_ERROR', 'NOTIFY_WARNING'.
-                         (default => add-on icon)
-        :param int display_time: [opt] Display_time in milliseconds to show dialog. (default => 5000)
+        Options for icon are.
+            * :attr:`Script.NOTIFY_INFO<codequick.script.Script.NOTIFY_INFO>`
+            * :attr:`Script.NOTIFY_ERROR<codequick.script.Script.NOTIFY_ERROR>`
+            * :attr:`Script.NOTIFY_WARNING<codequick.script.Script.NOTIFY_WARNING>`
+
+        :type heading: str or unicode
+        :param heading: Dialog heading label.
+
+        :type message: str or unicode
+        :param message: Dialog message label.
+
+        :type icon: str or unicode
+        :param icon: [opt] Icon image to use. (default => 'add-on icon image')
+
+        :param int display_time: [opt] Ttime in milliseconds to show dialog. (default => 5000)
         :param bool sound: [opt] Whether or not to play notification sound. (default => True)
         """
         # Ensure that heading, message and icon
@@ -233,11 +241,11 @@ class Script(object):
     @staticmethod
     def localize(string_id):
         """
-        Returns an addon's localized 'unicode string'.
+        Returns an add-on's localized 'unicode string'.
 
         :param int string_id: The id or reference string to be localized.
 
-        :returns: Localized 'unicode string'.
+        :returns: Localized unicode string.
         :rtype: unicode
         """
         if 30000 <= string_id <= 30999:
@@ -250,20 +258,31 @@ class Script(object):
     @staticmethod
     def get_info(key, addon_id=None):
         """
-        Returns the value of an addon property as a 'unicode string'.
+        Returns the value of an addon property as a unicode string.
 
-        Properties::
-
-            author, changelog, description, disclaimer, fanart, icon,
-            id, name, path, profile, stars, summary, type, version
+        Properties.
+            * author
+            * changelog
+            * description
+            * disclaimer
+            * fanart
+            * icon
+            * id
+            * name
+            * path
+            * profile
+            * stars
+            * summary
+            * type
+            * version
 
         :param str key: Id of the property to access.
         :param str addon_id: [opt] Id of another addon to extract properties from.
 
-        :return: Add-on property as a 'unicode string'.
+        :return: Add-on property as a unicode string.
         :rtype: unicode
 
-        :raises RuntimeError: IF no add-on with given id was found.
+        :raises RuntimeError: If addon_id is given and there is no add-on with given id.
         """
         if addon_id:
             # Extract property from a different add-on
