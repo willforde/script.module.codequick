@@ -30,6 +30,20 @@ class Route(Script):
     return listitems witch show up as folders in kodi.
 
     Route inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
+
+    :example:
+        >>> from codequick import Route, Listitem
+        >>>
+        >>> @Route.register
+        >>> def root(_):
+        >>>     yield Listitem.from_dict("Extra videos", subfolder)
+        >>>     yield Listitem.from_dict("Play video",
+        >>>           "http://www.example.com/video1.mkv")
+        >>>
+        >>> @Route.register
+        >>> def subfolder(_):
+        >>>     yield Listitem.from_dict("Play extra video",
+        >>>           "http://www.example.com/video2.mkv")
     """
 
     # Change listitem type to 'folder'

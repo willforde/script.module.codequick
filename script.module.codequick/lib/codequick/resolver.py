@@ -30,17 +30,29 @@ class Resolver(Script):
     This class is used to create Resolver callbacks. Resolver callbacks, are callbacks that
     return playable video urls witch kodi can play.
 
-    Resolver inherits all methods and attributes from :class:`Script`.
+    Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
 
-    The expected return types from the callback resolver::
+    The excepted return types from the resolver callbacks are.
+        * ``bytes``: Url as type bytes.
+        * ``unicode``: Url as type unicode.
+        * ``iterable``: List or tuple, consisting of url's, listItem's or tuple's, consisting of title and url.
+        * ``dict``: Dictionary consisting of title as the key and the url as the value.
+        * ``listItem``: A listitem object with required data already set e.g. label and path.
 
-        * bytes: Url as type bytes.
-        * unicode: Url as type unicode.
-        * iterable: List or tuple, consisting of url's, listItem's or tuple's consisting of title and url.
-        * dict: Dictionary consisting of title as the key and the url as the value.
-        * listItem: A kodi listitem object with required data already set e.g. label and path.
+    .. note:: If multiple url's are given, a playlist will be automaticly created.
 
-    When multiple url's are given, a playlist will be automaticly created.
+    :example:
+        >>> from codequick import Resolver, Route, Listitem
+        >>>
+        >>> @Route.register
+        >>> def root(_):
+        >>>     yield Listitem.from_dict("Play video", play_video,
+        >>>           params={"url": "https://www.youtube.com/watch?v=RZuVTOk6ePM"})
+        >>>
+        >>> @Resolver.register
+        >>> def play_video(plugin, url):
+        >>>     # Extract a playable video url using youtubeDL
+        >>>     return plugin.extract_source(url)
     """
     # Change listitem type to 'player'
     is_playable = True
@@ -59,17 +71,13 @@ class Resolver(Script):
 
         Also useful for continuous playback of videos with no foreseeable end. For example, party mode.
 
-        :param url: Url for the first playable listitem.
+        :param url: Url of the first playable item.
         :type url: str or unicode
 
         :param next_params: [opt] Keyword arguments to add to the loopback request when accessing the next video.
 
-        :returns: The Listitem that kodi will play
+        :returns: The Listitem that kodi will play.
         :rtype: xbmcgui.ListItem
-
-        .. Example:
-
-            plugin.create_loopback("http://example.com/a5ed59gk.mkv", video_set=["kd90k3lx", "j5yj9y7p", "1djy6k7e"])
         """
         # Video Playlist
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
@@ -218,7 +226,6 @@ class Resolver(Script):
         Construct playable listitem and send to kodi.
 
         :param resolved: The resolved url to send back to kodi.
-        :type resolved: str or unicode or :class:`xbmcgui.ListItem` or :class:`codequick.Listitem`.
         """
 
         # Create listitem object if resolved object is a string or unicode
