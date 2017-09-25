@@ -27,9 +27,9 @@ NO_DATA = 33077
 class Route(Script):
     """
     This class is used to create Route callbacks. Route callbacks, are callbacks that
-    return listitems witch are expected to be listed in kodi.
+    return listitems witch show up as folders in kodi.
 
-    Route inherits all methods and attributes from :class:`Script`.
+    Route inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
     """
 
     # Change listitem type to 'folder'
@@ -37,21 +37,10 @@ class Route(Script):
 
     def __init__(self):
         super(Route, self).__init__()
-        self._manual_sort = set()
-
-        self.autosort = True
-        """bool: False value will disable autosort."""
-
         self.update_listing = self.params.get(u"_updatelisting_", False)
-        """bool: True, this folder should update the current listing. False, this folder is a subfolder (default)."""
-
+        self._manual_sort = set()
         self.content_type = None
-        """
-        str: The plugins content type. If not given it will default to files/videos based on type of content.
-        
-        'files' when listing folders.
-        'videos' when listing videos.
-        """
+        self.autosort = True
 
     def _execute_route(self, callback):
         """Execute the callback function and process the results."""
@@ -96,7 +85,8 @@ class Route(Script):
         """Configure plugin properties, content, category and sort methods."""
 
         # Set the add-on content type
-        xbmcplugin.setContent(self.handle, "files" if isfolder else "videos")
+        content_type = self.content_type or "files" if isfolder else "videos"
+        xbmcplugin.setContent(self.handle, content_type)
 
         # Sets the category for skins to display modes.
         xbmcplugin.setPluginCategory(self.handle, ensure_native_str(re.sub(u"\(\d+\)$", u"", self._title).strip()))
@@ -123,20 +113,16 @@ class Route(Script):
         """Mark the end of directory listings."""
         xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, False)
 
-    def add_sort_methods(self, *methods, **override):
+    def add_sort_methods(self, *methods):
         """
         Adds sorting method(s) for the media list.
 
         Any number of sort methods can be given as multiple arguments.
         Normally this should not be needed as sort methods are auto detected.
 
-        :param int methods: One or more kodi sort mehtods.
-        :param bool override: [opt] keyword argument to override the auto selected sort methods. (default => False)
+        :param int methods: One or more kodi sort methods.
 
-        .. Example:
-
-            plugin.add_sort_methods(xbmc.SORT_METHOD_DATE, xbmc.SORT_METHOD_DURATION, override=True)
+        .. seealso:: The full list of sort methods can be found at.\n
+                     https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#ga85b3bff796fd644fb28f87b136025f40
         """
-        # Disable auto sort if override is True, Default
-        self.autosort = self.autosort and not override.get("override", False)
         self._manual_sort.update(methods)

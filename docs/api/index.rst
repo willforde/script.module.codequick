@@ -11,7 +11,7 @@ dfghdfghfdghfdhgfdh
  .. toctree::
     :maxdepth: 1
 
-    base
+    script
     route
     resolver
     listitem

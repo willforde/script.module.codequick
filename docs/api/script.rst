@@ -1,5 +1,5 @@
-Base
-====
+Script
+======
 
 .. autoclass:: codequick.script.Script
     :members:
