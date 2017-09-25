@@ -183,7 +183,7 @@ class Script(object):
         dispatcher.metacalls.append(callback)
 
     @staticmethod
-    def log(msg, *args, **kwargs):
+    def log(msg, args, lvl=10):
         """
         Logs a message with logging level of 'lvl'.
 
@@ -194,18 +194,17 @@ class Script(object):
             * :attr:`Script.ERROR<codequick.script.Script.ERROR>`
             * :attr:`Script.CRITICAL<codequick.script.Script.CRITICAL>`
 
+        :param msg: The message format string.
+        :type args: list or tuple
+        :param args: List of arguments which are merged into msg using the string formatting operator.
+        :param lvl: The logging level to use. default => 10(Debug).
+
         .. Note::
             When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
             will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
             log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
-
-        :param msg: The message format string.
-        :param args: Arguments which are merged into msg using the string formatting operator.
-        :param kwargs: Only one keyword argument is inspected: 'lvl', the logging level of the logger.
-                       If not given, logging level will default to 10(Debug).
         """
-        lvl = kwargs.pop("lvl", 10)
-        addon_logger.log(lvl, msg, *args, **kwargs)
+        addon_logger.log(lvl, msg, *args)
 
     @staticmethod
     def notify(heading, message, icon=None, display_time=5000, sound=True):
@@ -310,6 +309,27 @@ class Script(object):
         return resp
 
     @CacheProperty
+    def request(self):
+        """
+        A urlquick.session object.
+
+        This is used for requesting online resources.
+        It is very similar to requests.session but with built-in caching support.
+
+        .. seealso:: The urlquick documentation can be found at.\n
+                     http://urlquick.readthedocs.io/en/stable/
+
+        :example:
+            >>> from codequick import Route
+            >>>
+            >>> @Route.register
+            >>> def root(plugin):
+            >>>     html = plugin.request.get("http://example.com/index.html")
+            >>>     root_element = html.parse()
+        """
+        return urlquick.Session()
+
+    @CacheProperty
     def icon(self):
         """The add-on's icon image path."""
         return self.get_info("icon")
@@ -328,8 +348,3 @@ class Script(object):
     def path(self):
         """The add-on's directory path."""
         return self.get_info("path")
-
-    @CacheProperty
-    def request(self):
-        """A urlquick session."""
-        return urlquick.Session()

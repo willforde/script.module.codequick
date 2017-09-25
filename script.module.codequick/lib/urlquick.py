@@ -1271,6 +1271,28 @@ class Response(object):
         from xml.etree import ElementTree
         return ElementTree.fromstring(self.content)
 
+    def parse(self, tag=u"", attrs=None):
+        """
+        Parse's "HTML" document into a element tree using HTMLement.
+
+        .. seealso:: The htmlement documentation can be found at.\n
+                     http://python-htmlement.readthedocs.io/en/stable/?badge=stable
+
+        :type tag: str or unicode
+        :param tag: [opt] Name of 'element' which is used to filter tree to required section.
+
+        :type attrs: dict
+        :param attrs: [opt] Attributes of 'element', used when searching for required section.
+                                 Attrs should be a dict of unicode key/value pairs.
+
+        :return: The root element of the element tree.
+        :rtype: xml.etree.ElementTree.Element
+        """
+        from htmlement import HTMLement
+        parser = HTMLement(unicode(tag), attrs)
+        parser.feed(self.text)
+        return parser.close()
+
     def iter_content(self, chunk_size=512, decode_unicode=False):
         """
         Iterates over the response data. The chunk size are the number of bytes it should read into memory.
@@ -1348,29 +1370,6 @@ class Response(object):
 
     def __repr__(self):
         return "<Response [{}]>".format(self.status_code)
-
-    def parse(self, tag=u"", attrs=None):
-        """
-        Parse's "HTML" document into a element tree using HTMLement.
-
-        .. seealso::
-
-            'http://python-htmlement.readthedocs.io/en/stable/?badge=stable'
-
-        :type tag: str or unicode
-        :param tag: [opt] Name of 'element' which is used to filter tree to required section.
-
-        :type attrs: dict
-        :param attrs: [opt] Attributes of 'element', used when searching for required section.
-                                 Attrs should be a dict of unicode key/value pairs.
-
-        :return: The root element of the element tree.
-        :rtype: xml.etree.ElementTree.Element
-        """
-        from htmlement import HTMLement
-        parser = HTMLement(unicode(tag), attrs)
-        parser.feed(self.text)
-        return parser.close()
 
 
 def request(method, url, params=None, data=None, headers=None, cookies=None, auth=None,
