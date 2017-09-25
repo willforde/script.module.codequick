@@ -12,8 +12,9 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
-   :titlesonly:
+    :maxdepth: 2
+    :titlesonly:
 
-   tutorial
-   api/index
+    tutorial
+    api/index
+    examples
