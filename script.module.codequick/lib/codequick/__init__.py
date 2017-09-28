@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright: (c) 2016 - 2017 William Forde (willforde+codequick@gmail.com)
+#
 # License: GPLv2, see LICENSE for more details
 #
 # This program is free software; you can redistribute it and/or
@@ -19,6 +20,13 @@
 # Execution start time, used later to report total execution time
 from __future__ import absolute_import
 start_time = __import__("time").time()
+
+__all__ = ["run", "Script", "Route", "Resolver", "Listitem", "utils", "storage"]
+__repo__ = "https://github.com/willforde/script.module.codequick"
+__copyright__ = "Copyright (C) 2017 William Forde"
+__author__ = "William Forde"
+__license__ = "GPLv2"
+__version__ = "0.9.0"
 
 # Package imports
 from codequick.support import run
