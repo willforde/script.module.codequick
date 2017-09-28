@@ -719,7 +719,7 @@ class Related(APIControl):
         """
         self.update_listing = True
         feed = self.api.search(pageToken=pagetoken, relatedToVideoId=video_id)
-        video_list = (item[u"id"][u"videoId"] for item in feed[u"items"])
+        video_list = [item[u"id"][u"videoId"] for item in feed[u"items"]]
 
         # List all the related videos
         results = list(self.videos(video_list, multi_channel=True))
