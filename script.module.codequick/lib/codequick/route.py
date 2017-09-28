@@ -72,8 +72,12 @@ class Route(Script):
         if inspect.isgenerator(raw_listitems):
             raw_listitems = list(raw_listitems)
 
+        # If raw_listitems is False then, that was deliberate, so return False
+        if raw_listitems is False:
+            return False
+
         # Check if raw_listitems is None or an empty list
-        if not raw_listitems:
+        elif not raw_listitems:
             raise RuntimeError("No items found")
 
         # Create a new list containing tuples, consisting of path, listitem, isfolder.

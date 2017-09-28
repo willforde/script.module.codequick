@@ -41,9 +41,9 @@ class SavedSearches(Route):
             self.search_db.remove(remove)
             self.search_db.flush()
 
-        # Show search dialog if search argument is True or if there is no search term saved
-        elif not self.search_db or search:
-            self.search_dialog()
+        # Show search dialog if search argument is True, or if there is no search term saved
+        elif (not self.search_db or search) and not self.search_dialog():
+            return False
 
         # List all saved search terms
         return self.list_terms(extras)
@@ -54,6 +54,9 @@ class SavedSearches(Route):
         if search_term and search_term not in self.search_db:
             self.search_db.append(search_term)
             self.search_db.flush()
+
+        # Return True if text was returned
+        return bool(search_term)
 
     def list_terms(self, extras):
         """
