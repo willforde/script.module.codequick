@@ -365,3 +365,4 @@ base_logger.propagate = False
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
+run = dispatcher.dispatch

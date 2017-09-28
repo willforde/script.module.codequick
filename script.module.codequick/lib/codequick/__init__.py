@@ -21,13 +21,9 @@ from __future__ import absolute_import
 start_time = __import__("time").time()
 
 # Package imports
-from codequick.storage import PersistentDict, PersistentList
-from codequick.support import dispatcher as _dispatcher
+from codequick.support import run
 from codequick.resolver import Resolver
 from codequick.listing import Listitem
 from codequick.script import Script
 from codequick.route import Route
-from codequick import utils
-
-# Convenience function to call dispatcher
-run = _dispatcher.dispatch
+from codequick import utils, storage

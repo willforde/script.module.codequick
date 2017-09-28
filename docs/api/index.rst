@@ -1,12 +1,7 @@
 API
 ===
 
-fhfghfghfgh
-fdghfdghdfghdfgh
-dfg
-h
-fdgh
-dfghdfghfdghfdhgfdh
+Table of Contents.
 
  .. toctree::
     :maxdepth: 1

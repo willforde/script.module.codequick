@@ -183,7 +183,7 @@ class Script(object):
         dispatcher.metacalls.append(callback)
 
     @staticmethod
-    def log(msg, args, lvl=10):
+    def log(msg, args=None, lvl=10):
         """
         Logs a message with logging level of 'lvl'.
 
@@ -326,6 +326,8 @@ class Script(object):
             >>> def root(plugin):
             >>>     html = plugin.request.get("http://example.com/index.html")
             >>>     root_element = html.parse()
+            >>>     print(root_element)
+            >>>     "xml.etree.ElementTree.Element"
         """
         return urlquick.Session()
 
