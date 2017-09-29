@@ -6,6 +6,8 @@ This is achieved by reducing the amount of boilerplate code to a minimum, automa
 and sort method selection. Ultimately allowing the developer to focus primarily on scraping content from websites
 and passing it to kodi.
 
+Codequick is written to support both python2 and python3 and is fully unicode aware.
+
 This framework utilizes 3 other kodi modules.
     * urlquick: https://github.com/willforde/urlquick
     * htmlement: https://github.com/willforde/python-htmlement
