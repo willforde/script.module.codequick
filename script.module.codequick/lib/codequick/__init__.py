@@ -22,11 +22,6 @@ from __future__ import absolute_import
 start_time = __import__("time").time()
 
 __all__ = ["run", "Script", "Route", "Resolver", "Listitem", "utils", "storage"]
-__repo__ = "https://github.com/willforde/script.module.codequick"
-__copyright__ = "Copyright (C) 2017 William Forde"
-__author__ = "William Forde"
-__license__ = "GPLv2"
-__version__ = "0.9.0"
 
 # Package imports
 from codequick.support import run
