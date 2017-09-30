@@ -110,8 +110,9 @@ class Route(Script):
         # See if we can guess the content_type based on the mediatypes from the listitem
         if mediatypes and not self.content_type:
             if len(mediatypes) > 1:
+                from operator import itemgetter
                 # Sort mediatypes by there count, and return the highest count mediatype
-                mediatype = sorted(mediatypes.items(), key=lambda mtype: mtype[1])[-1][0]
+                mediatype = sorted(mediatypes.items(), key=itemgetter(1))[-1][0]
             else:
                 mediatype = list(mediatypes.keys())[0]
 
