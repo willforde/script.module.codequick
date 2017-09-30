@@ -140,9 +140,7 @@ class API(object):
         self.req_session.headers["referer"] = "http://www.codequick.com/"
         self.req_session.params = {"maxResults": str(max_results),
                                    "prettyPrint": str(pretty_print).lower(),
-                                   "key": "AIzaSyCR4bRcTluwteqwplIC34wEf0GWi9PbSXQ"}
-
-        # "key": "AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"} Replace the current key with this
+                                   "key": "AIzaSyD_guosGuZjoQLWIZdJzYzYEn3Oy8VOUgs"}
 
     def _request(self, url, query):
         """

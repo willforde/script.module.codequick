@@ -234,10 +234,9 @@ class Info(Params):
         >>> item.info['size'] = 256816
     """
 
-    def __init__(self, listitem, content_type):
+    def __init__(self, listitem):
         super(Info, self).__init__()
         self._listitem = listitem
-        self._ctype = content_type
 
     def __setitem__(self, key, value):
         if value is None or value == "":
@@ -327,8 +326,8 @@ class Info(Params):
 
         return duration
 
-    def _close(self):
-        self._listitem.setInfo(self._ctype, self.raw_dict)
+    def _close(self, content_type):
+        self._listitem.setInfo(content_type, self.raw_dict)
 
 
 class Property(Params):
@@ -502,12 +501,13 @@ class Listitem(object):
     """
 
     def __init__(self, content_type="video"):
+        self.content_type = content_type
         self.callback = ""
 
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
 
-        self.info = Info(listitem, content_type)
+        self.info = Info(listitem)
         """
         Dictionary like object for adding infoLabels.
         See :class:`listing.Info<codequick.listing.Info>` for more details.
@@ -617,6 +617,10 @@ class Listitem(object):
             if "icon" not in self.art.raw_dict:
                 self.art.raw_dict["icon"] = "DefaultVideo.png"
 
+            # Add mediatype if not already set
+            if "mediatype" not in self.info.raw_dict and self.content_type in ("video", "music"):
+                self.info.raw_dict["mediatype"] = self.content_type
+
             # Add Video Specific Context menu items
             self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
             self.context.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
@@ -632,7 +636,7 @@ class Listitem(object):
         self.listitem.setPath(path)
         self.property._close()
         self.context._close()
-        self.info._close()
+        self.info._close(self.content_type)
         self.art._close()
 
         # Return a tuple compatible with 'xbmcplugin.addDirectoryItems'

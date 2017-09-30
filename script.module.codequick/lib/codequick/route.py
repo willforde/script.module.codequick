@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
+from collections import defaultdict
 import logging
 import inspect
 import re
@@ -83,6 +84,7 @@ class Route(Script):
         # Create a new list containing tuples, consisting of path, listitem, isfolder.
         listitems = []
         folder_counter = 0.0
+        mediatypes = defaultdict(int)
         for listitem in raw_listitems:
             if listitem:
                 # noinspection PyProtectedMember
@@ -91,20 +93,36 @@ class Route(Script):
                 if listitem_tuple[2]:
                     folder_counter += 1
 
+                if "mediatype" in listitem.info:
+                    mediatypes[listitem.info["mediatype"]] += 1
+
         # Guess if this directory listing is primarily a folder or video listing.
         # Listings will be considered to be a folder if more that half the listitems are folder items.
         isfolder = folder_counter > (len(listitems) / 2)
-        self.__content_type(isfolder)
+        self.__content_type(isfolder, mediatypes)
 
         # Pass the listitems and relevant data to kodi
         return xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
 
-    def __content_type(self, isfolder):
+    def __content_type(self, isfolder, mediatypes):
         """Configure plugin properties, content, category and sort methods."""
 
+        # See if we can guess the content_type based on the mediatypes from the listitem
+        if mediatypes and not self.content_type:
+            if len(mediatypes) > 1:
+                # Sort mediatypes by there count, and return the highest count mediatype
+                mediatype = sorted(mediatypes.items(), key=lambda mtype: mtype[1])[-1][0]
+            else:
+                mediatype = list(mediatypes.keys())[0]
+
+            # Convert mediatype to a content_type, not all mediatypes can be converted directly
+            if mediatype in ("video", "movie", "tvshow", "episode", "musicvideo", "song", "album", "artist"):
+                self.content_type = mediatype + "s"
+
         # Set the add-on content type
-        content_type = self.content_type or "files" if isfolder else "videos"
+        content_type = self.content_type or ("files" if isfolder else "videos")
         xbmcplugin.setContent(self.handle, content_type)
+        self.log("Content-type: %s", [content_type], self.INFO)
 
         # Sets the category for skins to display modes.
         xbmcplugin.setPluginCategory(self.handle, ensure_native_str(re.sub(u"\(\d+\)$", u"", self._title).strip()))
