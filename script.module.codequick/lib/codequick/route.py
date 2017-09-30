@@ -122,7 +122,7 @@ class Route(Script):
         # Set the add-on content type
         content_type = self.content_type or ("files" if isfolder else "videos")
         xbmcplugin.setContent(self.handle, content_type)
-        self.log("Content-type: %s", [content_type], self.INFO)
+        logger.debug("Content-type: %s", content_type)
 
         # Sets the category for skins to display modes.
         xbmcplugin.setPluginCategory(self.handle, ensure_native_str(re.sub(u"\(\d+\)$", u"", self._title).strip()))
