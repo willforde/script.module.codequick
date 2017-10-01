@@ -246,9 +246,17 @@ class CachedProperty(object):
 
 
 class CacheHandler(object):
+    # Checks if it's time to initiate a cache cleanup
+    initiate_cleanup = _addon_data.getSetting("cache_cleanup_timestamp") == "" or \
+                       (time.time() - float(_addon_data.getSetting("cache_cleanup_timestamp")) > 60 * 60 * 24 * 28)
+
     def __init__(self, uid, max_age=MAX_AGE):
         self.max_age = max_age
         self.response = None
+
+        if self.initiate_cleanup:
+            cache_cleanup(60 * 60 * 24 * 14)
+            _addon_data.setSetting("cache_cleanup_timestamp", str(time.time()))
 
         # Filepath to cache file
         cache_dir = self.cache_dir()
@@ -432,6 +440,9 @@ def cache_cleanup(max_age=None):
             # Check if the cache is not fresh and delete if so
             if not handler.isfilefresh(cache_path, max_age):
                 handler.delete(cache_path)
+
+    # Disable cleanup flag
+    handler.initiate_cleanup = False
 
 
 class CacheAdapter(object):
