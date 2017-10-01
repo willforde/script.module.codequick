@@ -114,7 +114,7 @@ class Route(Script):
                 # Sort mediatypes by there count, and return the highest count mediatype
                 mediatype = sorted(mediatypes.items(), key=itemgetter(1))[-1][0]
             else:
-                mediatype = list(mediatypes.keys())[0]
+                mediatype = mediatypes.popitem()[0]
 
             # Convert mediatype to a content_type, not all mediatypes can be converted directly
             if mediatype in ("video", "movie", "tvshow", "episode", "musicvideo", "song", "album", "artist"):

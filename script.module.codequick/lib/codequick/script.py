@@ -46,6 +46,10 @@ class Settings(object):
         # noinspection PyTypeChecker
         addon_data.setSetting(key, ensure_unicode(value))
 
+    def __delitem__(self, key):
+        """Set an add-on setting to a blank string."""
+        addon_data.setSetting(key, "")
+
     @staticmethod
     def get_string(key, addon_id=None):
         """
