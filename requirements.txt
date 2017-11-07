@@ -1,0 +1,2 @@
+https://github.com/willforde/kodi-addondev/archive/master.zip#addondev
+https://github.com/willforde/kodi-mock/archive/master.zip#kodimock
