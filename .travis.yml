@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.6"
+
+install:
+  - pip install coveralls
+  - pip install pytest-cov
+  - pip install https://github.com/willforde/kodi-addondev/archive/master.zip
+  - pip install https://github.com/willforde/kodi-mock/archive/master.zip
+
+script: py.test --cov
+
+after_success: coveralls

@@ -1,0 +1,7 @@
+[run]
+source=script.module.codequick/lib/codequick
+branch=True
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
