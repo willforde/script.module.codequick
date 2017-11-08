@@ -5,6 +5,8 @@ initializer(os.path.join(os.path.dirname(os.path.dirname(__file__)), "script.mod
 import unittest
 from codequick import utils
 
+print ("Testing %s" % os.getcwd())
+
 
 class Utils(unittest.TestCase):
     def test_ensure_unicode_with_bytes(self):
