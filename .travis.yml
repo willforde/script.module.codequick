@@ -10,6 +10,6 @@ install:
   - pip install https://github.com/willforde/kodi-addondev/archive/master.zip
   - pip install https://github.com/willforde/kodi-mock/archive/master.zip
 
-script: py.test
+script: py.test --cov
 
 after_success: coveralls
