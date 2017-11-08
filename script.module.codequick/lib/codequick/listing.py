@@ -309,6 +309,7 @@ class Info(Params):
         :rtype: int
         """
         if isinstance(duration, (str, unicode_type)):
+            duration = duration.strip(";").strip(":")
             if ":" in duration or ";" in duration:
                 # Split Time By Marker and Convert to Integer
                 time_parts = duration.replace(";", ":").split(":")
