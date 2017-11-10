@@ -4,6 +4,9 @@
 .. image:: https://coveralls.io/repos/github/willforde/script.module.codequick/badge.svg?branch=master
     :target: https://coveralls.io/github/willforde/script.module.codequick?branch=master
 
+.. image:: https://readthedocs.org/projects/scriptmodulecodequick/badge/?version=latest
+    :target: http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=latest
+
 .. image:: https://api.codacy.com/project/badge/Grade/169396ed505642e9a21e9a4926d31277
     :target: https://www.codacy.com/app/willforde/script.module.codequick?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=willforde/script.module.codequick&amp;utm_campaign=Badge_Grade
 
@@ -17,3 +20,8 @@ on scraping content from websites and passing it to kodi.
 
 This project is mostly done, just need to finish the documentation and upload it to readthedocs.
 It has already been added to the official kodi repository.
+
+Documentation
+-------------
+Documentation can be found over at ReadTheDocs.
+http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=latest
