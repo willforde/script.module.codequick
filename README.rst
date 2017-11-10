@@ -18,9 +18,6 @@ This is achieved by reducing the amount of boilerplate code to a minimum, automa
 automated, like route dispatching and sort method selection. Ultimately allowing the developer to focus primarily
 on scraping content from websites and passing it to kodi.
 
-This project is mostly done, just need to finish the documentation and upload it to readthedocs.
-It has already been added to the official kodi repository.
-
 Documentation
 -------------
 Documentation can be found over at ReadTheDocs.
