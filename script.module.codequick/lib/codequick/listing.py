@@ -787,6 +787,10 @@ class Listitem(object):
         item.set_callback(SavedSearches, route=callback.route.path, **params)
         return item
 
+    def __repr__(self):
+        """Returns representation of the object."""
+        return "{}('{}')".format(self.__class__.__name__, self.label)
+
 
 # Import callback functions required for listitem constructs
 from codequick.youtube import Playlist as YTPlaylist
