@@ -253,7 +253,7 @@ def ensure_native_str(data, encoding="utf8"):
         # Only executes on python 3
         return data.decode(encoding)
     else:
-        str(data)
+        return str(data)
 
 
 def ensure_unicode(data, encoding="utf8"):
