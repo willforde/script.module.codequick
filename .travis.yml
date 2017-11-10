@@ -6,7 +6,7 @@ python:
 
 cache:
   directories:
-    - $HOME/.cache/kodi_mock
+    - $HOME/.cache/kodi_mock/addons
 
 install:
   - pip install coveralls
