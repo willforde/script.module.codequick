@@ -1,4 +1,4 @@
-from addondev import initializer
+from addondev import initializer, testing
 import types
 import sys
 import os
@@ -38,6 +38,11 @@ class Utils(unittest.TestCase):
         ret = utils.ensure_native_str(u"teststring")
         self.assertIsInstance(ret, str)
         self.assertEqual(ret, "teststring")
+
+    def test_ensure_native_str_with_int(self):
+        ret = utils.ensure_native_str(101)
+        self.assertIsInstance(ret, str)
+        self.assertEqual(ret, "101")
 
     def test_safe_path_bytes(self):
         ret = utils.safe_path(b"teststring")
@@ -89,3 +94,10 @@ class Utils(unittest.TestCase):
         first_no = obj.data_id
         self.assertIsInstance(first_no, float)
         self.assertEqual(obj.data_id, first_no)
+        ret = Test.data_id
+        self.assertIsInstance(ret, utils.CacheProperty)
+
+    def test_keyboard(self):
+        testing.mock_keyboard("Testing input")
+        ret = utils.keyboard("Test")
+        self.assertEqual(ret, "Testing input")
