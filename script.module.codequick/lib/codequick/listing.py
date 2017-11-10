@@ -789,7 +789,7 @@ class Listitem(object):
 
     def __repr__(self):
         """Returns representation of the object."""
-        return "{}('{}')".format(self.__class__.__name__, self.label)
+        return "{}('{}')".format(self.__class__.__name__, ensure_native_str(self.label))
 
 
 # Import callback functions required for listitem constructs
