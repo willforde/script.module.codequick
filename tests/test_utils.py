@@ -73,6 +73,10 @@ class Utils(unittest.TestCase):
         self.assertIsInstance(ret, dict)
         self.assertDictEqual(ret, {u"q": u"search", u"safe": u"no"})
 
+    def test_parse_qs_fail(self):
+        with self.assertRaises(ValueError):
+            utils.parse_qs("q=search&safe=no&safe=yes")
+
     def test_CacheProperty(self):
         import random
 
