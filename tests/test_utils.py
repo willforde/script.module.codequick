@@ -1,0 +1,87 @@
+from addondev import initializer
+import types
+import sys
+import os
+
+initializer(os.path.join(os.path.dirname(os.path.dirname(__file__)), "script.module.codequick"))
+import unittest
+from codequick import utils
+
+
+class Utils(unittest.TestCase):
+    def test_ensure_unicode_with_bytes(self):
+        ret = utils.ensure_unicode(b"teststring")
+        self.assertIsInstance(ret, utils.unicode_type)
+        self.assertEqual(ret, u"teststring")
+
+    def test_ensure_unicode_with_unicode(self):
+        ret = utils.ensure_unicode(u"teststring")
+        self.assertIsInstance(ret, utils.unicode_type)
+        self.assertEqual(ret, u"teststring")
+
+    def test_ensure_bytes_with_bytes(self):
+        ret = utils.ensure_bytes(b"teststring")
+        self.assertIsInstance(ret, bytes)
+        self.assertEqual(ret, b"teststring")
+
+    def test_ensure_bytes_with_unicode(self):
+        ret = utils.ensure_bytes(u"teststring")
+        self.assertIsInstance(ret, bytes)
+        self.assertEqual(ret, b"teststring")
+
+    def test_ensure_native_str_with_bytes(self):
+        ret = utils.ensure_native_str(b"teststring")
+        self.assertIsInstance(ret, str)
+        self.assertEqual(ret, "teststring")
+
+    def test_ensure_native_str_with_unicode(self):
+        ret = utils.ensure_native_str(u"teststring")
+        self.assertIsInstance(ret, str)
+        self.assertEqual(ret, "teststring")
+
+    def test_safe_path_bytes(self):
+        ret = utils.safe_path(b"teststring")
+        if sys.platform.startswith("win"):
+            self.assertIsInstance(ret, utils.unicode_type)
+        else:
+            self.assertIsInstance(ret, bytes)
+
+    def test_safe_path_unicode(self):
+        ret = utils.safe_path(u"teststring")
+        if sys.platform.startswith("win"):
+            self.assertIsInstance(ret, utils.unicode_type)
+        else:
+            self.assertIsInstance(ret, bytes)
+
+    def test_strip_tags(self):
+        ret = utils.strip_tags('<a href="http://example.com/">I linked to <i>example.com</i></a>')
+        self.assertEqual(ret, "I linked to example.com")
+
+    def test_urljoin_partial(self):
+        url_constructor = utils.urljoin_partial("https://google.ie/")
+        self.assertIsInstance(url_constructor, types.FunctionType)
+        ret = url_constructor("/gmail")
+        self.assertEqual(ret, "https://google.ie/gmail")
+
+    def test_parse_qs_full(self):
+        ret = utils.parse_qs("http://example.com/path?q=search&safe=no")
+        self.assertIsInstance(ret, dict)
+        self.assertDictEqual(ret, {u"q": u"search", u"safe": u"no"})
+
+    def test_parse_qs_part(self):
+        ret = utils.parse_qs("q=search&safe=no")
+        self.assertIsInstance(ret, dict)
+        self.assertDictEqual(ret, {u"q": u"search", u"safe": u"no"})
+
+    def test_CacheProperty(self):
+        import random
+
+        class Test(object):
+            @utils.CacheProperty
+            def data_id(self):
+                return random.random()
+
+        obj = Test()
+        first_no = obj.data_id
+        self.assertIsInstance(first_no, float)
+        self.assertEqual(obj.data_id, first_no)
