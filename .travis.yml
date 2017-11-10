@@ -8,6 +8,9 @@ cache:
   directories:
     - $HOME/.cache/kodi_mock/addons
 
+before_cache:
+  - rm -f $HOME/.cache/kodi_mock/addons/packages
+
 install:
   - pip install coveralls
   - pip install pytest-cov
