@@ -9,7 +9,7 @@ cache:
     - $HOME/.cache/kodi_mock/addons
 
 before_cache:
-  - rm -f $HOME/.cache/kodi_mock/addons/packages
+  - rm -rf $HOME/.cache/kodi_mock/addons/packages
 
 install:
   - pip install coveralls
