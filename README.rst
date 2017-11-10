@@ -21,4 +21,4 @@ on scraping content from websites and passing it to kodi.
 Documentation
 -------------
 Documentation can be found over at ReadTheDocs.
-http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=latest
+http://scriptmodulecodequick.readthedocs.io/en/latest
