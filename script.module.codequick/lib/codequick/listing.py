@@ -406,7 +406,8 @@ class Stream(Params):
             * 2 = 1080p
             * 3 = 4K.
 
-        :param int quality: Quality of the stream.
+        :type quality: int or None
+        :param quality: Quality of the stream.
         :param float aspect: [opt] The aspect ratio of the video.
 
         :example:
