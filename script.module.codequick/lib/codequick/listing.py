@@ -379,7 +379,7 @@ class Stream(Params):
         self._listitem = listitem
 
     def __setitem__(self, key, value):
-        if value is None:
+        if not value:
             logger.debug("Ignoring empty stream detail value for: '%s'", key)
             return None
 
