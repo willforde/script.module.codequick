@@ -295,8 +295,8 @@ class Info(Params):
             >>> item.info.date('june 27, 2017', '%B %d, %Y')
         """
         converted_date = strptime(ensure_native_str(date), date_format)
-        self.raw_dict["date"] = strftime("%d.%m.%Y", converted_date)  # 01.01.2017
-        self.raw_dict["aired"] = strftime("%Y-%m-%d", converted_date)  # 2017-01-01
+        self.raw_dict["date"] = strftime("%d.%m.%Y", converted_date)  # 27.06.2017
+        self.raw_dict["aired"] = strftime("%Y-%m-%d", converted_date)  # 2017-06-27
         self.raw_dict["year"] = strftime("%Y", converted_date)  # 2017
         auto_sort_add(xbmcplugin.SORT_METHOD_VIDEO_YEAR)
         auto_sort_add(xbmcplugin.SORT_METHOD_DATE)
