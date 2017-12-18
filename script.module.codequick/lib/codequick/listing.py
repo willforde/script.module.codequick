@@ -634,9 +634,14 @@ class Listitem(object):
             # Close video related datasets
             self.stream._close()
 
+        label = self.label
+        # Set label to UNKNOWN if unset
+        if not label:
+            self.label = label = u"UNKNOWN"
+
         # Add label as plot if no plot is found
         if "plot" not in self.info:
-            self.info["plot"] = self.label
+            self.info["plot"] = label
 
         # Close common datasets
         self.listitem.setPath(path)
