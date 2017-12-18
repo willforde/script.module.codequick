@@ -346,7 +346,7 @@ class Property(Params):
             logger.debug("Ignoring empty property: '%s'", key)
 
     def _close(self):
-        for key, value in self.raw_dict:
+        for key, value in self.raw_dict.items():
             self._listitem.setProperty(key, value)
 
 
@@ -475,7 +475,7 @@ class Context(list):
         """
         Convenient method to add a related videos context menu item.
 
-        All this really does is set the label of the menu item for you.
+        All this really does is call context.container and sets label for you.
         
         :param callback: The function that will be called when menu item is activated.
         :param query: [opt] Keyword arguments that will be passed on to callback function.
@@ -486,6 +486,7 @@ class Context(list):
         """
         Convenient method to add a context menu item.
 
+        :type label: str or unicode
         :param label: The label of the context menu item.
         :param callback: The function that will be called when menu item is activated.
         :param query: [opt] Keyword arguments that will be passed on to callback function.
