@@ -190,6 +190,7 @@ class Dispatcher(object):
     def reset(self):
         """Reset session parameters."""
         self.selector = self.selector_org
+        self.registered_routes.clear()
         self.metacalls[:] = []
         self.params.clear()
 
