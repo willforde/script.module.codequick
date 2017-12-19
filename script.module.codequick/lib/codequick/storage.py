@@ -31,6 +31,7 @@ class _PersistentBase(object):
 
     def __init__(self, name):
         super(_PersistentBase, self).__init__()
+        self._serializer_obj = None
         self._stream = None
         self._hash = None
 
@@ -72,7 +73,7 @@ class _PersistentBase(object):
         Data will only be written to disk if contents has changed.
         """
         # Serialize the storage data
-        content = pickle.dumps(self, protocol=2)  # Protocol 2 is used for python2/3 compatibility
+        content = pickle.dumps(self._serializer_obj(self), protocol=2)  # Protocol 2 is used for python2/3 compatibility
         current_hash = sha1(content).hexdigest()
 
         # Compare saved hash with current hash, to detect if content has changed
@@ -128,6 +129,7 @@ class PersistentDict(_PersistentBase, dict):
     def __init__(self, name):
         super(PersistentDict, self).__init__(name)
         current_data = self._load()
+        self._serializer_obj = dict
         if current_data:
             self.update(current_data)
 
@@ -159,5 +161,7 @@ class PersistentList(_PersistentBase, list):
     def __init__(self, name):
         super(PersistentList, self).__init__(name)
         current_data = self._load()
+        self._serializer_obj = list
         if current_data:
             self.extend(current_data)
+
