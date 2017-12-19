@@ -31,7 +31,7 @@ class _PersistentBase(object):
 
     def __init__(self, name):
         super(_PersistentBase, self).__init__()
-        self._serializer_obj = None
+        self._serializer_obj = object
         self._stream = None
         self._hash = None
 
