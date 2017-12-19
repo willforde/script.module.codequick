@@ -1,10 +1,9 @@
-from addondev import initializer, testing
+from addondev import testing
+import unittest
 import types
 import sys
-import os
 
-initializer(os.path.join(os.path.dirname(os.path.dirname(__file__)), "script.module.codequick"))
-import unittest
+# Testing specific imports
 from codequick import utils
 
 
