@@ -160,7 +160,11 @@ class Route(object):
 
         try:
             # Now we are ready to call the callback function and return its results
-            return list(self.callback(controller_ins, *args, **kwargs))
+            results = self.callback(controller_ins, *args, **kwargs)
+            if isinstance(results, bool):
+                return results
+            else:
+                return list(results)
         finally:
             # Reset global datasets
             kodi_logger.debug_msgs = []
