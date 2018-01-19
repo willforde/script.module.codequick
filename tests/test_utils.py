@@ -97,6 +97,7 @@ class Utils(unittest.TestCase):
         self.assertIsInstance(ret, utils.CacheProperty)
 
     def test_keyboard(self):
-        testing.mock_keyboard("Testing input")
-        ret = utils.keyboard("Test")
+        with testing.mock_keyboard("Testing input"):
+            ret = utils.keyboard("Test")
+
         self.assertEqual(ret, "Testing input")
