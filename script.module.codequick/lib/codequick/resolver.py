@@ -22,6 +22,7 @@ logger = logging.getLogger("%s.resolver" % logger_id)
 
 # Localized string Constants
 SELECT_PLAYBACK_ITEM = 25006
+NO_VIDEO = 32401
 NO_DATA = 33077
 
 
@@ -254,7 +255,7 @@ class Resolver(Script):
         elif resolved:
             raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
         else:
-            raise ValueError(self.localize(NO_DATA))
+            raise ValueError(self.localize(NO_VIDEO))
 
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)

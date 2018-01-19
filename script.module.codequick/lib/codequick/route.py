@@ -53,6 +53,7 @@ class Route(Script):
     def __init__(self):
         super(Route, self).__init__()
         self.update_listing = self.params.get(u"_updatelisting_", False)
+        self.cache_to_disc = False
         self._manual_sort = set()
         self.content_type = None
         self.autosort = True
@@ -74,10 +75,10 @@ class Route(Script):
             raw_listitems = list(raw_listitems)
 
         # If raw_listitems is False then, that was deliberate, so return False
-        if raw_listitems is False:
+        if raw_listitems is False or (raw_listitems and isinstance(raw_listitems, list) and raw_listitems[0] is False):
             return False
 
-        # Check if raw_listitems is None or an empty list
+        # Checks if raw_listitems is None or an empty list
         elif not raw_listitems:
             raise RuntimeError("No items found")
 
@@ -148,7 +149,7 @@ class Route(Script):
 
     def __end_directory(self, success):
         """Mark the end of directory listings."""
-        xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, False)
+        xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
     def add_sort_methods(self, *methods):
         """
