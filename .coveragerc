@@ -1,13 +1,9 @@
 [run]
 source=script.module.codequick/lib/codequick
-branch=False
+branch=True
 
 [report]
 exclude_lines =
-    if __name__ == .__main__.:
-    except ImportError:
-    __str__
-    __repr__
-    __len__
-    __iter__
-    __contains__
+    def __str__
+    def __repr__
+    pragma: no cover

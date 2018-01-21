@@ -8,7 +8,7 @@ import os
 
 try:
     import cPickle as pickle
-except ImportError:
+except ImportError:  # pragma: no cover
     import pickle
 
 # Package imports
@@ -45,7 +45,7 @@ class _PersistentBase(object):
             data_dir = profile_dir
 
         # Ensure that filepath is bytes when platform type is linux/bsd
-        if not sys.platform.startswith("win"):
+        if not sys.platform.startswith("win"):  # pragma: no branch
             self._filepath = self._filepath.encode("utf8")
             data_dir = data_dir.encode("utf8")
 

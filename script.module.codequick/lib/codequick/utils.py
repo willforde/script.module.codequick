@@ -93,7 +93,7 @@ def keyboard(heading, default="", hidden=False):
         text = kb.getText()
         return text.decode("utf8") if isinstance(text, bytes) else text
     else:
-        return u""
+        return u""  # pragma: no cover
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False):

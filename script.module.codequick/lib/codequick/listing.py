@@ -203,9 +203,9 @@ class Art(Params):
         self.raw_dict["thumb"] = global_image.format(image)
 
     def _close(self):
-        if fanart and "fanart" not in self.raw_dict:
+        if fanart and "fanart" not in self.raw_dict:  # pragma: no branch
             self.raw_dict["fanart"] = fanart
-        if "thumb" not in self.raw_dict:
+        if "thumb" not in self.raw_dict:  # pragma: no branch
             self.raw_dict["thumb"] = icon
         self._listitem.setArt(self.raw_dict)
 
@@ -449,7 +449,7 @@ class Stream(Params):
                 raise KeyError("unknown stream detail key: '{}'".format(key))
 
         # Now we are ready to send the stream info to kodi
-        if audio:
+        if audio: # pragma: no branch
             self._listitem.addStreamInfo("audio", audio)
         if video:
             self._listitem.addStreamInfo("video", video)
@@ -616,15 +616,15 @@ class Listitem(object):
 
         if isfolder:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:
+            if "icon" not in self.art.raw_dict:  # pragma: no branch
                 self.art.raw_dict["icon"] = "DefaultFolder.png"
         else:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:
+            if "icon" not in self.art.raw_dict: # pragma: no branch
                 self.art.raw_dict["icon"] = "DefaultVideo.png"
 
             # Add mediatype if not already set
-            if "mediatype" not in self.info.raw_dict and self.content_type in ("video", "music"):
+            if "mediatype" not in self.info.raw_dict and self.content_type in ("video", "music"): # pragma: no branch
                 self.info.raw_dict["mediatype"] = self.content_type
 
             # Add Video Specific Context menu items
@@ -636,11 +636,11 @@ class Listitem(object):
 
         label = self.label
         # Set label to UNKNOWN if unset
-        if not label:
+        if not label:  # pragma: no branch
             self.label = label = u"UNKNOWN"
 
         # Add label as plot if no plot is found
-        if "plot" not in self.info:
+        if "plot" not in self.info:  # pragma: no branch
             self.info["plot"] = label
 
         # Close common datasets
@@ -677,17 +677,17 @@ class Listitem(object):
         item.set_callback(callback)
         item.label = label
 
-        if params:
+        if params:  # pragma: no branch
             item.params.update(params)
-        if info:
+        if info:  # pragma: no branch
             item.info.update(info)
-        if art:
+        if art:  # pragma: no branch
             item.art.update(art)
-        if stream:
+        if stream:  # pragma: no branch
             item.stream.update(stream)
-        if properties:
+        if properties:  # pragma: no branch
             item.property.update(properties)
-        if context:
+        if context:  # pragma: no branch
             item.context.extend(context)
 
         return item
