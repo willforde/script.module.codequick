@@ -213,6 +213,7 @@ class Context(unittest.TestCase):
 
     def tearDown(self):
         dispatcher.reset()
+        dispatcher.registered_routes.clear()
 
     def test_container(self):
         self.base.container("test label", self.test_callback)
@@ -274,6 +275,7 @@ class TestListitem(unittest.TestCase):
 
     def tearDown(self):
         dispatcher.reset()
+        dispatcher.registered_routes.clear()
 
     def test_label(self):
         self.listitem.label = "test label"
