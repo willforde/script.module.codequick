@@ -46,8 +46,8 @@ class TestRoute(unittest.TestCase):
         self.assertListEqual(args, ['_', 'one', 'two', 'return_data'])
 
     def test_args_to_kwargs(self):
-        converted = self.route.args_to_kwargs(("True", False))
-        self.assertIsInstance(converted, list)
+        converted = list(self.route.args_to_kwargs(("True", False)))
+        self.assertEqual(len(converted), 2)
         self.assertTupleEqual(converted[0], ("one", "True"))
         self.assertTupleEqual(converted[1], ("two", False))
 
