@@ -30,6 +30,16 @@ class Params(unittest.TestCase):
         del self.base["test"]
         self.assertNotIn("test", self.base)
 
+    def test_len(self):
+        self.base["test1"] = "one"
+        self.base["test2"] = "two"
+        self.assertEqual(len(self.base), 2)
+
+    def test_iter(self):
+        self.base["test1"] = "data"
+        self.base["test2"] = "data"
+        self.assertListEqual(list(self.base), ["test1", "test2"])
+
 
 class Art(Params):
     def setUp(self):
@@ -44,10 +54,18 @@ class Art(Params):
         self.base.global_thumb("recent.png")
         self.assertIn("thumb", self.base)
 
-    def test_close(self):
+    def test_close_without_extras(self):
         listing.fanart = "fanart"
         self.assertNotIn("thumb", self.base)
         self.assertNotIn("fanart", self.base)
+        self.base._close()
+        self.assertIn("thumb", self.base)
+        self.assertIn("fanart", self.base)
+
+    def test_close_with_extras(self):
+        listing.fanart = "fanart"
+        self.base["fanart"] = ""
+        self.base["thumb"] = ""
         self.base._close()
         self.assertIn("thumb", self.base)
         self.assertIn("fanart", self.base)
