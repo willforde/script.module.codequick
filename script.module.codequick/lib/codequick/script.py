@@ -183,8 +183,7 @@ class Script(object):
         :param args: Positional arguments that will be passed to function.
         :param kwargs: Keyword arguments that will be passed to function.
         """
-        callback = (func, args, kwargs)
-        dispatcher.metacalls.append(callback)
+        dispatcher.register_metacall(func, args, kwargs)
 
     @staticmethod
     def log(msg, args=None, lvl=10):

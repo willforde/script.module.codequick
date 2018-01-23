@@ -210,7 +210,7 @@ class Dispatcher(object):
         """
         # Only designed to work as a plugin
         if not sys.argv[0].startswith("plugin://"):
-            raise RuntimeError("No parameters found, unable to execute script")
+            raise RuntimeError("Only plugin:// paths are supported: not {}".format(sys.argv[0]))
 
         # Extract command line arguments and remove leading '/' from selector
         _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
@@ -254,7 +254,7 @@ class Dispatcher(object):
         Register route callback function
 
         :param callback: The callback function.
-        :param cls: Parent class that will handle the callback, if registering a function.
+        :param cls: Parent class that will handle the callback, used when callback is a function.
         :returns: The callback function with extra attributes added, 'route', 'testcall'.
         """
         if callback.__name__.lower() == "root":
@@ -268,21 +268,25 @@ class Dispatcher(object):
         # Register a class callback
         elif inspect.isclass(callback):
             if hasattr(callback, "run"):
-                # Set the callback as the parent and the run method as the function to call
+                # Set the callback as the parent and the run method as the 'run' function
                 route = Route(callback, callback.run, callback, path)
-                # noinspection PyTypeChecker
-                callback.test = staticmethod(route.unittest_caller)
+                tester = staticmethod(route.unittest_caller)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Register a function callback
             route = Route(cls, callback, callback, path)
-            callback.test = route.unittest_caller
+            tester = route.unittest_caller
 
         # Return original function undecorated
         self.registered_routes[path] = route
         callback.route = route
+        callback.test = tester
         return callback
+
+    def register_metacall(self, func, args, kwargs):
+        callback = (func, args, kwargs)
+        self.metacalls.append(callback)
 
     def dispatch(self):
         """Dispatch to selected route path."""
@@ -299,11 +303,13 @@ class Dispatcher(object):
             controller_ins = route.parent()
             # noinspection PyProtectedMember
             controller_ins._execute_route(route.callback)
+
         except Exception as e:
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
             dialog.notification(e.__class__.__name__, str(e), addon_data.getAddonInfo("icon"))
             logger.critical(str(e), exc_info=1)
+
         else:
             from . import start_time
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
@@ -330,16 +336,13 @@ class Dispatcher(object):
         """:rtype: Route"""
         return self.registered_routes[route]
 
-    def __missing__(self, route):
-        raise KeyError("missing required route: '{}'".format(route))
-
 
 def build_path(path=None, query=None, **extra_query):
     """
     Build addon url that can be passeed to kodi for kodi to use when calling listitems.
 
     :param path: [opt] The route selector path referencing the callback object. (default => current route selector)
-    :param query: [opt] A set of query key/value pairs to add to plugin path.
+    :param dict query: [opt] A set of query key/value pairs to add to plugin path.
     :param extra_query: [opt] Keyword arguments if given will be added to the current set of querys.
 
     :return: Plugin url for kodi.
