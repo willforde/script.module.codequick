@@ -111,7 +111,7 @@ class Resolver(Script):
         # Retrun the playable listitem
         return main_listitem
 
-    def extract_source(self, url, quality=None):
+    def extract_source(self, url, quality=None, **params):
         """
         Extract video url using YoutubeDL.
 
@@ -125,6 +125,7 @@ class Resolver(Script):
         :param url: Url to fetch video for.
         :type url: str or unicode
         :param int quality: [opt] Override youtubeDL's quality setting.
+        :param params: Keyword arguments of youtube_dl parmeters
 
         :returns: The extracted video url
         :rtype: str
@@ -139,15 +140,19 @@ class Resolver(Script):
             if record.startswith("ERROR:"):
                 # Save error rocord for raising later, outside of the callback
                 # YoutubeDL ignores errors inside callbacks
-                stored_errors.append(record[7:])
+                stored_errors.append("Youtube-DL: " + record[7:])
 
             self.log(record)
             return True
 
         # Setup YoutubeDL module
-        from YDStreamExtractor import getVideoInfo, setOutputCallback
+        from YDStreamExtractor import getVideoInfo, setOutputCallback, overrideParam
         setOutputCallback(ytdl_logger)
         stored_errors = []
+
+        # Override youtube_dl parmeters
+        for key, value in params.items():
+            overrideParam(key, value)
 
         # Atempt to extract video source
         video_info = getVideoInfo(url, quality)
