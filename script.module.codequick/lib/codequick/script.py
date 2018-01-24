@@ -207,7 +207,10 @@ class Script(object):
             will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
             log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
         """
-        addon_logger.log(lvl, msg, *args)
+        if args:
+            addon_logger.log(lvl, msg, *args)
+        else:
+            addon_logger.log(lvl, msg)
 
     @staticmethod
     def notify(heading, message, icon=None, display_time=5000, sound=True):
