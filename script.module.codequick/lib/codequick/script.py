@@ -300,7 +300,7 @@ class Script(object):
             resp = addon_data.getAddonInfo(key)
 
         # Check if path needs to be translated first
-        if resp[:10] == "special://":
+        if resp[:10] == "special://":  # pragma: no cover
             resp = xbmc.translatePath(resp)
 
         # Convert response to unicode
@@ -309,7 +309,7 @@ class Script(object):
         # Create any missing directory
         if key.startswith("profile"):
             path = safe_path(resp)
-            if not os.path.exists(path):
+            if not os.path.exists(path):  # pragma: no cover
                 os.mkdir(path)
 
         return resp

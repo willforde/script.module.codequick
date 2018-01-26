@@ -132,8 +132,13 @@ class Resolver(Script):
 
         .. note::
 
-            Unfortunately the kodi YoutubeDL module is python2 only.
+            Unfortunately the kodi Youtube-DL module is python2 only.
             Hopefully it will be ported to python3 when kodi gets upgraded.
+
+        .. note::
+
+            Unfortunately Youtube-DL module will not work with the UWP
+            version of Kodi on Xbox.
         """
 
         def ytdl_logger(record):
