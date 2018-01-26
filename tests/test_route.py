@@ -62,6 +62,7 @@ class TestRoute(unittest.TestCase):
         def route_list(_):
             yield Listitem.from_dict("test item one", callback_test, info={"mediatype": "video"})
             yield Listitem.from_dict("test item two", callback_test, info={"mediatype": "movie"})
+            yield Listitem.from_dict("test item three", callback_test, info={"mediatype": "video"})
 
         self.route._execute_route(route_list)
         self.assertTrue(plugin_data["succeeded"])
