@@ -87,11 +87,11 @@ class Route(Script):
         folder_counter = 0.0
         mediatypes = defaultdict(int)
         for listitem in raw_listitems:
-            if listitem:
+            if listitem:  # pragma: no branch
                 # noinspection PyProtectedMember
                 listitem_tuple = listitem._close()
                 listitems.append(listitem_tuple)
-                if listitem_tuple[2]:
+                if listitem_tuple[2]:  # pragma: no branch
                     folder_counter += 1
 
                 if "mediatype" in listitem.info:

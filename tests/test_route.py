@@ -1,223 +1,147 @@
-from addondev.testing import data_log
 import unittest
+from addondev.testing import plugin_data
 
-from codequick import script
-
-
-class Addon(object):
-    def __init__(self, id=u"testdata"):
-        self.settings = {}
-        self.default = id
-
-    def getSetting(self, id):
-        return type(u"")(self.settings.get(id, self.default))
-
-    def setSetting(self, id, value):
-        self.settings[id] = value
+from codequick.listing import Listitem
+from codequick.support import auto_sort
+from codequick import route
 
 
-class MockLogger(object):
-    def __init__(self):
-        self.record = ""
-        self.lvl = 0
-
-        self.org_logger = script.addon_logger
-        script.addon_logger = self
-
-    def log(self, lvl, msg, *args):
-        self.lvl = lvl
-        if args:
-            self.record = msg % args
-        else:
-            self.record = msg
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *_):
-        script.addon_logger = self.org_logger
+@route.Route.register
+def callback_test(_):
+    pass
 
 
-class Settings(unittest.TestCase):
+class TestRoute(unittest.TestCase):
     def setUp(self):
-        self.org_addon_data = script.addon_data
-        self.org_xbmcaddon = script.xbmcaddon.Addon
+        self.route = route.Route()
 
-        script.addon_data = Addon()
-        script.xbmcaddon.Addon = Addon
+    def test_gen(self):
+        def route_gen(_):
+            yield Listitem.from_dict("test item", callback_test)
 
-        self.settings = script.Settings()
+        self.route._execute_route(route_gen)
+        self.assertTrue(plugin_data["succeeded"])
 
-    def tearDown(self):
-        script.addon_data = self.org_addon_data
-        script.xbmcaddon.Addon = self.org_xbmcaddon
+    def test_list(self):
+        def route_list(_):
+            return [Listitem.from_dict("test item", callback_test)]
 
-    def test_getter(self):
-        string = self.settings["tester"]
-        self.assertEqual(string, "testdata")
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
 
-    def test_setter(self):
-        self.settings["tester"] = "newdata"
-        string = self.settings["tester"]
-        self.assertEqual(string, "newdata")
+    def test_return_false(self):
+        def route_list(_):
+            return False
 
-    def test_deleter(self):
-        self.settings["tester"] = "newdata"
-        del self.settings["tester"]
-        string = self.settings["tester"]
-        self.assertEqual(string, "")
+        self.route._execute_route(route_list)
+        self.assertFalse(plugin_data["succeeded"])
 
-    def test_get_string(self):
-        self.settings["tester"] = "newdata"
-        data = self.settings.get_string("tester")
-        self.assertIsInstance(data, type(u""))
-        self.assertEqual(data, "newdata")
+    def test_yield_false(self):
+        def route_list(_):
+            yield False
 
-    def test_get_boolean(self):
-        self.settings["tester"] = "true"
-        data = self.settings.get_boolean("tester")
-        self.assertIsInstance(data, bool)
-        self.assertEqual(data, True)
+        self.route._execute_route(route_list)
+        self.assertFalse(plugin_data["succeeded"])
 
-    def test_get_int(self):
-        self.settings["tester"] = "999"
-        data = self.settings.get_int("tester")
-        self.assertIsInstance(data, int)
-        self.assertEqual(data, 999)
+    def test_no_items(self):
+        def route_list(_):
+            return []
 
-    def test_get_number(self):
-        self.settings["tester"] = "1.5"
-        data = self.settings.get_number("tester")
-        self.assertIsInstance(data, float)
-        self.assertEqual(data, 1.5)
+        with self.assertRaises(RuntimeError):
+            self.route._execute_route(route_list)
 
-    def test_get_string_addon(self):
-        data = self.settings.get_string("tester", addon_id="newdata")
-        self.assertIsInstance(data, type(u""))
-        self.assertEqual(data, "newdata")
+    def test_one_mediatype(self):
+        def route_list(_):
+            yield Listitem.from_dict("test item", callback_test, info={"mediatype": "video"})
 
-    def test_get_boolean_addon(self):
-        data = self.settings.get_boolean("tester", addon_id="true")
-        self.assertIsInstance(data, bool)
-        self.assertEqual(data, True)
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["contenttype"], "videos")
 
-    def test_get_int_addon(self):
-        data = self.settings.get_int("tester", addon_id="999")
-        self.assertIsInstance(data, int)
-        self.assertEqual(data, 999)
+    def test_two_mediatype(self):
+        def route_list(_):
+            yield Listitem.from_dict("test item one", callback_test, info={"mediatype": "video"})
+            yield Listitem.from_dict("test item two", callback_test, info={"mediatype": "movie"})
 
-    def test_get_number_addon(self):
-        data = self.settings.get_number("tester", addon_id="1.5")
-        self.assertIsInstance(data, float)
-        self.assertEqual(data, 1.5)
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["contenttype"], "videos")
 
+    def test_unsupported_mediatype(self):
+        def route_list(_):
+            yield Listitem.from_dict("season one", callback_test, info={"mediatype": "season"})
 
-class Script(unittest.TestCase):
-    def setUp(self):
-        self.script = script.Script()
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["contenttype"], "files")
 
-    def test_register_metacall(self):
-        def tester():
-            pass
+    def test_sortmethod(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-        self.script.register_metacall(tester)
-        for callback, _, _ in script.dispatcher.metacalls:
-            if callback is tester:
-                self.assertTrue(True, "")
-                break
-        else:
-            self.assertTrue(False)
+        def route_list(_):
+            yield Listitem.from_dict("season one", "test.mkv")
 
-    def test_log_noarg(self):
-        with MockLogger() as logger:
-            self.script.log("test msg")
-            self.assertEqual(logger.record, "test msg")
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [10])
 
-    def test_log_noarg_lvl(self):
-        with MockLogger() as logger:
-            self.script.log("test msg", lvl=20)
-            self.assertEqual(logger.record, "test msg")
-            self.assertEqual(logger.lvl, 20)
+    def test_sortmethod_genre(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-    def test_log_args(self):
-        with MockLogger() as logger:
-            self.script.log("test %s", ["msg"])
-            self.assertEqual(logger.record, "test msg")
+        def route_list(_):
+            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-    def test_notify(self):
-        self.script.notify("test header", "test msg", icon=self.script.NOTIFY_INFO)
-        data = data_log["notifications"][-1]
-        self.assertEqual(data[0], "test header")
-        self.assertEqual(data[1], "test msg")
-        self.assertEqual(data[2], "info")
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [10, 16])
 
-    def test_localize(self):
-        self.assertEqual(self.script.localize(30001), "")
+    def test_no_sort(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-    def test_localize_novideo(self):
-        self.assertEqual(self.script.localize(32401), "No video found!")
+        def route_list(plugin):
+            plugin.autosort = False
+            yield Listitem.from_dict("season one", "test.mkv")
 
-    def test_localize_nodata(self):
-        self.assertEqual(self.script.localize(33077), "No data found!")
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [40])
 
-    def test_get_author(self):
-        self.assertEqual(self.script.get_info("author"), "willforde")
+    def test_no_sort_genre(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-    def test_get_changelog(self):
-        self.assertEqual(self.script.get_info("changelog"), "")
+        def route_list(plugin):
+            plugin.autosort = False
+            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-    def test_get_description(self):
-        self.assertTrue(self.script.get_info("description").startswith(
-            "Codequick is a framework for kodi add-on's. The goal of this"))
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [40])
 
-    def test_get_disclaimer(self):
-        self.assertEqual(self.script.get_info("disclaimer"), "")
+    def test_custom_sort_only(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-    def test_get_fanart(self):
-        self.assertTrue(self.script.get_info("fanart").endswith("script.module.codequick/fanart.jpg"))
+        def route_list(plugin):
+            plugin.autosort = False
+            plugin.add_sort_methods(3)
+            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-    def test_get_icon(self):
-        self.assertTrue(self.script.get_info("icon").endswith("script.module.codequick/resources/icon.png"))
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [3])
 
-    def test_get_id(self):
-        self.assertEqual(self.script.get_info("id"), "script.module.codequick")
+    def test_custom_sort_with_autosort(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
 
-    def test_get_name(self):
-        self.assertEqual(self.script.get_info("name"), "CodeQuick")
+        def route_list(plugin):
+            plugin.add_sort_methods(3)
+            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-    def test_get_path(self):
-        self.assertTrue(self.script.get_info("path").endswith("script.module.codequick"))
-
-    def test_get_profile(self):
-        self.assertTrue(self.script.get_info("profile").endswith("userdata/addon_data/script.module.codequick"))
-
-    def test_get_stars(self):
-        self.assertEqual(self.script.get_info("stars"), "-1")
-
-    def test_get_summary(self):
-        self.assertEqual(self.script.get_info("summary"), "Framework for creating kodi add-on's.")
-
-    def test_get_type(self):
-        self.assertEqual(self.script.get_info("type"), "xbmc.python.module")
-
-    def test_get_version(self):
-        self.assertIsInstance(self.script.get_info("version"), type(u""))
-
-    def test_get_name_addon(self):
-        self.assertEqual(self.script.get_info("name", addon_id="script.module.codequick"), "CodeQuick")
-
-    def test_request(self):
-        req = self.script.request
-        self.assertIsInstance(req, script.urlquick.Session)
-
-    def test_icon(self):
-        self.assertTrue(self.script.icon.endswith("script.module.codequick/resources/icon.png"))
-
-    def test_fanart(self):
-        self.assertTrue(self.script.fanart.endswith("script.module.codequick/fanart.jpg"))
-
-    def test_profile(self):
-        self.assertTrue(self.script.profile.endswith("userdata/addon_data/script.module.codequick"))
-
-    def test_path(self):
-        self.assertTrue(self.script.path.endswith("script.module.codequick"))
+        self.route._execute_route(route_list)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [3, 10, 16])
