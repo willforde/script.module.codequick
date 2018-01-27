@@ -239,31 +239,32 @@ class Resolver(Script):
         :param resolved: The resolved url to send back to kodi.
         """
 
-        # Create listitem object if resolved object is a string or unicode
-        if isinstance(resolved, (bytes, unicode_type)):
-            listitem = xbmcgui.ListItem()
-            listitem.setPath(resolved)
+        if resolved:
+            # Create listitem object if resolved object is a string or unicode
+            if isinstance(resolved, (bytes, unicode_type)):
+                listitem = xbmcgui.ListItem()
+                listitem.setPath(resolved)
 
-        # Create playlist if resolved object is a list of urls
-        elif isinstance(resolved, (list, tuple)) or inspect.isgenerator(resolved):
-            listitem = self.__create_playlist(resolved)
+            # Directly use resoleved if its already a listitem
+            elif isinstance(resolved, xbmcgui.ListItem):
+                listitem = resolved
 
-        # Create playlist if resolved is a dict of {title: url}
-        elif hasattr(resolved, "items"):
-            listitem = self.__create_playlist(resolved.items())
+            # Extract original kodi listitem from custom listitem
+            elif isinstance(resolved, Listitem):
+                # noinspection PyProtectedMember
+                listitem = resolved._close()[1]
 
-        # Directly use resoleved if its already a listitem
-        elif isinstance(resolved, xbmcgui.ListItem):
-            listitem = resolved
+            # Create playlist if resolved object is a list of urls
+            elif isinstance(resolved, (list, tuple)) or inspect.isgenerator(resolved):
+                listitem = self.__create_playlist(resolved)
 
-        # Extract original kodi listitem from custom listitem
-        elif isinstance(resolved, Listitem):
-            # noinspection PyProtectedMember
-            listitem = resolved._close()[1]
+            # Create playlist if resolved is a dict of {title: url}
+            elif hasattr(resolved, "items"):
+                listitem = self.__create_playlist(resolved.items())
 
-        # Invalid or No url was found
-        elif resolved:
-            raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
+            else:
+                # Resolved url must be invalid
+                raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
         else:
             raise ValueError(self.localize(NO_VIDEO))
 
