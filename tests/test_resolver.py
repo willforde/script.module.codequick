@@ -11,7 +11,7 @@ from . import YDStreamExtractor
 sys.modules["YDStreamExtractor"] = YDStreamExtractor
 
 
-class TestRoute(unittest.TestCase):
+class TestResolver(unittest.TestCase):
     def setUp(self):
         self.resolver = resolver.Resolver()
 
