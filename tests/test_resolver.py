@@ -7,7 +7,7 @@ from xbmcgui import ListItem as kodi_listitem
 from codequick import resolver
 from codequick.listing import Listitem as custom_listitem
 
-import YDStreamExtractor
+from . import YDStreamExtractor
 sys.modules["YDStreamExtractor"] = YDStreamExtractor
 
 
