@@ -22,6 +22,10 @@ logger = logging.getLogger("%s.youtube" % logger_id)
 ALLVIDEOS = 32003
 PLAYLISTS = 136
 
+# Youtube cache directory
+_CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
+CACHEFILE = _CACHEFILE if PY3 else safe_path(_CACHEFILE)
+
 
 class CustomRow(sqlite3.Row):
     def __eq__(self, y):
@@ -34,8 +38,7 @@ class CustomRow(sqlite3.Row):
 class Database(object):
     def __init__(self):
         # Unfortunately with python 3, sqlite3.connect might fail if system local is 'c_type'(ascii)
-        filepath = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
-        self.db = db = sqlite3.connect(filepath if PY3 else safe_path(filepath), timeout=1)
+        self.db = db = sqlite3.connect(CACHEFILE, timeout=1)
 
         db.isolation_level = None
         db.row_factory = CustomRow
@@ -518,8 +521,8 @@ class APIControl(Route):
         """
         # Check that the quality setting is set to HD or greater
         try:
-            ishd = self.setting.get_int("video_quality", addon_id="script.module.youtube.dl")
-        except RuntimeError:
+            ishd = self.setting.get_int("kodion.video.quality", addon_id="plugin.video.youtube")
+        except RuntimeError:  # pragma: no cover
             ishd = True
 
         # Process videos
@@ -598,14 +601,14 @@ class Playlists(APIControl):
 
         # Fetch fanart image for channel
         fanart = self.db.cur.execute("SELECT fanart FROM channels WHERE channel_id = ?", (channel_id,)).fetchone()
-        if fanart:
+        if fanart:  # pragma: no branch
             fanart = fanart[0]
 
         # Fetch channel playlists feed
         feed = self.api.playlists(channel_id, pagetoken, loop)
 
         # Add next Page entry if pagetoken is found
-        if u"nextPageToken" in feed:
+        if u"nextPageToken" in feed:  # pragma: no branch
             yield Listitem.next_page(channel_id=channel_id, show_all=False, pagetoken=feed[u"nextPageToken"])
 
         # Display a link for listing all channel videos
@@ -621,7 +624,7 @@ class Playlists(APIControl):
 
             # Check if there is actualy items in the playlist before listing
             item_count = playlist_item[u"contentDetails"][u"itemCount"]
-            if item_count == 0:
+            if item_count == 0:  # pragma: no cover
                 continue
 
             # Fetch video snippet
@@ -675,10 +678,10 @@ class Playlist(APIControl):
 
         # Fetch video ids for all public videos
         for item in feed[u"items"]:
-            if item[u"status"][u"privacyStatus"] == u"public":
+            if item[u"status"][u"privacyStatus"] == u"public":  # pragma: no branch
                 channel_list.add(item[u"snippet"][u"channelId"])
                 video_list.append(item[u"snippet"][u"resourceId"][u"videoId"])
-            else:
+            else:  # pragma: no cover
                 logger.debug("Skipping non plublic video: '%s'", item[u"snippet"][u"resourceId"][u"videoId"])
 
         # Return the list of video listitems
@@ -717,21 +720,20 @@ class Related(APIControl):
         """
         self.update_listing = True
         feed = self.api.search(pageToken=pagetoken, relatedToVideoId=video_id)
-        video_list = [item[u"id"][u"videoId"] for item in feed[u"items"]]
+        video_list = [item[u"id"][u"videoId"] for item in feed[u"items"]]  # pragma: no branch
 
         # List all the related videos
         results = list(self.videos(video_list, multi_channel=True))
-        if u"nextPageToken" in feed:
+        if u"nextPageToken" in feed:  # pragma: no branch
             next_item = Listitem.next_page(video_id=video_id, pagetoken=feed[u"nextPageToken"])
             results.append(next_item)
         return results
 
 
 @Resolver.register
-def play_video(plugin, video_id):
+def play_video(_, video_id):
     """
-    :type plugin: :class:`codequick.PlayMedia`
+    :type _: :class:`codequick.PlayMedia`
     :type video_id: unicode
     """
-    url = u"https://www.youtube.com/watch?v=%s" % video_id
-    return plugin.extract_source(url)
+    return "plugin://plugin.video.youtube/play/?video_id={}".format(video_id)
