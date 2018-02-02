@@ -222,6 +222,7 @@ class Context(unittest.TestCase):
     def setUp(self):
         listitem = xbmcgui.ListItem()
         self.base = listing.Context(listitem)
+        self.org_routes = dispatcher.registered_routes.copy()
 
         @route.Route.register
         def test_callback(_):
@@ -232,6 +233,7 @@ class Context(unittest.TestCase):
     def tearDown(self):
         dispatcher.reset()
         dispatcher.registered_routes.clear()
+        dispatcher.registered_routes.update(self.org_routes)
 
     def test_container(self):
         self.base.container("test label", self.test_callback)
@@ -273,6 +275,7 @@ class Context(unittest.TestCase):
 class TestListitem(unittest.TestCase):
     def setUp(self):
         self.listitem = listing.Listitem()
+        self.org_routes = dispatcher.registered_routes.copy()
 
         @route.Route.register
         def route_callback(_):
@@ -294,6 +297,7 @@ class TestListitem(unittest.TestCase):
     def tearDown(self):
         dispatcher.reset()
         dispatcher.registered_routes.clear()
+        dispatcher.registered_routes.update(self.org_routes)
 
     def test_label(self):
         self.listitem.label = "test label"

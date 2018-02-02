@@ -9,6 +9,7 @@ from codequick.support import dispatcher
 
 class Search(unittest.TestCase):
     def setUp(self):
+        self.org_routes = dispatcher.registered_routes.copy()
         path = os.path.join(storage.profile_dir, u"_searches.pickle")
         if os.path.exists(path):
             os.remove(path)
@@ -16,6 +17,7 @@ class Search(unittest.TestCase):
     def tearDown(self):
         dispatcher.reset()
         dispatcher.registered_routes.clear()
+        dispatcher.registered_routes.update(self.org_routes)
 
     def test_first_run(self):
         @route.Route.register
