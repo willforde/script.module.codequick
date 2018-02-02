@@ -20,7 +20,7 @@ try:
 except NameError:
     long_type = int
 
-PY3 = sys.version_info >= (3, 0)
+PY3 = sys.version_info[0] >= 3
 
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
