@@ -283,7 +283,7 @@ class Resolver(Script):
 
             # Fetch the first element of the generator and process the rest in the background
             elif inspect.isgenerator(resolved):
-                listitem = self._create_playlist([resolved.next()])
+                listitem = self._create_playlist([next(resolved)])
                 self.register_metacall(self._process_generator, resolved)
 
             # Create playlist if resolved is a dict of {title: url}
