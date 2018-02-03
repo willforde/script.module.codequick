@@ -33,12 +33,15 @@ class Resolver(Script):
 
     Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
 
-    The excepted return types from the resolver callbacks are.
+    The possible return types from the resolver callbacks are.
         * ``bytes``: Url as type bytes.
         * ``unicode``: Url as type unicode.
-        * ``iterable``: List or tuple, consisting of url's, listItem's or tuple's, consisting of title and url.
+        * ``iterable``: List or tuple, consisting of url's, listItem's or a tuple consisting of title and url.
         * ``dict``: Dictionary consisting of title as the key and the url as the value.
         * ``listItem``: A listitem object with required data already set e.g. label and path.
+        * ``generator``: A python generator that return's one or more urls.
+                         Playback will start after the first video has been decoded, the rest of the videos
+                         will then be decoded in the background while the first video is playing.
 
     .. note:: If multiple url's are given, a playlist will be automaticly created.
 
@@ -60,12 +63,12 @@ class Resolver(Script):
 
     def __init__(self):
         super(Resolver, self).__init__()
-        self._playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
     def _execute_route(self, callback):
         """Execute the callback function and process the results."""
         resolved = super(Resolver, self)._execute_route(callback)
-        self.__send_to_kodi(resolved)
+        self._send_to_kodi(resolved)
 
     def create_loopback(self, url, **next_params):
         """
@@ -168,7 +171,7 @@ class Resolver(Script):
         if video_info:
             if video_info.hasMultipleStreams():
                 # More than one stream found, Ask the user to select a stream
-                return self.__source_selection(video_info)
+                return self._source_selection(video_info)
             else:
                 return video_info.streamURL()
 
@@ -176,7 +179,7 @@ class Resolver(Script):
         elif stored_errors:
             raise RuntimeError(stored_errors[0])
 
-    def __source_selection(self, video_info):
+    def _source_selection(self, video_info):
         """
         Ask user with video stream to play.
 
@@ -196,24 +199,64 @@ class Resolver(Script):
             video_info.selectStream(ret)
             return video_info.streamURL()
 
-    def __create_playlist(self, urls):
+    def _create_playlist(self, urls):
         """
         Create playlist for kodi and return back the first item of that playlist to play.
 
         :param list urls: Set of urls that will be used in the creation of the playlist.
-                          List may consist of url or listitem object.
+                          List may consist of urls or listitem objects.
 
         :returns The first listitem of the playlist.
         :rtype: xbmcgui.ListItem
         """
         # Loop each item to create playlist
         for item in enumerate(filter(None, urls), 1):
-            self._process_item(*item)
+            self._playlist_item(*item)
 
         # Return the first playlist item
-        return self._playlist[0]
+        return self.playlist[0]
 
-    def __send_to_kodi(self, resolved):
+    def _playlist_item(self, count, url):
+        """
+        Process the playlist item and add to kodi playlist.
+
+        :param int count: The part number of the item
+        :param url: The resolved object
+        :type url: str or unicode
+        """
+        # Kodi original listitem object
+        if isinstance(url, xbmcgui.ListItem):
+            listitem = url
+        # Custom listitem object
+        elif isinstance(url, Listitem):
+            # noinspection PyProtectedMember
+            listitem = url._close()[1]
+        else:
+            # Not already a listitem object
+            listitem = xbmcgui.ListItem()
+            if isinstance(url, (list, tuple)):
+                title, url = url
+                title = ensure_unicode(title)
+            else:
+                title = self._title
+
+            # Create listitem with new title
+            listitem.setLabel(u"%s Part %i" % (title, count))
+            listitem.setPath(url)
+
+        # Populate Playlis
+        self.playlist.add(listitem.getPath(), listitem)
+
+    def _process_generator(self, resolved):
+        """
+        Populate the kodi playlist in the background from a generator.
+
+        :param resolved: The resolved generator to fetch the rest of the videos from
+        """
+        for item in enumerate(filter(None, resolved), 2):
+            self._playlist_item(*item)
+
+    def _send_to_kodi(self, resolved):
         """
         Construct playable listitem and send to kodi.
 
@@ -236,16 +279,16 @@ class Resolver(Script):
 
             # Create playlist if resolved object is a list of urls
             elif isinstance(resolved, (list, tuple)):
-                listitem = self.__create_playlist(resolved)
+                listitem = self._create_playlist(resolved)
 
             # Fetch the first element of the generator and process the rest in the background
             elif inspect.isgenerator(resolved):
-                listitem = self.__create_playlist([resolved.next()])
+                listitem = self._create_playlist([resolved.next()])
                 self.register_metacall(self._process_generator, resolved)
 
             # Create playlist if resolved is a dict of {title: url}
             elif hasattr(resolved, "items"):
-                listitem = self.__create_playlist(resolved.items())
+                listitem = self._create_playlist(resolved.items())
 
             else:
                 # Resolved url must be invalid
@@ -255,35 +298,6 @@ class Resolver(Script):
 
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)
-
-    def _process_generator(self, resolved):
-        """Populate the playlist in the background."""
-        for item in enumerate(filter(None, resolved), 2):
-            self._process_item(*item)
-
-    def _process_item(self, count, url):
-        # Kodi original listitem object
-        if isinstance(url, xbmcgui.ListItem):
-            listitem = url
-        # Custom listitem object
-        elif isinstance(url, Listitem):
-            # noinspection PyProtectedMember
-            listitem = url._close()[1]
-        else:
-            # Not already a listitem object
-            listitem = xbmcgui.ListItem()
-            if isinstance(url, (list, tuple)):
-                title, url = url
-                title = ensure_unicode(title)
-            else:
-                title = self._title
-
-            # Create listitem with new title
-            listitem.setLabel(u"%s Part %i" % (title, count))
-            listitem.setPath(url)
-
-        # Populate Playlis
-        self._playlist.add(listitem.getPath(), listitem)
 
 
 # Now we can import the listing module
