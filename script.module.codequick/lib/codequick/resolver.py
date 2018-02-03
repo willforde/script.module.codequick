@@ -58,6 +58,10 @@ class Resolver(Script):
     # Change listitem type to 'player'
     is_playable = True
 
+    def __init__(self):
+        super(Resolver, self).__init__()
+        self._playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+
     def _execute_route(self, callback):
         """Execute the callback function and process the results."""
         resolved = super(Resolver, self)._execute_route(callback)
@@ -202,35 +206,12 @@ class Resolver(Script):
         :returns The first listitem of the playlist.
         :rtype: xbmcgui.ListItem
         """
-        # Create Playlist
-        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        title = self._title
-
         # Loop each item to create playlist
-        for count, url in enumerate(filter(None, urls), 1):
-            # Kodi original listitem object
-            if isinstance(url, xbmcgui.ListItem):
-                listitem = url
-            # Custom listitem object
-            elif isinstance(url, Listitem):
-                # noinspection PyProtectedMember
-                listitem = url._close()[1]
-            else:
-                # Not already a listitem object
-                listitem = xbmcgui.ListItem()
-                if isinstance(url, (list, tuple)):
-                    title, url = url
-                    title = ensure_unicode(title)
-
-                # Create listitem with new title
-                listitem.setLabel(u"%s Part %i" % (title, count))
-                listitem.setPath(url)
-
-            # Populate Playlis
-            playlist.add(listitem.getPath(), listitem)
+        for item in enumerate(filter(None, urls), 1):
+            self._process_item(*item)
 
         # Return the first playlist item
-        return playlist[0]
+        return self._playlist[0]
 
     def __send_to_kodi(self, resolved):
         """
@@ -238,9 +219,8 @@ class Resolver(Script):
 
         :param resolved: The resolved url to send back to kodi.
         """
-
         if resolved:
-            # Create listitem object if resolved object is a string or unicode
+            # Create listitem object if resolved is a string or unicode
             if isinstance(resolved, (bytes, unicode_type)):
                 listitem = xbmcgui.ListItem()
                 listitem.setPath(resolved)
@@ -255,8 +235,13 @@ class Resolver(Script):
                 listitem = resolved._close()[1]
 
             # Create playlist if resolved object is a list of urls
-            elif isinstance(resolved, (list, tuple)) or inspect.isgenerator(resolved):
+            elif isinstance(resolved, (list, tuple)):
                 listitem = self.__create_playlist(resolved)
+
+            # Fetch the first element of the generator and process the rest in the background
+            elif inspect.isgenerator(resolved):
+                listitem = self.__create_playlist([resolved.next()])
+                self.register_metacall(self._process_generator, resolved)
 
             # Create playlist if resolved is a dict of {title: url}
             elif hasattr(resolved, "items"):
@@ -270,6 +255,35 @@ class Resolver(Script):
 
         # Send playable listitem to kodi
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)
+
+    def _process_generator(self, resolved):
+        """Populate the playlist in the background."""
+        for item in enumerate(filter(None, resolved), 2):
+            self._process_item(*item)
+
+    def _process_item(self, count, url):
+        # Kodi original listitem object
+        if isinstance(url, xbmcgui.ListItem):
+            listitem = url
+        # Custom listitem object
+        elif isinstance(url, Listitem):
+            # noinspection PyProtectedMember
+            listitem = url._close()[1]
+        else:
+            # Not already a listitem object
+            listitem = xbmcgui.ListItem()
+            if isinstance(url, (list, tuple)):
+                title, url = url
+                title = ensure_unicode(title)
+            else:
+                title = self._title
+
+            # Create listitem with new title
+            listitem.setLabel(u"%s Part %i" % (title, count))
+            listitem.setPath(url)
+
+        # Populate Playlis
+        self._playlist.add(listitem.getPath(), listitem)
 
 
 # Now we can import the listing module

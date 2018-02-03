@@ -6,6 +6,7 @@ from xbmcgui import ListItem as kodi_listitem
 
 from codequick import resolver
 from codequick.listing import Listitem as custom_listitem
+from codequick.support import dispatcher
 
 from . import YDStreamExtractor
 sys.modules["YDStreamExtractor"] = YDStreamExtractor
@@ -99,6 +100,30 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 1)
+
+    def test_gen_single(self):
+        del plugin_data["playlist"][:]
+
+        def eg_resolver(_):
+            yield "test_one.mkv"
+
+        self.resolver._execute_route(eg_resolver)
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 1)
+
+    def test_gen_multi(self):
+        del plugin_data["playlist"][:]
+
+        def eg_resolver(_):
+            yield "test_one.mkv"
+            yield "test_two.mkv"
+
+        self.resolver._execute_route(eg_resolver)
+        dispatcher.run_metacalls()
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 2)
 
     def test_playlist_kodi_listitem(self):
         del plugin_data["playlist"][:]
