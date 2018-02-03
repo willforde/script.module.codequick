@@ -68,7 +68,7 @@ class Database(object):
         self.cur.execute("BEGIN")
         try:
             execute_obj(sqlquery, args)
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             self.db.rollback()
             raise e
         else:
@@ -158,12 +158,12 @@ class API(object):
         """
         source = self.req_session.get(url, params=query)
         response = json.loads(source.content, encoding=source.encoding)
-        if u"error" not in response:
+        if u"error" not in response:  # pragma: no branch
             return response
-        else:
+        else:  # pragma: no cover
             try:
                 message = response[u"error"][u"errors"][0][u"message"]
-            except KeyError:
+            except (KeyError, ValueError):
                 raise RuntimeError("Youtube V3 API return an error response")
             else:
                 raise RuntimeError("Youtube V3 API return an error response: %s" % message)
@@ -288,7 +288,7 @@ class API(object):
                  "playlistId": playlist_id, "part": "snippet,status"}
 
         # Add pageToken if exists
-        if pagetoken:
+        if pagetoken:  # pragma: no cover
             query["pageToken"] = pagetoken
 
         # Connect to server to optain json response
@@ -338,7 +338,7 @@ class API(object):
                            "(publishedAt,localized,thumbnails/medium/url))"}
 
         # Add pageToken if exists
-        if pagetoken:
+        if pagetoken:  # pragma: no cover
             query["pageToken"] = pagetoken
 
         # Connect to server to optain json response
@@ -398,7 +398,10 @@ class APIControl(Route):
                 # Channel data is missing from cache
                 # Update cache and return uploads uuid
                 self.update_channel_cache([contentid])
-                return self.db.channels[contentid]
+                if contentid in self.db.channels:
+                    return self.db.channels[contentid]
+                else:
+                    raise KeyError("Unable to find Youtube channel: {}".format(contentid))
 
         # PL = Playlist / UU = Channel Uploads / FL = Favorites List
         elif contentid[:2] in ("PL", "FL", "UU"):
@@ -433,7 +436,7 @@ class APIControl(Route):
             # Fetch the channel banner if available
             try:
                 data["fanart"] = item[u"brandingSettings"][u"image"][u"bannerTvMediumImageUrl"]
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 data["fanart"] = None
 
             # Add the dict of channel data to list of channels that will be added to database
@@ -452,7 +455,7 @@ class APIControl(Route):
         :type ids: list
         """
         cached_videos = self.db.extract_videos(ids)
-        uncached_ids = [key for key in ids if key not in cached_videos]
+        uncached_ids = [key for key in ids if key not in cached_videos]  # pragma: no branch
         if uncached_ids:
             # Fetch video information
             feed = self.api.videos(uncached_ids)
@@ -474,18 +477,9 @@ class APIControl(Route):
 
                 # Convert duration to what kodi is expecting (duration in seconds)
                 duration_str = content_details[u"duration"]
-                duration_str = duration_search.findall(duration_str)
-                if duration_str:
-                    duration = 0
-                    for time_segment, timeType in duration_str:
-                        if timeType == u"H":
-                            duration += (int(time_segment) * 3600)
-                        elif timeType == u"M":
-                            duration += (int(time_segment) * 60)
-                        elif timeType == u"S":
-                            duration += (int(time_segment))
-
-                    data["duration"] = duration
+                duration_match = duration_search.findall(duration_str)
+                if duration_match:  # pragma: no branch
+                    data["duration"] = self._convert_duration(duration_match)
 
                 # Add the dict of video data to list of video that will be added to database
                 processed_videos.append(data)
@@ -572,6 +566,20 @@ class APIControl(Route):
             # Return the listitem
             item.set_callback(play_video, video_id=video_data["video_id"])
             yield item
+
+    @staticmethod
+    def _convert_duration(duration_match):
+        """Convert youtube duration format to a format suitable for kodi."""
+        duration = 0
+        for time_segment, timeType in duration_match:
+            if timeType == u"H":
+                duration += (int(time_segment) * 3600)
+            elif timeType == u"M":
+                duration += (int(time_segment) * 60)
+            elif timeType == u"S":  # pragma: no branch
+                duration += (int(time_segment))
+
+        return duration
 
 
 @Route.register
