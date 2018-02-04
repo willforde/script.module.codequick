@@ -449,7 +449,7 @@ class Stream(Params):
                 raise KeyError("unknown stream detail key: '{}'".format(key))
 
         # Now we are ready to send the stream info to kodi
-        if audio: # pragma: no branch
+        if audio:  # pragma: no branch
             self._listitem.addStreamInfo("audio", audio)
         if video:
             self._listitem.addStreamInfo("video", video)
@@ -508,7 +508,7 @@ class Listitem(object):
 
     def __init__(self, content_type="video"):
         self.content_type = content_type
-        self.callback = ""
+        self.path = ""
 
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
@@ -597,12 +597,12 @@ class Listitem(object):
             args_map = callback.route.args_to_kwargs(args)
             kwargs.update(args_map)
 
-        self.callback = callback
+        self.path = callback
         self.params.update(kwargs)
 
     # noinspection PyProtectedMember
     def _close(self):
-        callback = self.callback
+        callback = self.path
         if hasattr(callback, "route"):
             self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
@@ -620,11 +620,11 @@ class Listitem(object):
                 self.art.raw_dict["icon"] = "DefaultFolder.png"
         else:
             # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict: # pragma: no branch
+            if "icon" not in self.art.raw_dict:  # pragma: no branch
                 self.art.raw_dict["icon"] = "DefaultVideo.png"
 
             # Add mediatype if not already set
-            if "mediatype" not in self.info.raw_dict and self.content_type in ("video", "music"): # pragma: no branch
+            if "mediatype" not in self.info.raw_dict and self.content_type in ("video", "music"):  # pragma: no branch
                 self.info.raw_dict["mediatype"] = self.content_type
 
             # Add Video Specific Context menu items
