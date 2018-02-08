@@ -22,6 +22,7 @@ from __future__ import absolute_import
 start_time = __import__("time").time()
 
 __all__ = ["run", "Script", "Route", "Resolver", "Listitem", "utils", "storage"]
+__version__ = (0, 9, 2)
 
 # Package imports
 from codequick.support import run
