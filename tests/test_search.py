@@ -1,10 +1,25 @@
 from addondev import testing
 import unittest
+import xbmc
 import os
 
 # Testing specific imports
 from codequick import search, route, storage
 from codequick.support import dispatcher
+
+
+class TestGlobalLocalization(unittest.TestCase):
+    def test_enter_search_string(self):
+        ret = xbmc.getLocalizedString(search.ENTER_SEARCH_STRING)
+        self.assertEqual(ret, "Enter search string")
+
+    def test_remove(self):
+        ret = xbmc.getLocalizedString(search.REMOVE)
+        self.assertEqual(ret, "Remove")
+
+    def test_search(self):
+        ret = xbmc.getLocalizedString(search.SEARCH)
+        self.assertEqual(ret, "Search")
 
 
 class Search(unittest.TestCase):

@@ -1,5 +1,6 @@
 import unittest
 from addondev.testing import plugin_data
+import xbmc
 
 from codequick.listing import Listitem
 from codequick.support import auto_sort
@@ -9,6 +10,16 @@ from codequick import route
 @route.Route.register
 def callback_test(_):
     pass
+
+
+class TestGlobalLocalization(unittest.TestCase):
+    def test_select_playback_item(self):
+        ret = xbmc.getLocalizedString(route.SELECT_PLAYBACK_ITEM)
+        self.assertEqual(ret, "Select playback item")
+
+    def test_nodata(self):
+        ret = xbmc.getLocalizedString(route.NO_DATA)
+        self.assertEqual(ret, "No data found!")
 
 
 class TestRoute(unittest.TestCase):

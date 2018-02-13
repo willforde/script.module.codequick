@@ -4,6 +4,17 @@ from codequick import listing, route, resolver
 from codequick.support import dispatcher
 from codequick.utils import unicode_type, long_type
 import xbmcgui
+import xbmc
+
+
+class TestGlobalLocalization(unittest.TestCase):
+    def test_next_page(self):
+        ret = xbmc.getLocalizedString(listing.NEXT_PAGE)
+        self.assertEqual(ret, "Next page")
+
+    def test_search(self):
+        ret = xbmc.getLocalizedString(listing.SEARCH)
+        self.assertEqual(ret, "Search")
 
 
 class Params(unittest.TestCase):

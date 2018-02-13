@@ -1,6 +1,7 @@
 import unittest
 import sqlite3
 import inspect
+import xbmc
 import os
 
 from codequick import youtube
@@ -25,6 +26,12 @@ def route_caller(callback, *args, **kwargs):
     finally:
         obj.db.close()
         dispatcher.reset()
+
+
+class TestGlobalLocalization(unittest.TestCase):
+    def test_playlists(self):
+        ret = xbmc.getLocalizedString(youtube.PLAYLISTS)
+        self.assertEqual(ret, "Playlists")
 
 
 # noinspection PyTypeChecker
