@@ -354,6 +354,7 @@ class Resolver(Script):
             raise ValueError(self.localize(NO_VIDEO))
 
         # Send playable listitem to kodi
+        logger.debug("Resolved Url: %s", listitem.getPath())
         xbmcplugin.setResolvedUrl(self.handle, True, listitem)
 
 
