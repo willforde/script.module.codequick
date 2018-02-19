@@ -102,7 +102,7 @@ class _PersistentBase(object):
     def __exit__(self, *_):
         self.close()
 
-    def _serialize(self):
+    def _serialize(self):  # pragma: no cover
         pass
 
 

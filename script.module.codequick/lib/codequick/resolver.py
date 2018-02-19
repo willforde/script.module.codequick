@@ -222,7 +222,7 @@ class Resolver(Script):
                 source = self.request.get(source, max_age=0).text
             try:
                 video_elem = htmlement.fromstring(source)
-            except RuntimeError:
+            except RuntimeError:  # pragma: no cover
                 return None
 
         # Search for all types of embeded videos
@@ -232,7 +232,7 @@ class Resolver(Script):
 
         for url in video_urls:
             match = re.match(VALID_YOUTUBE_URL, url.get("src"))
-            if match is not None:
+            if match is not None:  # pragma: no branch
                 videoid = match.group(2)
                 return u"plugin://plugin.video.youtube/play/?video_id={}".format(videoid)
 

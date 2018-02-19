@@ -587,7 +587,7 @@ class ConnectionManager(CacheAdapter):
 
     def close(self):
         """Close all persistent connections and remove."""
-        for _, pool in self.request_handler.values():
+        for pool in self.request_handler.values():
             for key in list(pool.keys()):
                 conn = pool.pop(key)
                 conn.close()
