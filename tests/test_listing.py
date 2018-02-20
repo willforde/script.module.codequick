@@ -31,10 +31,6 @@ class Params(unittest.TestCase):
         self.assertIsInstance(ret, unicode_type)
         self.assertEqual(ret, "data")
 
-    def test_empty_setter(self):
-        self.base["test"] = ""
-        self.assertNotIn("test", self.base)
-
     def test_deleter(self):
         self.base["test"] = "data"
         self.assertIn("test", self.base)
@@ -56,6 +52,10 @@ class Art(Params):
     def setUp(self):
         listitem = xbmcgui.ListItem()
         self.base = listing.Art(listitem)
+
+    def test_empty_setter(self):
+        self.base["test"] = ""
+        self.assertNotIn("test", self.base)
 
     def test_local_thumb(self):
         self.base.local_thumb("image.jpg")
@@ -86,6 +86,10 @@ class Info(Params):
     def setUp(self):
         listitem = xbmcgui.ListItem()
         self.base = listing.Info(listitem)
+
+    def test_empty_setter(self):
+        self.base["test"] = ""
+        self.assertNotIn("test", self.base)
 
     def test_duration_seconds_int(self):
         self.base["duration"] = 330
@@ -150,11 +154,19 @@ class Property(Params):
         self.base["StartOffset"] = "256.4"
         self.base._close()
 
+    def test_empty_setter(self):
+        self.base["test"] = ""
+        self.assertNotIn("test", self.base)
+
 
 class Stream(Params):
     def setUp(self):
         listitem = xbmcgui.ListItem()
         self.base = listing.Stream(listitem)
+
+    def test_empty_setter(self):
+        self.base["test"] = ""
+        self.assertNotIn("test", self.base)
 
     def test_required_type(self):
         with self.assertRaises(TypeError):
