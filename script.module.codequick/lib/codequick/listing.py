@@ -109,10 +109,7 @@ class Params(MutableMapping):
         :param str key: The name to set.
         :param value: The value to add to key.
         """
-        if value:
-            self.raw_dict[key] = value
-        else:
-            logger.debug("Ignoring empty value: '%s'", key)
+        self.raw_dict[key] = value
 
     def __delitem__(self, key):
         """
