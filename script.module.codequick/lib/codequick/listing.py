@@ -704,7 +704,7 @@ class Listitem(object):
             >>> item.next_page(url="http://example.com/videos?page2")
         """
         # Add support params to callback params
-        params["_updatelisting_"] = True
+        params["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.support_params else False
         params["_title_"] = dispatcher.support_params.get(u"_title_", u"")
         params["_nextpagecount_"] = dispatcher.support_params.get(u"_nextpagecount_", 1) + 1
 
