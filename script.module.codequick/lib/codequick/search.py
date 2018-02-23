@@ -13,6 +13,9 @@ ENTER_SEARCH_STRING = 16017
 REMOVE = 1210
 SEARCH = 137
 
+# Name of the database file
+SEARCH_DB = u"_searches.pickle"
+
 
 @Route.register
 class SavedSearches(Route):
@@ -27,23 +30,25 @@ class SavedSearches(Route):
         super(SavedSearches, self).__init__()
 
         # Persistent list of currently saved searches
-        self.search_db = PersistentList(u"_searches.pickle")
+        self.search_db = PersistentList(SEARCH_DB)
+        self.register_metacall(self.close)
 
-    def run(self, remove=None, search=False, **extras):
+    def run(self, remove_entry=None, search=False, **extras):
         """List all saved searches."""
 
-        # Update the current listings only if a serch term was removed or added
-        if remove or search:
+        # Remove search term from saved searches
+        if remove_entry and remove_entry in self.search_db:
             self.update_listing = True
-
-        # Remove search term from saved searches if remove argument was given
-        if remove in self.search_db:
-            self.search_db.remove(remove)
+            self.search_db.remove(remove_entry)
             self.search_db.flush()
 
         # Show search dialog if search argument is True, or if there is no search term saved
-        elif (not self.search_db or search) and not self.search_dialog():
-            return False
+        elif not self.search_db or search:
+            search_term = self.search_dialog()
+            if search_term:
+                return self.redirect_search(search_term, extras)
+            else:
+                return False
 
         # List all saved search terms
         return self.list_terms(extras)
@@ -56,7 +61,14 @@ class SavedSearches(Route):
             self.search_db.flush()
 
         # Return True if text was returned
-        return bool(search_term)
+        return search_term
+
+    def redirect_search(self, search_term, extras):
+        self.category = search_term.title()
+        callback_params = extras.copy()
+        callback_params["search_query"] = search_term
+        callback = dispatcher[callback_params.pop("route")].callback
+        return callback(self, **callback_params)
 
     def list_terms(self, extras):
         """
@@ -85,11 +97,14 @@ class SavedSearches(Route):
             item.label = search_term.title()
 
             # Creatre Context Menu item for removing search term
-            item.context.container(str_remove, self, remove=search_term, **extras)
+            # item.context.script(remove_term, str_remove, term=search_term)
+            item.context.container(str_remove, self, remove_entry=search_term, **extras)
 
             # Update params with full url and set the callback
             item.params.update(callback_params, search_query=search_term)
             item.set_callback(callback)
             yield item
 
+    def close(self):
+        """Close the connection to the search database."""
         self.search_db.close()
