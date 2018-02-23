@@ -491,6 +491,18 @@ class Context(list):
         command = "XBMC.Container.Update(%s)" % build_path(callback.route.path, query)
         self.append((label, command))
 
+    def script(self, callback, label, **query):
+        """
+        Convenient method to add a context menu item.
+
+        :param callback: The function that will be called when menu item is activated.
+        :type label: str or unicode
+        :param label: The label of the context menu item.
+        :param query: [opt] Keyword arguments that will be passed on to callback function.
+        """
+        command = "XBMC.RunPlugin(%s)" % build_path(callback.route.path, query)
+        self.append((label, command))
+
     def _close(self):
         if self:
             self._listitem.addContextMenuItems(self)
