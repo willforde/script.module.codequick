@@ -53,6 +53,7 @@ class Route(Script):
     def __init__(self):
         super(Route, self).__init__()
         self.update_listing = self.params.get(u"_updatelisting_", False)
+        self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
         self.cache_to_disc = False
         self._manual_sort = set()
         self.content_type = None
@@ -127,7 +128,7 @@ class Route(Script):
         logger.debug("Content-type: %s", content_type)
 
         # Sets the category for skins to display modes.
-        xbmcplugin.setPluginCategory(self.handle, ensure_native_str(re.sub(u"\(\d+\)$", u"", self._title).strip()))
+        xbmcplugin.setPluginCategory(self.handle, ensure_native_str(self.category))
 
         # Add sort methods only if not a folder(Video listing)
         if not isfolder:
