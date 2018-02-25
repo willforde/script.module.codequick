@@ -33,7 +33,7 @@ class SavedSearches(Route):
         self.search_db = PersistentList(SEARCH_DB)
         self.register_metacall(self.close)
 
-    def run(self, remove_entry=None, search=False, **extras):
+    def run(self, remove_entry=None, search=False, first_load=False, **extras):
         """List all saved searches."""
 
         # Remove search term from saved searches
@@ -43,12 +43,15 @@ class SavedSearches(Route):
             self.search_db.flush()
 
         # Show search dialog if search argument is True, or if there is no search term saved
-        elif not self.search_db or search:
+        elif search or (first_load is True and not self.search_db):
+            self.cache_to_disc = True
             search_term = self.search_dialog()
             if search_term:
                 return self.redirect_search(search_term, extras)
-            else:
+            elif not self.search_db:
                 return False
+            elif search:
+                self.update_listing = True
 
         # List all saved search terms
         return self.list_terms(extras)
@@ -97,7 +100,6 @@ class SavedSearches(Route):
             item.label = search_term.title()
 
             # Creatre Context Menu item for removing search term
-            # item.context.script(remove_term, str_remove, term=search_term)
             item.context.container(str_remove, self, remove_entry=search_term, **extras)
 
             # Update params with full url and set the callback

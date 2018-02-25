@@ -803,7 +803,7 @@ class Listitem(object):
         item.label = u"[B]%s[/B]" % Script.localize(SEARCH)
         item.art.global_thumb("search.png")
         item.info["plot"] = "Search for video content."
-        item.set_callback(SavedSearches, route=callback.route.path, **params)
+        item.set_callback(SavedSearches, route=callback.route.path, first_load=True, **params)
         return item
 
     def __repr__(self):
