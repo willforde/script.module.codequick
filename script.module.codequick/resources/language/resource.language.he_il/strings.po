@@ -44,5 +44,5 @@ msgstr "סרטונים קשורים"
 # Error Strings: 32400 - 32599 #
 # ##############################
 msgctxt "#32401"
-msgid "No video found!"
-msgstr "לא נמצא סרטון"
+msgid "Unable to resolve url"
+msgstr "לא ניתן לפתור את כתובת האתרן"

@@ -49,5 +49,5 @@ msgstr ""
 ################################
 
 msgctxt "#32401"
-msgid "No video found!"
+msgid "Unable to resolve url"
 msgstr ""
