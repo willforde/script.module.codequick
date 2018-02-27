@@ -139,10 +139,15 @@ class Route(object):
         Parent argument will be auto instantiated and passed to callback.
         This basically acts as a constructor to callback.
 
+        Test specific Keyword args:
+        execute_delayed: Execute any registered delayed callbacks.
+
         :param args: Positional arguments to pass to callback.
         :param kwargs: Keyword arguments to pass to callback.
         :returns: The response from the callback function.
         """
+        execute_delayed = kwargs.pop("execute_delayed", False)
+
         # Change the selector to match callback route been tested
         # This will ensure that the plugin paths are currect
         dispatcher.selector = self.path
@@ -166,6 +171,10 @@ class Route(object):
             else:
                 return results
         finally:
+            # Execute Delated callback functions if any
+            if execute_delayed:
+                dispatcher.run_metacalls()
+
             # Reset global datasets
             kodi_logger.debug_msgs = []
             dispatcher.reset()
