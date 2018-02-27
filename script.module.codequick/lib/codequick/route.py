@@ -25,6 +25,29 @@ SELECT_PLAYBACK_ITEM = 25006
 NO_DATA = 33077
 
 
+def validate_listitems(raw_listitems):
+    """
+    Check if listitems are valid
+
+    :return: Listitems as a list.
+    :rtype: list
+    """
+
+    # Convert a generator of listitem into a list of listitems
+    if inspect.isgenerator(raw_listitems):
+        raw_listitems = list(raw_listitems)
+
+    # If raw_listitems is False then, that was deliberate, so return False
+    if raw_listitems is False or (raw_listitems and isinstance(raw_listitems, list) and raw_listitems[0] is False):
+        return False
+
+    # Checks if raw_listitems is None or an empty list
+    elif not raw_listitems:
+        raise RuntimeError("No items found")
+    else:
+        return raw_listitems
+
+
 class Route(Script):
     """
     This class is used to create Route callbacks. Route callbacks, are callbacks that
@@ -71,17 +94,9 @@ class Route(Script):
 
     def __add_listitems(self, raw_listitems):
         """Handle the processing of the listitems."""
-        # Convert listitem to list incase we have a generator
-        if inspect.isgenerator(raw_listitems):
-            raw_listitems = list(raw_listitems)
-
-        # If raw_listitems is False then, that was deliberate, so return False
-        if raw_listitems is False or (raw_listitems and isinstance(raw_listitems, list) and raw_listitems[0] is False):
+        raw_listitems = validate_listitems(raw_listitems)
+        if raw_listitems is False:
             return False
-
-        # Checks if raw_listitems is None or an empty list
-        elif not raw_listitems:
-            raise RuntimeError("No items found")
 
         # Create a new list containing tuples, consisting of path, listitem, isfolder.
         listitems = []
