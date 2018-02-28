@@ -727,7 +727,7 @@ class Listitem(object):
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb("next.png")
         item.params.update(params)
-        item.set_callback(dispatcher.callback, **params)
+        item.set_callback(dispatcher.current_route.org_callback, **params)
         return item
 
     @classmethod

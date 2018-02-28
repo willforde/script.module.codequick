@@ -67,12 +67,14 @@ class SavedSearches(Route):
         :param extras: Extra parameters that will be farwarded on to the callback function.
         :return: List if valid search results
         """
-
-        # Call the farwarding callback to check for valid search term
         self.category = search_term.title()
         callback_params = extras.copy()
         callback_params["search_query"] = search_term
-        callback = dispatcher[callback_params.pop("route")].callback
+        route = callback_params.pop("route")
+        dispatcher.selector = route
+
+        # Fetch search results from callback
+        callback = dispatcher.current_route.callback
         listitems = callback(self, **callback_params)
 
         # Check that we have valid listitems

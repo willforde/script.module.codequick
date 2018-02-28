@@ -249,14 +249,14 @@ class Dispatcher(object):
                 self.callback_params[key] = value
 
     @property
-    def callback(self):
+    def current_route(self):
         """
         The original callback function/class.
 
         Primarily used by 'Listitem.next_page' constructor.
         :returns: The dispatched callback function/class.
         """
-        return self[self.selector].org_callback
+        return self[self.selector]
 
     def register(self, callback, cls):
         """
