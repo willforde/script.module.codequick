@@ -6,7 +6,7 @@ from codequick.storage import PersistentList
 from codequick.support import dispatcher
 from codequick.listing import Listitem
 from codequick.utils import keyboard
-from codequick.route import Route
+from codequick.route import Route, validate_listitems
 
 # Localized string Constants
 ENTER_SEARCH_STRING = 16017
@@ -43,35 +43,51 @@ class SavedSearches(Route):
             self.search_db.flush()
 
         # Show search dialog if search argument is True, or if there is no search term saved
+        # First load is used to only allow auto search to work when first loading the saved search container.
+        # Fixes an issue when there is no saved searches left after removing them.
         elif search or (first_load is True and not self.search_db):
             self.cache_to_disc = True
-            search_term = self.search_dialog()
+            search_term = keyboard(self.localize(ENTER_SEARCH_STRING))
             if search_term:
                 return self.redirect_search(search_term, extras)
             elif not self.search_db:
                 return False
-            elif search:
+            else:
                 self.update_listing = True
 
         # List all saved search terms
         return self.list_terms(extras)
 
-    def search_dialog(self):
-        """Show dialog for user to enter a new search term."""
-        search_term = keyboard(self.localize(ENTER_SEARCH_STRING))
-        if search_term and search_term not in self.search_db:
-            self.search_db.append(search_term)
-            self.search_db.flush()
-
-        # Return True if text was returned
-        return search_term
-
     def redirect_search(self, search_term, extras):
+        """
+        Checks if searh term returns valid results before adding to saved searches.
+        Then directly farward the results to kodi.
+
+        :param search_term: The serch term used to search for results.
+        :param extras: Extra parameters that will be farwarded on to the callback function.
+        :return: List if valid search results
+        """
+
+        # Call the farwarding callback to check for valid search term
         self.category = search_term.title()
         callback_params = extras.copy()
         callback_params["search_query"] = search_term
         callback = dispatcher[callback_params.pop("route")].callback
-        return callback(self, **callback_params)
+        listitems = callback(self, **callback_params)
+
+        # Check that we have valid listitems
+        valid_listitems = validate_listitems(listitems)
+
+        # Add the search term to database and return the list of results
+        if valid_listitems:
+            if search_term not in self.search_db:  # pragma: no branch
+                self.search_db.append(search_term)
+                self.search_db.flush()
+
+            return valid_listitems
+        else:
+            # Return False to indicate failure
+            return False
 
     def list_terms(self, extras):
         """
