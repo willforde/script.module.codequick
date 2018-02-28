@@ -192,8 +192,6 @@ class Dispatcher(object):
         self.params = {}
         self.callback_params = {}
         self.support_params = {}
-
-        self.selector_org = self.selector
         self.registered_routes = {}
 
         # List of callback functions that will be executed
@@ -202,7 +200,7 @@ class Dispatcher(object):
 
     def reset(self):
         """Reset session parameters."""
-        self.selector = self.selector_org
+        self.selector = "root"
         self.metacalls[:] = []
         self.params.clear()
 
