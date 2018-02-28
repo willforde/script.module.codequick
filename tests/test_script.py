@@ -155,7 +155,7 @@ class Script(unittest.TestCase):
         self.assertEqual(self.script.localize(30001), "")
 
     def test_localize_novideo(self):
-        self.assertEqual(self.script.localize(32401), "No video found!")
+        self.assertEqual(self.script.localize(32401), "Unable to resolve url")
 
     def test_localize_nodata(self):
         self.assertEqual(self.script.localize(33077), "No data found!")
