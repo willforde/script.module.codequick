@@ -211,6 +211,7 @@ class Resolver(Script):
 
     def extract_youtube(self, source):
         import htmlement
+        import urlquick
 
         # The Element class isn't been exposed directly by the C implementation
         # So the type trick is needed here
@@ -219,7 +220,7 @@ class Resolver(Script):
         else:
             # Tempeary method to extract video url from an embeded youtube video.
             if source.startswith("http://") or source.startswith("https://"):
-                source = self.request.get(source, max_age=0).text
+                source = urlquick.get(source, max_age=0).text
             try:
                 video_elem = htmlement.fromstring(source)
             except RuntimeError:  # pragma: no cover

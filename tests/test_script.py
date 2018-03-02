@@ -206,10 +206,6 @@ class Script(unittest.TestCase):
     def test_get_name_addon(self):
         self.assertEqual(self.script.get_info("name", addon_id="script.module.codequick"), "CodeQuick")
 
-    def test_request(self):
-        req = self.script.request
-        self.assertIsInstance(req, script.urlquick.Session)
-
     def test_icon(self):
         self.assertTrue(self.script.icon.endswith("script.module.codequick/resources/icon.png"))
 

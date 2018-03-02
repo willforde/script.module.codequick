@@ -315,29 +315,6 @@ class Script(object):
         return resp
 
     @CacheProperty
-    def request(self):
-        """
-        A urlquick.session object.
-
-        This is used for requesting online resources.
-        It is very similar to requests.session but with built-in caching support.
-
-        .. seealso:: The urlquick documentation can be found at.\n
-                     http://urlquick.readthedocs.io/en/stable/
-
-        :example:
-            >>> from codequick import Route
-            >>>
-            >>> @Route.register
-            >>> def root(plugin):
-            >>>     html = plugin.request.get("http://example.com/index.html")
-            >>>     root_element = html.parse()
-            >>>     print(root_element)
-            >>>     "xml.etree.ElementTree.Element"
-        """
-        return urlquick.Session()
-
-    @CacheProperty
     def icon(self):
         """The add-on's icon image path."""
         return self.get_info("icon")
