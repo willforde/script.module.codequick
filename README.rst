@@ -18,9 +18,6 @@ Codequick is a framework for kodi add-on's. The goal for this framework is to si
 This is achieved by reducing the amount of boilerplate code to a minimum while automating as many tasks that can be
 automated. Ultimately allowing the developer to focus primarily on scraping content from websites and passing it to kodi.
 
-
-Features
---------
     * Route dispatching (callbacks)
     * Callback arguments can be any python object that can be pickled
     * Delayed execution (execute code after callbacks have returned results)
