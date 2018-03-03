@@ -38,6 +38,12 @@ returns a 304 Not-Modified response, the cache is reused, saving having to re-do
 Inspired by: urlfetch & requests
 urlfetch: https://github.com/ifduyue/urlfetch
 requests: http://docs.python-requests.org/en/master/
+
+Github: https://github.com/willforde/urlquick
+Documentation: http://urlquick.readthedocs.io/en/stable/?badge=stable
+Integrated Testing: https://travis-ci.org/willforde/urlquick
+Code Coverage: https://coveralls.io/github/willforde/urlquick?branch=master
+Codacy: https://app.codacy.com/app/willforde/urlquick/dashboard
 """
 
 __all__ = ["request", "get", "head", "post", "put", "patch", "delete", "cache_cleanup", "Session"]

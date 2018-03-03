@@ -481,7 +481,7 @@ class Context(list):
 
     def container(self, label, callback, **query):
         """
-        Convenient method to add a context menu item.
+        Convenient method to add a context menu item to link to a container.
 
         :type label: str or unicode
         :param label: The label of the context menu item.
@@ -493,7 +493,7 @@ class Context(list):
 
     def script(self, callback, label, **query):
         """
-        Convenient method to add a context menu item.
+        Convenient method to add a context menu item to a script.
 
         :param callback: The function that will be called when menu item is activated.
         :type label: str or unicode
