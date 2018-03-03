@@ -1,3 +1,6 @@
+Welcome to Codequick’s documentation!
+=====================================
+
 .. image:: https://travis-ci.org/willforde/script.module.codequick.svg?branch=master
     :target: https://travis-ci.org/willforde/script.module.codequick
 
@@ -11,9 +14,8 @@
     :target: https://www.codacy.com/app/willforde/script.module.codequick?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=willforde/script.module.codequick&amp;utm_campaign=Badge_Grade
 
 
-=========
 Codequick
-=========
+---------
 Codequick is a framework for kodi add-on's. The goal for this framework is to simplify add-on development.
 This is achieved by reducing the amount of boilerplate code to a minimum while automating as many tasks that can be
 automated. Ultimately allowing the developer to focus primarily on scraping content from websites and passing it to kodi.
@@ -42,7 +44,7 @@ automated. Ultimately allowing the developer to focus primarily on scraping cont
 
 
 Contents
-========
+--------
 
 .. toctree::
     :maxdepth: 2
