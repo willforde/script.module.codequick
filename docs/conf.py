@@ -137,7 +137,7 @@ latex_elements = {
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
-    #'classoptions': ',openany,oneside',
+    'classoptions': ',openany,oneside',
     'babel' : '\\usepackage[polish]{babel}'
 }
 
