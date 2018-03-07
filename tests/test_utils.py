@@ -81,21 +81,6 @@ class Utils(unittest.TestCase):
         with self.assertRaises(ValueError):
             utils.parse_qs("q=search&safe=no&safe=yes")
 
-    def test_CacheProperty(self):
-        import random
-
-        class Test(object):
-            @utils.CacheProperty
-            def data_id(self):
-                return random.random()
-
-        obj = Test()
-        first_no = obj.data_id
-        self.assertIsInstance(first_no, float)
-        self.assertEqual(obj.data_id, first_no)
-        ret = Test.data_id
-        self.assertIsInstance(ret, utils.CacheProperty)
-
     def test_keyboard(self):
         with testing.mock_keyboard("Testing input"):
             ret = utils.keyboard("Test")

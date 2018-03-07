@@ -138,7 +138,7 @@ class TestDispatcher(unittest.TestCase):
         def root():
             pass
 
-        self.dispatcher.register_metacall(root, [], {})
+        self.dispatcher.register_delayed(root, [], {})
         self.assertListEqual(self.dispatcher.metacalls, [(root, [], {})])
 
     def test_metacalls(self):
@@ -149,7 +149,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             raise RuntimeError("should not be raised")
 
-        self.dispatcher.register_metacall(root, [], {})
+        self.dispatcher.register_delayed(root, [], {})
         self.dispatcher.run_metacalls()
         self.assertTrue(Executed.yes)
 

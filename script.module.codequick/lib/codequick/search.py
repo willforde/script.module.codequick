@@ -31,7 +31,7 @@ class SavedSearches(Route):
 
         # Persistent list of currently saved searches
         self.search_db = PersistentList(SEARCH_DB)
-        self.register_metacall(self.close)
+        self.register_delayed_callback(self.close)
 
     def run(self, remove_entry=None, search=False, first_load=False, **extras):
         """List all saved searches."""

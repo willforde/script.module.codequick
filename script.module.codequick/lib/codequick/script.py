@@ -11,9 +11,8 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import CacheProperty, ensure_unicode, ensure_native_str, safe_path
+from codequick.utils import ensure_unicode, ensure_native_str, safe_path
 from codequick.support import dispatcher, script_data, addon_data, logger_id
-import urlquick
 
 __all__ = ["Script", "Settings"]
 
@@ -37,7 +36,7 @@ class Settings(object):
 
     def __setitem__(self, key, value):
         """
-        Set an add-on setting.
+        Set add-on setting.
 
         :param str key: Id of the setting.
         :param value: Value of the setting.
@@ -127,16 +126,22 @@ class Script(object):
     is_playable = False
     is_folder = False
 
-    # Logging Levels
+    #: Critical logging level, maps to 'xbmc.LOGFATAL'
     CRITICAL = 50
+    #: Critical logging level, maps to 'xbmc.LOGWARNING'
     WARNING = 30
+    #: Critical logging level, maps to 'xbmc.LOGERROR'
     ERROR = 40
+    #: Critical logging level, maps to 'xbmc.LOGDEBUG'
     DEBUG = 10
+    #: Critical logging level, maps to 'xbmc.LOGNOTICE'
     INFO = 20
 
-    # Notification icon options
+    #: Kodi notification warning image
     NOTIFY_WARNING = 'warning'
+    #: Kodi notification error image
     NOTIFY_ERROR = 'error'
+    #: Kodi notification info image
     NOTIFY_INFO = 'info'
 
     #: Underlining logger object, for advanced use.
@@ -173,17 +178,17 @@ class Script(object):
         return dispatcher.register(callback, cls=cls)
 
     @staticmethod
-    def register_metacall(func, *args, **kwargs):
+    def register_delayed_callback(func, *args, **kwargs):
         """
         Register a function that will be executed after kodi has finished listing all listitems.
         Sence the function is called after the listitems have been shown, it will not slow anything down.
-        Very useful for fetching extra metadata without slowing down the listing of content.
+        Very useful for fetching extra metadata for later use without slowing down the listing of content.
 
         :param func: Function that will be called after endOfDirectory is called.
         :param args: Positional arguments that will be passed to function.
         :param kwargs: Keyword arguments that will be passed to function.
         """
-        dispatcher.register_metacall(func, args, kwargs)
+        dispatcher.register_delayed(func, args, kwargs)
 
     @staticmethod
     def log(msg, args=None, lvl=10):
@@ -200,7 +205,7 @@ class Script(object):
         :param msg: The message format string.
         :type args: list or tuple
         :param args: List of arguments which are merged into msg using the string formatting operator.
-        :param lvl: The logging level to use. default => 10(Debug).
+        :param lvl: The logging level to use. default => 10 (Debug).
 
         .. Note::
             When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
@@ -313,23 +318,3 @@ class Script(object):
                 os.mkdir(path)
 
         return resp
-
-    @CacheProperty
-    def icon(self):
-        """The add-on's icon image path."""
-        return self.get_info("icon")
-
-    @CacheProperty
-    def fanart(self):
-        """The add-on's fanart image path."""
-        return self.get_info("fanart")
-
-    @CacheProperty
-    def profile(self):
-        """The add-on's profile data directory path."""
-        return self.get_info("profile")
-
-    @CacheProperty
-    def path(self):
-        """The add-on's directory path."""
-        return self.get_info("path")

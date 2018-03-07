@@ -120,7 +120,7 @@ class Script(unittest.TestCase):
         def tester():
             pass
 
-        self.script.register_metacall(tester)
+        self.script.register_delayed_callback(tester)
         for callback, _, _ in script.dispatcher.metacalls:
             if callback is tester:
                 self.assertTrue(True, "")
@@ -205,15 +205,3 @@ class Script(unittest.TestCase):
 
     def test_get_name_addon(self):
         self.assertEqual(self.script.get_info("name", addon_id="script.module.codequick"), "CodeQuick")
-
-    def test_icon(self):
-        self.assertTrue(self.script.icon.endswith("script.module.codequick/resources/icon.png"))
-
-    def test_fanart(self):
-        self.assertTrue(self.script.fanart.endswith("script.module.codequick/fanart.jpg"))
-
-    def test_profile(self):
-        self.assertTrue(self.script.profile.endswith("userdata/addon_data/script.module.codequick"))
-
-    def test_path(self):
-        self.assertTrue(self.script.path.endswith("script.module.codequick"))

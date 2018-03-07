@@ -25,43 +25,8 @@ PY3 = sys.version_info[0] >= 3
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
 
-__all__ = ["CacheProperty", "keyboard", "parse_qs", "urljoin_partial", "strip_tags",
+__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags",
            "safe_path", "ensure_bytes", "ensure_native_str", "ensure_unicode"]
-
-
-class CacheProperty(object):
-    """
-    Decorator that converts a class method into a class property and caches the response on first access.
-
-    When the class property is accessed for the first time, the result is computed and returned.
-    The property is then replaced with an instance attribute with the computed result.
-
-    :example:
-        >>> import random
-        >>> class Test(object):
-        >>>     @CacheProperty
-        >>>     def data_id(self):
-        >>>         return random.random()
-        >>>
-        >>> obj = Test()
-        >>> print(obj.data_id)
-        0.39391705700202373
-        >>> print(obj.data_id)
-        0.39391705700202373
-    """
-
-    def __init__(self, func):
-        self.__name__ = func.__name__
-        self.__doc__ = func.__doc__
-        self._func = func
-
-    def __get__(self, instance, owner):
-        if instance:
-            attr = self._func(instance)
-            setattr(instance, self.__name__, attr)
-            return attr
-        else:
-            return self
 
 
 def keyboard(heading, default="", hidden=False):

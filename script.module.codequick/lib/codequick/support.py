@@ -291,7 +291,7 @@ class Dispatcher(object):
         callback.test = tester
         return callback
 
-    def register_metacall(self, func, args, kwargs):
+    def register_delayed(self, func, args, kwargs):
         callback = (func, args, kwargs)
         self.metacalls.append(callback)
 
