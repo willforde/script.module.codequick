@@ -3,7 +3,7 @@ Tutorial
 ########
 Here we will document the creation of an add-on.
 In this case, plugin.video.metalvideo. This will be a simplifyed version of the full add-on
-witch can be found @ https://github.com/willforde/plugin.video.metalvideo
+witch can be found over @ https://github.com/willforde/plugin.video.metalvideo
 
 First thing is to import the required codequick components.
 
@@ -16,6 +16,14 @@ First thing is to import the required codequick components.
 .. code-block:: python
 
     from codequick import Route, Resolver, Listitem, utils, run
+
+
+Next we will import urlquick, witch is a light-weight http client with requests like interface
+featuring caching support
+
+.. code-block:: python
+
+    import urlquick
 
 Now we will use :func:`utils.urljoin_partial<codequick.utils.urljoin_partial>` to create a url constructor
 with the base url of the site. This is use to convert relative urls to absolute urls.
@@ -38,11 +46,13 @@ The first argument that will be passed to a :class:`Route<codequick.route.Route>
 
 This callback will parse the list of music video categories available on http://metalvideo.com, then return a
 generator of listitems linking to a sub directory of videos within that category.
-Parsing of the html source will be done using HTMLement witch is integrated into the request response.
+Parsing of the html source will be done using HTMLement witch is integrated into the urlquick request response.
 
-.. seealso:: http://python-htmlement.readthedocs.io/en/stable/
+.. seealso:: http://urlquick.readthedocs.io/en/stable/#urlquick.Response.parse
 
-             http://urlquick.readthedocs.io/en/stable/
+             http://python-htmlement.readthedocs.io/en/stable/
+
+
 
 .. code-block:: python
 
@@ -50,12 +60,12 @@ Parsing of the html source will be done using HTMLement witch is integrated into
     def root(plugin):
         # Request the online resource
         url = url_constructor("/mobile/category.html")
-        html = plugin.request.get(url, headers={"Cookie": "COOKIE_DEVICE=mobile"})
+        resp = urlquick.get(url, headers={"Cookie": "COOKIE_DEVICE=mobile"})
 
         # Filter source down to needed section by giving the name and
         # attributes of the element containing the required data
         # It is a lot faster to limit the parser to required section
-        root_elem = html.parse(u"ul", attrs={"id": "category_listing"})
+        root_elem = resp.parse(u"ul", attrs={"id": "category_listing"})
 
         # Parse each category
         for elem in root_elem.iterfind("li"):
@@ -64,12 +74,16 @@ Parsing of the html source will be done using HTMLement witch is integrated into
             # Find the 'a' element containing the label & url info
             a_tag = elem.find("a")
 
+            # Find the video count 'span' tag
+            vidcount = elem.find("span").text
+
             # Set label with video count added
-            item.label = "%s (%s)" % (a_tag.text, elem.find("span").text)
+            item.label = "%s (%s)" % (a_tag.text, vidcount)
 
             # This will set the callback that will be called when listitem is activated
             # 'video_list' is the route callback function that we will create later
-            # The 'url' argument is the url of the category that will be passed to the callback
+            # The 'url' argument is the url of the category that will be passed
+            # to the 'video_list' callback
             item.set_callback(video_list, url=a_tag.get("href"))
 
             # Return the listitem as a generator
@@ -85,8 +99,8 @@ And since this is another function that will return listitems, it will be regist
     def video_list(plugin, url):
         # Request the online resource
         url = url_constructor(url)
-        html = plugin.request.get(url)
-        root_elem = html.parse("div", attrs={"id": "browse_main"})
+        resp = urlquick.get(url)
+        root_elem = resp.parse("div", attrs={"id": "browse_main"})
 
         # Parse each video
         for elem in root_elem.iterfind(u".//div[@class='video_i']"):
@@ -101,13 +115,14 @@ And since this is another function that will return listitems, it will be regist
             url = a_tag.get("href")
             elem.remove(a_tag)
 
-            # Set title as a 'artist - song'
+            # Set title as 'artist - song'
             span_tags = tuple(node.text for node in elem.findall(".//span"))
             item.label = "%s - %s" % span_tags
             item.info["artist"] = [span_tags[0]]
 
             # 'play_video' is the resolver callback function that we will create later
-            # The 'url' argument is the url of the video that will be passed to the resolver callback
+            # The 'url' argument is the url of the video that will be passed
+            # to the 'play_video' resolver callback
             item.set_callback(play_video, url=url)
 
             # Return the listitem as a generator
