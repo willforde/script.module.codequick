@@ -138,7 +138,7 @@ latex_elements = {
     #
     # 'figure_align': 'htbp',
     'classoptions': ',openany,oneside',
-    'babel' : '\\usepackage[polish]{babel}'
+    #'babel' : '\\usepackage[polish]{babel}'
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
