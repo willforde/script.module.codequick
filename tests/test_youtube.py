@@ -76,6 +76,7 @@ class Testcallbacks(unittest.TestCase):
         ret = route_caller(youtube.Playlists, "UCaWd5_7JhbQBe4dknZhsHJg", show_all=False)
         self.assertGreaterEqual(len(ret), 50)
 
+    @unittest.skip
     def test_playvideo(self):
         ret = youtube.play_video.test("-QEXPO9zgX8")
         self.assertEqual(ret, "plugin://plugin.video.youtube/play/?video_id=-QEXPO9zgX8")

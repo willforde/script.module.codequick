@@ -515,7 +515,7 @@ class APIControl(Route):
         """
         # Check that the quality setting is set to HD or greater
         try:
-            ishd = self.setting.get_int("kodion.video.quality", addon_id="plugin.video.youtube")
+            ishd = self.setting.get_int("video_quality", addon_id="script.module.youtube.dl")
         except RuntimeError:  # pragma: no cover
             ishd = True
 
@@ -739,9 +739,10 @@ class Related(APIControl):
 
 
 @Resolver.register
-def play_video(_, video_id):
+def play_video(plugin, video_id):
     """
-    :type _: :class:`codequick.PlayMedia`
+    :type plugin: :class:`codequick.PlayMedia`
     :type video_id: unicode
     """
-    return "plugin://plugin.video.youtube/play/?video_id={}".format(video_id)
+    url = u"https://www.youtube.com/watch?v={}".format(video_id)
+    return plugin.extract_source(url)
