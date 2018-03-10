@@ -95,5 +95,4 @@ ENV/
 .ropeproject
 .idea/
 docs/_static/
-script.module.codequick/.kodi/
 .pytest_cache/
