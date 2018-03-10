@@ -144,7 +144,7 @@ class Script(object):
     #: Kodi notification info image
     NOTIFY_INFO = 'info'
 
-    #: Underlining logger object, for advanced use.
+    # Underlining logger object, for advanced use.
     logger = addon_logger
 
     setting = Settings()

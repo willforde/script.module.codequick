@@ -31,7 +31,7 @@ __all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags",
 
 def keyboard(heading, default="", hidden=False):
     """
-    Show a keyboard dialog with default text heading and hidden input flag if supplied.
+    Show a keyboard dialog.
 
     :param heading: Keyboard heading.
     :type heading: str or unicode
@@ -85,7 +85,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     :return: Returns a dict of key/value pairs, with all keys and values as unicode.
     :rtype: dict
 
-    :raises ValueError: If duplicate query field names exists.
+    :raises ValueError: If duplicate query field names exists or if there is a parsing error.
 
     :example:
         >>> parse_qs("http://example.com/path?q=search&safe=no")
@@ -182,7 +182,7 @@ def safe_path(path, encoding="utf8"):
 
     :type path: str or unicode
     :param path: The path to convert.
-    :param str encoding: [opt] The encoding to use when needed.
+    :param str encoding: [opt] The encoding to use if needed.
     :return: Returns the path as unicode or bytes base on platform os.
     """
     return ensure_unicode(path, encoding) if sys.platform.startswith("win") else ensure_bytes(path, encoding)

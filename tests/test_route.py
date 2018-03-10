@@ -28,14 +28,14 @@ class TestRoute(unittest.TestCase):
 
     def test_gen(self):
         def route_gen(_):
-            yield Listitem.from_dict("test item", callback_test)
+            yield Listitem.from_dict(callback_test, "test item")
 
         self.route._execute_route(route_gen)
         self.assertTrue(plugin_data["succeeded"])
 
     def test_list(self):
         def route_list(_):
-            return [Listitem.from_dict("test item", callback_test)]
+            return [Listitem.from_dict(callback_test, "test item")]
 
         self.route._execute_route(route_list)
         self.assertTrue(plugin_data["succeeded"])
@@ -63,7 +63,7 @@ class TestRoute(unittest.TestCase):
 
     def test_one_mediatype(self):
         def route_list(_):
-            yield Listitem.from_dict("test item", callback_test, info={"mediatype": "video"})
+            yield Listitem.from_dict(callback_test, "test item", info={"mediatype": "video"})
 
         self.route._execute_route(route_list)
         self.assertTrue(plugin_data["succeeded"])
@@ -71,9 +71,9 @@ class TestRoute(unittest.TestCase):
 
     def test_two_mediatype(self):
         def route_list(_):
-            yield Listitem.from_dict("test item one", callback_test, info={"mediatype": "video"})
-            yield Listitem.from_dict("test item two", callback_test, info={"mediatype": "movie"})
-            yield Listitem.from_dict("test item three", callback_test, info={"mediatype": "video"})
+            yield Listitem.from_dict(callback_test, "test item one", info={"mediatype": "video"})
+            yield Listitem.from_dict(callback_test, "test item two", info={"mediatype": "movie"})
+            yield Listitem.from_dict(callback_test, "test item three", info={"mediatype": "video"})
 
         self.route._execute_route(route_list)
         self.assertTrue(plugin_data["succeeded"])
@@ -81,7 +81,7 @@ class TestRoute(unittest.TestCase):
 
     def test_unsupported_mediatype(self):
         def route_list(_):
-            yield Listitem.from_dict("season one", callback_test, info={"mediatype": "season"})
+            yield Listitem.from_dict(callback_test, "season one", info={"mediatype": "season"})
 
         self.route._execute_route(route_list)
         self.assertTrue(plugin_data["succeeded"])

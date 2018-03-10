@@ -259,7 +259,7 @@ class Context(unittest.TestCase):
         dispatcher.registered_routes.update(self.org_routes)
 
     def test_container(self):
-        self.base.container("test label", self.test_callback)
+        self.base.container(self.test_callback, "test label")
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
@@ -267,11 +267,27 @@ class Context(unittest.TestCase):
                                   "tests/test_listing/test_callback)")
 
     def test_container_with_params(self):
-        self.base.container("test label", self.test_callback, test=True)
+        self.base.container(self.test_callback, "test label", test=True)
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
         self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
+                                           "tests/test_listing/test_callback?_pickle_="))
+
+    def test_script(self):
+        self.base.script(self.test_callback, "test label")
+        label, command = self.base[0]
+
+        self.assertEqual(label, "test label")
+        self.assertEqual(command, "XBMC.RunPlugin(plugin://script.module.codequick/"
+                                  "tests/test_listing/test_callback)")
+
+    def test_script_with_params(self):
+        self.base.script(self.test_callback, "test label", test=True)
+        label, command = self.base[0]
+
+        self.assertEqual(label, "test label")
+        self.assertTrue(command.startswith("XBMC.RunPlugin(plugin://script.module.codequick/"
                                            "tests/test_listing/test_callback?_pickle_="))
 
     def test_related(self):
@@ -300,8 +316,9 @@ class TestListitem(unittest.TestCase):
         self.listitem = listing.Listitem()
         self.org_routes = dispatcher.registered_routes.copy()
 
+        # noinspection PyUnusedLocal
         @route.Route.register
-        def route_callback(_):
+        def route_callback(_, data=None):
             pass
 
         # noinspection PyUnusedLocal
@@ -349,6 +366,10 @@ class TestListitem(unittest.TestCase):
         self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/route_callback")
         self.assertTrue(isfolder)
 
+    def test_close_no_callback(self):
+        with self.assertRaises(ValueError):
+            self.listitem._close()
+
     def test_close_route_params(self):
         self.listitem.set_callback(self.route_callback, "yes", full=True)
         path, raw_listitem, isfolder = self.listitem._close()
@@ -368,7 +389,7 @@ class TestListitem(unittest.TestCase):
         self.assertFalse(isfolder)
 
     def test_from_dict(self):
-        listitem = listing.Listitem.from_dict("test label", self.route_callback,
+        listitem = listing.Listitem.from_dict(self.route_callback, "test label",
                                               params={"test": True},
                                               info={"size": 135586565},
                                               art={"fanart": "fanart.jpg"},
@@ -385,11 +406,12 @@ class TestListitem(unittest.TestCase):
         self.assertListEqual(listitem.context, [('related', 'XBMC.Container.Update')])
 
     def test_next_page(self):
+        # noinspection PyUnusedLocal
         @route.Route.register
-        def root(_):
+        def root(_, url):
             pass
 
-        listitem = listing.Listitem.next_page(url="http://example.com/videos?page2")
+        listitem = listing.Listitem.next_page("http://example.com/videos?page2")
 
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Next page 2[/B]")
@@ -402,7 +424,12 @@ class TestListitem(unittest.TestCase):
         self.assertEqual(listitem.params["contentid"], "UC4QZ_LsYcvcq7qOsOhpAX4A")
         self.assertTrue(listitem.art["thumb"].endswith("videos.png"))
 
-    def test_recent(self):
+    def test_recent_with_arg(self):
+        listitem = listing.Listitem.recent(self.route_callback, "")
+        self.assertIsInstance(listitem, listing.Listitem)
+        self.assertTrue(listitem.art["thumb"].endswith("recent.png"))
+
+    def test_recent_without_arg(self):
         listitem = listing.Listitem.recent(self.route_callback)
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertTrue(listitem.art["thumb"].endswith("recent.png"))
@@ -410,10 +437,10 @@ class TestListitem(unittest.TestCase):
     def test_search(self):
         # noinspection PyUnusedLocal
         @route.Route.register
-        def search_results(_, search_query):
+        def search_results(_, url="", search_query=""):
             pass
 
-        listitem = listing.Listitem.search(search_results)
+        listitem = listing.Listitem.search(search_results, "")
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Search[/B]")
         self.assertTrue(listitem.art["thumb"].endswith("search.png"))

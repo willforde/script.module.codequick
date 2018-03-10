@@ -70,7 +70,7 @@ class _PersistentBase(object):
         """
         Syncrnize data back to disk.
 
-        Data will only be written to disk if contents has changed.
+        Data will only be written to disk if content has changed.
         """
         # Serialize the storage data
         content = pickle.dumps(self._serialize(), protocol=2)  # Protocol 2 is used for python2/3 compatibility
@@ -112,21 +112,20 @@ class PersistentDict(_PersistentBase, dict):
 
     This class inherits all methods from the build-in data type :class:`dict`.
 
-    ``name`` can be the filename of a file, or the full path to a file.
-    The add-on profile directory will be the default location for files, unless a full path is given.
-
-    .. note:: This class is also designed as a context manager.
-
     :param name: Filename or path to storage file.
     :type name: str or unicode
 
+    .. note::
+
+        ``name`` can be the filename of a file, or the full path to a file.
+        The add-on profile directory will be the default location for files, unless a full path is given.
+
+    .. note:: This class is also designed as a context manager.
+
     :Example:
-        >>> db = PersistentDict("dictfile.pickle")
-        >>> db["testdata"] = "testvalue"
-        >>> print(db)
-        {"testdata": "testvalue"}
-        >>> db.flush()
-        >>> db.close()
+        >>> with PersistentDict("dictfile.pickle") as db:
+        >>>     db["testdata"] = "testvalue"
+        >>>     db.flush()
     """
 
     def __init__(self, name):
@@ -145,22 +144,21 @@ class PersistentList(_PersistentBase, list):
 
     This class inherits all methods from the build-in data type :class:`list`.
 
-    ``name`` can be the filename of a file, or the full path to a file.
-    The add-on profile directory will be the default location for files, unless a full path is given.
-
-    .. note:: This class is also designed as a context manager.
-
     :param name: Filename or path to storage file.
     :type name: str or unicode
 
+    .. note::
+
+        ``name`` can be the filename of a file, or the full path to a file.
+        The add-on profile directory will be the default location for files, unless a full path is given.
+
+    .. note:: This class is also designed as a context manager.
+
     :Example:
-        >>> db = PersistentList("listfile.pickle")
-        >>> db.append("testvalue")
-        >>> db.extend(["test1", "test2"])
-        >>> print(db)
-        ["testvalue", "test1", "test2"]
-        >>> db.flush()
-        >>> db.close()
+        >>> with PersistentList("listfile.pickle") as db:
+        >>>     db.append("testvalue")
+        >>>     db.extend(["test1", "test2"])
+        >>>     db.flush()
     """
 
     def __init__(self, name):

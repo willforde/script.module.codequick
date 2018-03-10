@@ -560,7 +560,7 @@ class APIControl(Route):
 
             # Add Context item for youtube channel if videos from more than one channel are ben listed
             if multi_channel:
-                item.context.container(u"Go to: %s" % video_data["channel_title"], Playlist,
+                item.context.container(Playlist, u"Go to: %s" % video_data["channel_title"],
                                        contentid=video_data["channel_id"])
 
             # Return the listitem

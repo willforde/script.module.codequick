@@ -39,8 +39,8 @@ class Search(unittest.TestCase):
         @route.Route.register
         def results(_, search_query):
             self.assertEqual(search_query, "Rock")
-            yield Listitem.from_dict("listitem one", results)
-            yield Listitem.from_dict("listitem two", results)
+            yield Listitem.from_dict(results, "listitem one")
+            yield Listitem.from_dict(results, "listitem two")
 
         with testing.mock_keyboard("Rock"):
             listitems = search.SavedSearches.test(first_load=True, route=results.route.path, execute_delayed=True)
@@ -84,8 +84,8 @@ class Search(unittest.TestCase):
         @route.Route.register
         def results(_, search_query):
             self.assertEqual(search_query, "Rock")
-            yield Listitem.from_dict("listitem one", results)
-            yield Listitem.from_dict("listitem two", results)
+            yield Listitem.from_dict(results, "listitem one")
+            yield Listitem.from_dict(results, "listitem two")
 
         with testing.mock_keyboard("Rock"):
             listitems = search.SavedSearches.test(search=True, route=results.route.path, execute_delayed=True)
@@ -101,8 +101,8 @@ class Search(unittest.TestCase):
         @route.Route.register
         def results(_, search_query):
             self.assertEqual(search_query, "Rock")
-            yield Listitem.from_dict("listitem one", results)
-            yield Listitem.from_dict("listitem two", results)
+            yield Listitem.from_dict(results, "listitem one")
+            yield Listitem.from_dict(results, "listitem two")
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             db.append("Pop")

@@ -118,7 +118,7 @@ class SavedSearches(Route):
             item.label = search_term.title()
 
             # Creatre Context Menu item for removing search term
-            item.context.container(str_remove, self, remove_entry=search_term, **extras)
+            item.context.container(self, str_remove, remove_entry=search_term, **extras)
 
             # Update params with full url and set the callback
             item.params.update(callback_params, search_query=search_term)

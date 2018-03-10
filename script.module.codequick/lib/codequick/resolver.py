@@ -63,15 +63,13 @@ class Resolver(Script):
 
     Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
 
-    The possible return types from the resolver callbacks are.
+    The possible return types from resolver callbacks are.
         * ``bytes``: Url as type bytes.
         * ``unicode``: Url as type unicode.
         * ``iterable``: List or tuple, consisting of url's, listItem's or a tuple consisting of title and url.
         * ``dict``: Dictionary consisting of title as the key and the url as the value.
         * ``listItem``: A listitem object with required data already set e.g. label and path.
         * ``generator``: A python generator that return's one or more urls.
-                         Playback will start after the first video has been decoded, the rest of the videos
-                         will then be decoded in the background while the first video is playing.
 
     .. note:: If multiple url's are given, a playlist will be automaticly created.
 
@@ -102,10 +100,7 @@ class Resolver(Script):
 
     def create_loopback(self, url, **next_params):
         """
-        Create a playlist where the second item loops back to current addon to load next video.
-
-        Useful for faster playlist resolving by only resolving the video url as the playlist progresses.
-        No need to resolve all video urls at once before playing the playlist.
+        Create a playlist where the second item loops back to addon to load next video.
 
         Also useful for continuous playback of videos with no foreseeable end. For example, party mode.
 
@@ -152,30 +147,38 @@ class Resolver(Script):
         """
         Extract video url using YoutubeDL.
 
-        The YoutubeDL module provides access to youtube-dl video stream extractor
-        witch gives access to hundreds of sites.
+        YoutubeDL provides access to hundreds of sites.
 
-        Quality is 0=SD, 1=720p, 2=1080p, 3=Highest Available
+        Quality options are.
+            * 0 = SD,
+            * 1 = 720p,
+            * 2 = 1080p,
+            * 3 = Highest Available
 
-        .. seealso:: https://rg3.github.io/youtube-dl/supportedsites.html
-
-        :param url: Url to fetch video for.
+        :param url: Url of the video source to extract the playable video from.
         :type url: str or unicode
         :param int quality: [opt] Override youtubeDL's quality setting.
-        :param params: Keyword arguments of youtube_dl parmeters
+        :param params: Optional Keyword arguments of youtube_dl parameters.
 
-        :returns: The extracted video url
+        :returns: The playable video url
         :rtype: str
+
+        .. seealso::
+
+            The list of supported sites can be found at:
+
+            https://rg3.github.io/youtube-dl/supportedsites.html
+
+        .. seealso::
+
+            The list of available parameters can be found at.
+
+            https://github.com/rg3/youtube-dl#options
 
         .. note::
 
             Unfortunately the kodi Youtube-DL module is python2 only.
             It should be ported to python3 when kodi switches to python 3 for version 19.
-
-        .. note::
-
-            Unfortunately Youtube-DL module will not work with the UWP
-            version of Kodi on Xbox.
         """
 
         def ytdl_logger(record):
