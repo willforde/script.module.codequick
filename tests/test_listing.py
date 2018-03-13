@@ -247,8 +247,9 @@ class Context(unittest.TestCase):
         self.base = listing.Context(listitem)
         self.org_routes = dispatcher.registered_routes.copy()
 
+        # noinspection PyUnusedLocal
         @route.Route.register
-        def test_callback(_):
+        def test_callback(_, test):
             pass
 
         self.test_callback = test_callback
@@ -267,7 +268,7 @@ class Context(unittest.TestCase):
                                   "tests/test_listing/test_callback)")
 
     def test_container_with_params(self):
-        self.base.container(self.test_callback, "test label", test=True)
+        self.base.container(self.test_callback, "test label", True, url="tester")
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
@@ -283,7 +284,7 @@ class Context(unittest.TestCase):
                                   "tests/test_listing/test_callback)")
 
     def test_script_with_params(self):
-        self.base.script(self.test_callback, "test label", test=True)
+        self.base.script(self.test_callback, "test label", True, url="tester")
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
