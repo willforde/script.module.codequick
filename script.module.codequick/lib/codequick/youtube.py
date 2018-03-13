@@ -726,7 +726,8 @@ class Related(APIControl):
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
         """
-        self.update_listing = True
+        self.category = "Related"
+        self.update_listing = bool(pagetoken)
         feed = self.api.search(pageToken=pagetoken, relatedToVideoId=video_id)
         video_list = [item[u"id"][u"videoId"] for item in feed[u"items"]]  # pragma: no branch
 
