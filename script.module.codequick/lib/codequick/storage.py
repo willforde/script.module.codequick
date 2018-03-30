@@ -2,7 +2,9 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
+from collections import MutableMapping, MutableSequence
 from hashlib import sha1
+import time
 import sys
 import os
 
@@ -31,6 +33,8 @@ class _PersistentBase(object):
 
     def __init__(self, name):
         super(_PersistentBase, self).__init__()
+        self._version_string = "__codequick_storage_version__"
+        self._data_string = "__codequick_storage_data__"
         self._serializer_obj = object
         self._stream = None
         self._hash = None
@@ -72,8 +76,10 @@ class _PersistentBase(object):
 
         Data will only be written to disk if content has changed.
         """
+
         # Serialize the storage data
-        content = pickle.dumps(self._serialize(), protocol=2)  # Protocol 2 is used for python2/3 compatibility
+        data = {self._version_string: 2, self._data_string: self._serialize()}
+        content = pickle.dumps(data, protocol=2)  # Protocol 2 is used for python2/3 compatibility
         current_hash = sha1(content).hexdigest()
 
         # Compare saved hash with current hash, to detect if content has changed
@@ -96,28 +102,27 @@ class _PersistentBase(object):
             self._stream.close()
             self._stream = None
 
+    def _serialize(self):  # pragma: no cover
+        pass
+
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
         self.close()
 
-    def _serialize(self):  # pragma: no cover
-        pass
 
-
-class PersistentDict(_PersistentBase, dict):
+class PersistentDict(_PersistentBase, MutableMapping):
     """
     Persistent storage with a :class:`dictionary<dict>` like interface.
 
-    This class inherits all methods from the build-in data type :class:`dict`.
-
     :param name: Filename or path to storage file.
     :type name: str or unicode
+    :param int ttl: [opt] The amount of time in seconds that a value can be stored before it expires, if required.
 
     .. note::
 
-        ``name`` can be the filename of a file, or the full path to a file.
+        ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
 
     .. note:: This class is also designed as a context manager.
@@ -128,28 +133,64 @@ class PersistentDict(_PersistentBase, dict):
         >>>     db.flush()
     """
 
-    def __init__(self, name):
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, key):
+        return self._data[key][0]
+
+    def __setitem__(self, key, value):
+        self._data[key] = (value, time.time())
+
+    def __delitem__(self, key):
+        del self._data[key]
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
+
+    def __init__(self, name, ttl=None):
         super(PersistentDict, self).__init__(name)
-        current_data = self._load()
-        if current_data:
-            self.update(current_data)
+        data = self._load()
+        self._data = {}
+
+        if data:
+            version = data.get(self._version_string, 1)
+            if version == 1:
+                self._data = {key: (val, time.time()) for key, val in data.items()}
+            elif version == 2:
+                data = data[self._data_string]
+                if ttl:
+                    self._data = {key: item for key, item in data.items() if time.time() - item[1] < ttl}
+                else:
+                    self._data = data
 
     def _serialize(self):
-        return dict(self)
+        return self._data
+
+    def items(self):
+        return map(lambda x: (x[0], x[1][0]), self._data.items())
+
+    def __bool__(self):
+        return bool(self._data)
+
+    def __nonzero__(self):
+        return bool(self._data)
 
 
-class PersistentList(_PersistentBase, list):
+class PersistentList(_PersistentBase, MutableSequence):
     """
     Persistent storage with a :class:`list` like interface.
 
-    This class inherits all methods from the build-in data type :class:`list`.
-
     :param name: Filename or path to storage file.
     :type name: str or unicode
+    :param int ttl: [opt] The amount of time in seconds that a value can be stored before it expires, if required.
 
     .. note::
 
-        ``name`` can be the filename of a file, or the full path to a file.
+        ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
 
     .. note:: This class is also designed as a context manager.
@@ -161,11 +202,47 @@ class PersistentList(_PersistentBase, list):
         >>>     db.flush()
     """
 
-    def __init__(self, name):
+    def __len__(self):
+        len(self._data)
+
+    def __getitem__(self, index):
+        return self._data[index][0]
+
+    def __setitem__(self, index, value):
+        self._data[index] = (value, time.time())
+
+    def __delitem__(self, index):
+        del self._data[index]
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, [val for val, _ in self._data])
+
+    def __init__(self, name, ttl=None):
         super(PersistentList, self).__init__(name)
-        current_data = self._load()
-        if current_data:
-            self.extend(current_data)
+        data = self._load()
+        self._data = []
+
+        if data:
+            if isinstance(data, list):
+                self._data = [(val, time.time()) for val in data]
+            else:
+                data = data[self._data_string]
+                if ttl:
+                    self._data = [item for item in data if time.time() - item[1] < ttl]
+                else:
+                    self._data = data
+
+    def insert(self, index, value):
+        self._data.insert(index, (value, time.time()))
+
+    def append(self, value):
+        self._data.append((value, time.time()))
 
     def _serialize(self):
-        return list(self)
+        return self._data
+
+    def __bool__(self):
+        return bool(self._data)
+
+    def __nonzero__(self):
+        return bool(self._data)
