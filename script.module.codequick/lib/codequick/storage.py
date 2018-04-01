@@ -98,6 +98,7 @@ class _PersistentBase(object):
 
     def close(self):
         """Close file object."""
+        self.flush()
         if self._stream:
             self._stream.close()
             self._stream = None
@@ -124,6 +125,10 @@ class PersistentDict(_PersistentBase, MutableMapping):
 
         ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
+
+    .. note::
+
+        If the 'ttl' parameter is given, any expired data will be removed on initialization.
 
     .. note:: This class is also designed as a context manager.
 
@@ -192,6 +197,10 @@ class PersistentList(_PersistentBase, MutableSequence):
 
         ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
+
+    .. note::
+
+        If the 'ttl' parameter is given, any expired data will be removed on initialization.
 
     .. note:: This class is also designed as a context manager.
 
