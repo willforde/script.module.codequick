@@ -112,17 +112,18 @@ class Route(object):
         self.parent = parent
         self.path = path
 
-    # noinspection PyDeprecation
-    def args_to_kwargs(self, args):
+    def args_to_kwargs(self, args, kwargs):
         """
-        Convert positional arguments to keyword arguments.
+        Convert positional arguments to keyword arguments and merge into callback parameters.
 
         :param tuple args: List of positional arguments to extract names for.
-        :returns: A list of tuples consisten of ('arg name', 'arg value)'.
+        :param dict kwargs: The dict of callback parameters that will be updated.
+        :returns: A list of tuples consisting of ('arg name', 'arg value)'.
         :rtype: list
         """
         callback_args = self.arg_names()[1:]
-        return zip(callback_args, args)
+        arg_map = zip(callback_args, args)
+        kwargs.update(arg_map)
 
     def arg_names(self):
         """Return a list of argument names, positional and keyword arguments."""
@@ -155,8 +156,8 @@ class Route(object):
         # Update support params with the params
         # that are to be passed to callback
         if args:
-            arg_map = self.args_to_kwargs(args)
-            dispatcher.params.update(arg_map)
+            self.args_to_kwargs(args, dispatcher.params)
+
         if kwargs:
             dispatcher.params.update(kwargs)
 
@@ -344,17 +345,25 @@ class Dispatcher(object):
         return self.registered_routes[route]
 
 
-def build_path(path=None, query=None, **extra_query):
+def build_path(callback=None, args=None, query=None, **extra_query):
     """
     Build addon url that can be passeed to kodi for kodi to use when calling listitems.
 
-    :param path: [opt] The route selector path referencing the callback object. (default => current route selector)
+    :param callback: [opt] The route selector path referencing the callback object. (default => current route selector)
+    :param tuple args: [opt] Positional arguments that will be add to plugin path.
     :param dict query: [opt] A set of query key/value pairs to add to plugin path.
     :param extra_query: [opt] Keyword arguments if given will be added to the current set of querys.
 
     :return: Plugin url for kodi.
     :rtype: str
     """
+
+    # Set callback to current callback if not given
+    route = callback.route if callback else dispatcher.current_route
+
+    # Convert args to keyword args if required
+    if args:
+        route.args_to_kwargs(args, query)
 
     # If extra querys are given then append the
     # extra querys to the current set of querys
@@ -367,7 +376,7 @@ def build_path(path=None, query=None, **extra_query):
         query = "_pickle_=" + ensure_native_str(binascii.hexlify(pickle.dumps(query, protocol=pickle.HIGHEST_PROTOCOL)))
 
     # Build kodi url with new path and query parameters
-    return urlparse.urlunsplit(("plugin", plugin_id, path if path else dispatcher.selector, query, ""))
+    return urlparse.urlunsplit(("plugin", plugin_id, route.path, query, ""))
 
 
 # Setup kodi logging

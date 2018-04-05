@@ -472,12 +472,7 @@ class Context(list):
         :param args: [opt] Positional arguments that will be passed to callback.
         :param kwargs: [opt] Keyword arguments that will be passed on to callback function.
         """
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
-        command = "XBMC.Container.Update(%s)" % build_path(callback.route.path, kwargs)
+        command = "XBMC.Container.Update(%s)" % build_path(callback, args, kwargs)
         self.append((label, command))
 
     def script(self, callback, label, *args, **kwargs):
@@ -490,12 +485,7 @@ class Context(list):
         :param args: [opt] Positional arguments that will be passed to callback.
         :param kwargs: [opt] Keyword arguments that will be passed on to callback function.
         """
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
-        command = "XBMC.RunPlugin(%s)" % build_path(callback.route.path, kwargs)
+        command = "XBMC.RunPlugin(%s)" % build_path(callback, args, kwargs)
         self.append((label, command))
 
     def _close(self):
@@ -512,6 +502,7 @@ class Listitem(object):
 
     def __init__(self, content_type="video"):
         self._content_type = content_type
+        self._args = None
         self.path = ""
 
         #: The underlining kodi listitem object, for advanced use.
@@ -592,12 +583,8 @@ class Listitem(object):
         :param args: Positional arguments that will be passed to callback.
         :param kwargs: Keyword arguments that will be passed to callback.
         """
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
         self.path = callback
+        self._args = args
         if kwargs:
             self.params.update(kwargs)
 
@@ -607,7 +594,7 @@ class Listitem(object):
         if hasattr(callback, "route"):
             self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
-            path = build_path(callback.route.path, self.params.raw_dict)
+            path = build_path(callback, self._args, self.params.raw_dict)
             isfolder = callback.route.is_folder
         elif callback:
             self.listitem.setProperty("isplayable", "true" if callback else "false")
@@ -712,11 +699,6 @@ class Listitem(object):
         # Current running callback
         callback = dispatcher.current_route.org_callback
 
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
         # Add support params to callback params
         kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.support_params else False
         kwargs["_title_"] = dispatcher.support_params.get(u"_title_", u"")
@@ -728,8 +710,7 @@ class Listitem(object):
         item.info["plot"] = "Show the next page of content."
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb("next.png")
-        item.params.update(kwargs)
-        item.set_callback(callback, **kwargs)
+        item.set_callback(callback, *args, **kwargs)
         return item
 
     @classmethod
@@ -744,17 +725,12 @@ class Listitem(object):
         :param args: Positional arguments that will be passed to callback.
         :param kwargs: Keyword arguments that will be passed to callback.
         """
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
         # Create listitem instance
         item = cls()
         item.label = Script.localize(RECENT_VIDEOS)
         item.info["plot"] = "Show the most recent videos."
         item.art.global_thumb("recent.png")
-        item.set_callback(callback, **kwargs)
+        item.set_callback(callback, args, **kwargs)
         return item
 
     @classmethod
@@ -772,14 +748,13 @@ class Listitem(object):
         :param kwargs: Keyword arguments that will be passed to callback.
         :raises ValueError: If the given callback function does not have a 'search_query' parameter.
         """
-        if args:
-            # Convert positional arguments to keyword arguments
-            args_map = callback.route.args_to_kwargs(args)
-            kwargs.update(args_map)
-
-        # Check that callback function has required parameter(search_query).
+        # Check that callback function has required parameter(search_query)
         if "search_query" not in callback.route.arg_names():
             raise ValueError("callback function is missing required argument: 'search_query'")
+
+        if args:
+            # Convert positional arguments to keyword arguments
+            callback.route.args_to_kwargs(args, kwargs)
 
         item = cls()
         item.label = u"[B]%s[/B]" % Script.localize(SEARCH)

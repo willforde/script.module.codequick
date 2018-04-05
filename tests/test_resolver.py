@@ -14,6 +14,21 @@ from . import YDStreamExtractor
 sys.modules["YDStreamExtractor"] = YDStreamExtractor
 
 
+def temp_callback(func):
+    def wrapper(*args):
+        # noinspection PyUnusedLocal
+        @resolver.Resolver.register
+        def root(_):
+            pass
+
+        try:
+            func(*args)
+        finally:
+            del dispatcher.registered_routes[root.route.path]
+
+    return wrapper
+
+
 class TestGlobalLocalization(unittest.TestCase):
     def test_select_playback_item(self):
         ret = xbmc.getLocalizedString(resolver.SELECT_PLAYBACK_ITEM)
@@ -163,12 +178,14 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
+    @temp_callback
     def test_create_loopback(self):
         del plugin_data["playlist"][:]
 
         self.resolver.create_loopback("video.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 2)
 
+    @temp_callback
     def test_continue_loopback(self):
         del plugin_data["playlist"][:]
         self.resolver._title = "_loopback_ - tester"

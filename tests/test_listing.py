@@ -358,8 +358,8 @@ class TestListitem(unittest.TestCase):
     def test_callback_args(self):
         self.listitem.set_callback(self.route_callback_args, "yes", full=True)
         self.assertEqual(self.listitem.path, self.route_callback_args)
+        self.assertTupleEqual(self.listitem._args, ("yes",))
         self.assertIn("full", self.listitem.params)
-        self.assertIn("test", self.listitem.params)
 
     def test_close_route(self):
         self.listitem.set_callback(self.route_callback)
@@ -417,7 +417,7 @@ class TestListitem(unittest.TestCase):
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Next page 2[/B]")
         self.assertTrue(listitem.art["thumb"].endswith("next.png"))
-        self.assertEqual(listitem.params["url"], "http://example.com/videos?page2")
+        self.assertTupleEqual(listitem._args, ("http://example.com/videos?page2",))
 
     def test_youtube(self):
         listitem = listing.Listitem.youtube("UC4QZ_LsYcvcq7qOsOhpAX4A")
