@@ -82,21 +82,12 @@ class Route(Script):
         self.content_type = None
         self.autosort = True
 
-    def _execute_route(self, callback):
-        """Execute the callback function and process the results."""
-
-        # Fetch all listitems from callback function
-        listitems = super(Route, self)._execute_route(callback)
-
-        # Process listitems and close
-        success = self.__add_listitems(listitems)
-        self.__end_directory(success)
-
-    def __add_listitems(self, raw_listitems):
+    def _process_results(self, raw_listitems):
         """Handle the processing of the listitems."""
         raw_listitems = validate_listitems(raw_listitems)
         if raw_listitems is False:
-            return False
+            xbmcplugin.endOfDirectory(self.handle, False)
+            return None
 
         # Create a new list containing tuples, consisting of path, listitem, isfolder.
         listitems = []
@@ -119,7 +110,8 @@ class Route(Script):
         self.__content_type(isfolder, mediatypes)
 
         # Pass the listitems and relevant data to kodi
-        return xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
+        success = xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
+        xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
     def __content_type(self, isfolder, mediatypes):
         """Configure plugin properties, content, category and sort methods."""
@@ -162,10 +154,6 @@ class Route(Script):
         else:
             # If no sortmethods are given then set sort mehtod to unsorted
             xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_UNSORTED)
-
-    def __end_directory(self, success):
-        """Mark the end of directory listings."""
-        xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
     def add_sort_methods(self, *methods):
         """

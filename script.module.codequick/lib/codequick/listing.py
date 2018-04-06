@@ -700,9 +700,9 @@ class Listitem(object):
         callback = dispatcher.current_route.org_callback
 
         # Add support params to callback params
-        kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.support_params else False
-        kwargs["_title_"] = dispatcher.support_params.get(u"_title_", u"")
-        kwargs["_nextpagecount_"] = dispatcher.support_params.get(u"_nextpagecount_", 1) + 1
+        kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.params else False
+        kwargs["_title_"] = dispatcher.params.get(u"_title_", u"")
+        kwargs["_nextpagecount_"] = dispatcher.params.get(u"_nextpagecount_", 1) + 1
 
         # Create listitem instance
         item = cls()

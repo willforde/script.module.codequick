@@ -104,10 +104,9 @@ class TestDispatcher(unittest.TestCase):
 
         self.assertEqual(self.dispatcher.handle, 96)
         self.assertEqual(self.dispatcher.selector, "test/tester")
-        self.assertDictContainsSubset(self.dispatcher.params,
-                                      {"testdata": "true", "worker": "false", "_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.support_params, {"_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.callback_params, {"testdata": "true", "worker": "false"})
+        self.assertDictContainsSubset({"testdata": "true", "worker": "false", "_title_": "test"},
+                                      self.dispatcher.params)
+        self.assertDictContainsSubset({"testdata": "true", "worker": "false"}, self.dispatcher.callback_params)
 
     def test_parse_sysargs_error(self):
         with mock_argv(["script://script.module.codequick", 96, ""]):
@@ -119,20 +118,16 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.parse_params(
             "_pickle_=80027d7100285506776f726b65727101895508746573746461746171028855075f7469746c655f71035"
             "504746573747104752e")
-        self.assertDictContainsSubset(self.dispatcher.params,
-                                      {"testdata": True, "worker": False, "_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.support_params, {"_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.callback_params, {"testdata": True, "worker": False})
+        self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, self.dispatcher.params)
+        self.assertDictContainsSubset({"testdata": True, "worker": False}, self.dispatcher.callback_params)
 
     @unittest.skipUnless(PY3, "The pickled string is specific to python 3")
     def test_parse_params_pickle_py3(self):
         self.dispatcher.parse_params(
             "_pickle_=8004952c000000000000007d94288c08746573746461746194888c06776f726b657294898c075f74697"
             "46c655f948c047465737494752e")
-        self.assertDictContainsSubset(self.dispatcher.params,
-                                      {"testdata": True, "worker": False, "_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.support_params, {"_title_": "test"})
-        self.assertDictContainsSubset(self.dispatcher.callback_params, {"testdata": True, "worker": False})
+        self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, self.dispatcher.params)
+        self.assertDictContainsSubset({"testdata": True, "worker": False}, self.dispatcher.callback_params)
 
     def test_register_metacall(self):
         def root():

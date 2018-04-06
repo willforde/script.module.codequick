@@ -44,64 +44,45 @@ class TestResolver(unittest.TestCase):
         self.resolver = resolver.Resolver()
 
     def test_bytes(self):
-        def eg_resolver(_):
-            return b"test.mkv"
-
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(b"test.mkv")
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_unicode(self):
-        def eg_resolver(_):
-            return u"test.mkv"
-
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(u"test.mkv")
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_no_url(self):
-        def eg_resolver(_):
-            return None
-
         with self.assertRaises(ValueError):
-            self.resolver._execute_route(eg_resolver)
+            self.resolver._process_results(None)
 
     def test_invalid_url(self):
-        def eg_resolver(_):
-            return 9
-
         with self.assertRaises(ValueError):
-            self.resolver._execute_route(eg_resolver)
+            self.resolver._process_results(9)
 
     def test_kodi_listitem(self):
-        def eg_resolver(_):
-            item = kodi_listitem()
-            item.setLabel("test")
-            item.setPath(u"test.mkv")
-            return item
+        item = kodi_listitem()
+        item.setLabel("test")
+        item.setPath(u"test.mkv")
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(item)
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_custom_listitem(self):
-        def eg_resolver(_):
-            item = custom_listitem()
-            item.label = "test"
-            item.set_callback(u"test.mkv")
-            return item
+        item = custom_listitem()
+        item.label = "test"
+        item.set_callback(u"test.mkv")
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(item)
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_list(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
-            return [u"test.mkv", u"tester.mkv"]
-
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results([u"test.mkv", u"tester.mkv"])
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 2)
@@ -109,10 +90,7 @@ class TestResolver(unittest.TestCase):
     def test_tuple(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
-            return u"test.mkv", u"tester.mkv"
-
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results((u"test.mkv", u"tester.mkv"))
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 2)
@@ -120,10 +98,7 @@ class TestResolver(unittest.TestCase):
     def test_dict(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
-            return {"test": "test.mkv"}
-
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results({"test": "test.mkv"})
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 1)
@@ -131,10 +106,10 @@ class TestResolver(unittest.TestCase):
     def test_gen_single(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
+        def eg_resolver():
             yield "test_one.mkv"
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(eg_resolver())
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 1)
@@ -142,11 +117,11 @@ class TestResolver(unittest.TestCase):
     def test_gen_multi(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
+        def eg_resolver():
             yield "test_one.mkv"
             yield "test_two.mkv"
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results(eg_resolver())
         dispatcher.run_metacalls()
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
@@ -155,26 +130,22 @@ class TestResolver(unittest.TestCase):
     def test_playlist_kodi_listitem(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
-            item = kodi_listitem()
-            item.setLabel("test")
-            item.setPath(u"test.mkv")
-            return [item]
+        item = kodi_listitem()
+        item.setLabel("test")
+        item.setPath(u"test.mkv")
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results([item])
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_playlist_custom_listitem(self):
         del plugin_data["playlist"][:]
 
-        def eg_resolver(_):
-            item = custom_listitem()
-            item.label = "test"
-            item.set_callback(u"test.mkv")
-            return [item]
+        item = custom_listitem()
+        item.label = "test"
+        item.set_callback(u"test.mkv")
 
-        self.resolver._execute_route(eg_resolver)
+        self.resolver._process_results([item])
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 

@@ -192,7 +192,6 @@ class Dispatcher(object):
 
         self.params = {}
         self.callback_params = {}
-        self.support_params = {}
         self.registered_routes = {}
 
         # List of callback functions that will be executed
@@ -240,12 +239,9 @@ class Dispatcher(object):
         # Populate dict of params
         self.params.update(raw_params)
 
-        # Construct separate dictionaries for callback and support params
-        for key, value in self.params.items():
-            if key.startswith(u"_") and key.endswith(u"_"):
-                self.support_params[key] = value
-            else:
-                self.callback_params[key] = value
+        # Construct separate dictionaries for callback params
+        self.callback_params = {key: value for key, value in self.params.items()
+                                if not (key.startswith(u"_") and key.endswith(u"_"))}
 
     @property
     def current_route(self):
@@ -308,9 +304,11 @@ class Dispatcher(object):
             execute_time = time.time()
 
             # Initialize controller and execute callback
-            controller_ins = route.parent()
-            # noinspection PyProtectedMember
-            controller_ins._execute_route(route.callback)
+            parent_ins = route.parent()
+            results = route.callback(parent_ins, **self.callback_params)
+            if hasattr(parent_ins, "_process_results"):
+                # noinspection PyProtectedMember
+                parent_ins._process_results(results)
 
         except Exception as e:
             # Log the error in both the gui and the kodi log file

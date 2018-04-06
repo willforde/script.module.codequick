@@ -93,11 +93,6 @@ class Resolver(Script):
         super(Resolver, self).__init__()
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
-    def _execute_route(self, callback):
-        """Execute the callback function and process the results."""
-        resolved = super(Resolver, self)._execute_route(callback)
-        self._send_to_kodi(resolved)
-
     def create_loopback(self, url, **next_params):
         """
         Create a playlist where the second item loops back to addon to load next video.
@@ -317,7 +312,7 @@ class Resolver(Script):
         for item in enumerate(filter(None, resolved), 2):
             self._playlist_item(*item)
 
-    def _send_to_kodi(self, resolved):
+    def _process_results(self, resolved):
         """
         Construct playable listitem and send to kodi.
 

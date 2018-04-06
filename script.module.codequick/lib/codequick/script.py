@@ -154,18 +154,9 @@ class Script(object):
     """
 
     def __init__(self):
-        self._title = dispatcher.support_params.get(u"_title_", u"")
+        self._title = dispatcher.params.get(u"_title_", u"")
         self.handle = dispatcher.handle
         self.params = dispatcher.params
-
-    def _execute_route(self, callback):
-        """
-        Execute the callback function and process the results.
-
-        :param callback: The callback func/class to register.
-        :returns: The response from the callback func/class.
-        """
-        return callback(self, **dispatcher.callback_params)
 
     @classmethod
     def register(cls, callback):

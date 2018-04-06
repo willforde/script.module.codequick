@@ -27,63 +27,54 @@ class TestRoute(unittest.TestCase):
         self.route = route.Route()
 
     def test_gen(self):
-        def route_gen(_):
+        def route_gen():
             yield Listitem.from_dict(callback_test, "test item")
 
-        self.route._execute_route(route_gen)
+        self.route._process_results(route_gen())
         self.assertTrue(plugin_data["succeeded"])
 
     def test_list(self):
-        def route_list(_):
-            return [Listitem.from_dict(callback_test, "test item")]
-
-        self.route._execute_route(route_list)
+        self.route._process_results([Listitem.from_dict(callback_test, "test item")])
         self.assertTrue(plugin_data["succeeded"])
 
     def test_return_false(self):
-        def route_list(_):
-            return False
-
-        self.route._execute_route(route_list)
+        self.route._process_results(False)
         self.assertFalse(plugin_data["succeeded"])
 
     def test_yield_false(self):
-        def route_list(_):
+        def route_list():
             yield False
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertFalse(plugin_data["succeeded"])
 
     def test_no_items(self):
-        def route_list(_):
-            return []
-
         with self.assertRaises(RuntimeError):
-            self.route._execute_route(route_list)
+            self.route._process_results([])
 
     def test_one_mediatype(self):
-        def route_list(_):
+        def route_list():
             yield Listitem.from_dict(callback_test, "test item", info={"mediatype": "video"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "videos")
 
     def test_two_mediatype(self):
-        def route_list(_):
+        def route_list():
             yield Listitem.from_dict(callback_test, "test item one", info={"mediatype": "video"})
             yield Listitem.from_dict(callback_test, "test item two", info={"mediatype": "movie"})
             yield Listitem.from_dict(callback_test, "test item three", info={"mediatype": "video"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "videos")
 
     def test_unsupported_mediatype(self):
-        def route_list(_):
+        def route_list():
             yield Listitem.from_dict(callback_test, "season one", info={"mediatype": "season"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "files")
 
@@ -91,10 +82,10 @@ class TestRoute(unittest.TestCase):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
 
-        def route_list(_):
+        def route_list():
             yield Listitem.from_dict("season one", "test.mkv")
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [10])
 
@@ -102,10 +93,10 @@ class TestRoute(unittest.TestCase):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
 
-        def route_list(_):
+        def route_list():
             yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [10, 16])
 
@@ -117,7 +108,7 @@ class TestRoute(unittest.TestCase):
             plugin.autosort = False
             yield Listitem.from_dict("season one", "test.mkv")
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [40])
 
@@ -129,7 +120,7 @@ class TestRoute(unittest.TestCase):
             plugin.autosort = False
             yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [40])
 
@@ -142,7 +133,7 @@ class TestRoute(unittest.TestCase):
             plugin.add_sort_methods(3)
             yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [3])
 
@@ -154,6 +145,6 @@ class TestRoute(unittest.TestCase):
             plugin.add_sort_methods(3)
             yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
 
-        self.route._execute_route(route_list)
+        self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [3, 10, 16])
