@@ -94,7 +94,6 @@ class TestDispatcher(unittest.TestCase):
         with mock_argv(["plugin://script.module.codequick/test/tester", 96, ""]):
             dispatcher = support.Dispatcher()
 
-        self.assertEqual(dispatcher.handle, 96)
         self.assertEqual(dispatcher.selector, "/test/tester")
 
     def test_parse_sysargs_with_args(self):
@@ -102,7 +101,6 @@ class TestDispatcher(unittest.TestCase):
                         "?testdata=true&worker=false&_title_=test"]):
             dispatcher = support.Dispatcher()
 
-        self.assertEqual(dispatcher.handle, 96)
         self.assertEqual(dispatcher.selector, "/test/tester")
         self.assertDictContainsSubset({"testdata": "true", "worker": "false", "_title_": "test"}, dispatcher.params)
         self.assertDictContainsSubset({"testdata": "true", "worker": "false"}, dispatcher.callback_params)

@@ -192,7 +192,6 @@ class Dispatcher(object):
         # Extract arguments given by Kodi
         _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
         self.selector = route if len(route) > 1 else "root"
-        self.handle = int(sys.argv[1])
 
         if raw_params:
             self.params = params = parse_qs(raw_params)

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 import logging
+import sys
 import os
 
 # Kodi imports
@@ -144,6 +145,9 @@ class Script(object):
     #: Kodi notification info image
     NOTIFY_INFO = 'info'
 
+    #: The Kodi handle that this add-on was started with.
+    handle = int(sys.argv[1])
+
     # Underlining logger object, for advanced use.
     logger = addon_logger
 
@@ -155,7 +159,6 @@ class Script(object):
 
     def __init__(self):
         self._title = dispatcher.params.get(u"_title_", u"")
-        self.handle = dispatcher.handle
         self.params = dispatcher.params
 
     @classmethod
