@@ -174,7 +174,7 @@ class Route(object):
         finally:
             # Execute Delated callback functions if any
             if execute_delayed:
-                dispatcher.run_metacalls()
+                dispatcher.run_delayed()
 
             # Reset global datasets
             kodi_logger.debug_msgs = []
@@ -186,62 +186,34 @@ class Dispatcher(object):
     """Class to handle registering and dispatching of callback functions."""
 
     def __init__(self):
-        # Extract command line arguments passed in from kodi
-        self.selector = "root"
-        self.handle = -1
-
-        self.params = {}
-        self.callback_params = {}
+        self.registered_delayed = []
         self.registered_routes = {}
 
-        # List of callback functions that will be executed
-        # after listitems have been listed
-        self.metacalls = []
+        # Extract arguments given by Kodi
+        _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
+        self.selector = route if len(route) > 1 else "root"
+        self.handle = int(sys.argv[1])
+
+        if raw_params:
+            self.params = params = parse_qs(raw_params)
+
+            # Unpickle pickled data
+            if "_pickle_" in params:
+                unpickled = pickle.loads(binascii.unhexlify(params.pop("_pickle_")))
+                params.update(unpickled)
+
+            # Construct a separate dictionary for callback specific parameters
+            self.callback_params = {key: value for key, value in params.items()
+                                    if not (key.startswith(u"_") and key.endswith(u"_"))}
+        else:
+            self.callback_params = {}
+            self.params = {}
 
     def reset(self):
         """Reset session parameters."""
         self.selector = "root"
-        self.metacalls[:] = []
+        self.registered_delayed[:] = []
         self.params.clear()
-
-    def parse_sysargs(self):
-        """
-        Extract route selector & callback params from the command line arguments received from kodi.
-
-        Selector is the path to the route callback.
-        Handle is the id used for kodi to handle requests send from this addon.
-        Params are the dictionary of parameters that controls the execution of this framework.
-
-        :return: A tuple of (selector, handle, params)
-        :rtype: tuple
-        """
-        # Only designed to work as a plugin
-        if not sys.argv[0].startswith("plugin://"):
-            raise RuntimeError("Only plugin:// paths are supported: not {}".format(sys.argv[0]))
-
-        # Extract command line arguments and remove leading '/' from selector
-        _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
-        route = route.split("/", 1)[-1]
-
-        self.selector = route if route else "root"
-        self.handle = int(sys.argv[1])
-        if raw_params:
-            self.parse_params(raw_params)
-
-    def parse_params(self, raw_params):
-        if raw_params.startswith("_pickle_="):
-            # Decode params using binascii & json
-            raw_params = pickle.loads(binascii.unhexlify(raw_params[9:]))
-        else:
-            # Decode params using urlparse.parse_qs
-            raw_params = parse_qs(raw_params)
-
-        # Populate dict of params
-        self.params.update(raw_params)
-
-        # Construct separate dictionaries for callback params
-        self.callback_params = {key: value for key, value in self.params.items()
-                                if not (key.startswith(u"_") and key.endswith(u"_"))}
 
     @property
     def current_route(self):
@@ -264,7 +236,7 @@ class Dispatcher(object):
         if callback.__name__.lower() == "root":
             path = callback.__name__.lower()
         else:
-            path = "{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
+            path = "/{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
         if path in self.registered_routes:
             raise ValueError("encountered duplicate route: '{}'".format(path))
@@ -290,12 +262,10 @@ class Dispatcher(object):
 
     def register_delayed(self, func, args, kwargs):
         callback = (func, args, kwargs)
-        self.metacalls.append(callback)
+        self.registered_delayed.append(callback)
 
     def dispatch(self):
         """Dispatch to selected route path."""
-        self.parse_sysargs()
-
         try:
             # Fetch the controling class and callback function/method
             route = self[self.selector]
@@ -320,16 +290,16 @@ class Dispatcher(object):
             from . import start_time
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
             logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
-            self.run_metacalls()
+            self.run_delayed()
 
-    def run_metacalls(self):
+    def run_delayed(self):
         """Execute all callbacks, if any."""
-        if self.metacalls:
+        if self.registered_delayed:
             # Time before executing callbacks
             start_time = time.time()
 
             # Execute each callback one by one
-            for func, args, kwargs in self.metacalls:
+            for func, args, kwargs in self.registered_delayed:
                 try:
                     func(*args, **kwargs)
                 except Exception as e:

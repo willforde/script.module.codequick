@@ -122,7 +122,7 @@ class TestResolver(unittest.TestCase):
             yield "test_two.mkv"
 
         self.resolver._process_results(eg_resolver())
-        dispatcher.run_metacalls()
+        dispatcher.run_delayed()
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 2)

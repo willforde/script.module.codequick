@@ -121,7 +121,7 @@ class Script(unittest.TestCase):
             pass
 
         self.script.register_delayed_callback(tester)
-        for callback, _, _ in script.dispatcher.metacalls:
+        for callback, _, _ in script.dispatcher.registered_delayed:
             if callback is tester:
                 self.assertTrue(True, "")
                 break
