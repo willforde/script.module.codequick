@@ -95,12 +95,12 @@ class Route(object):
     :param org_callback: The decorated func/class.
     :param str path: The route path to func/class.
 
-    :ivar is_playable: True if callback is playable, else False.
-    :ivar is_folder: True if callback is a folder, else False.
+    :ivar bool is_playable: True if callback is playable, else False.
+    :ivar bool is_folder: True if callback is a folder, else False.
     :ivar org_callback: The decorated func/class.
     :ivar callback: The callable callback function.
     :ivar parent: The parent class that will handle the response from callback.
-    :ivar path: The route path to func/class.
+    :ivar str path: The route path to func/class.
     """
     __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
 
