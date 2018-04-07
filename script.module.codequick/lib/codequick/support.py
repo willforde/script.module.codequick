@@ -53,14 +53,13 @@ class KodiLogHandler(logging.Handler):
     All debug messages will be stored locally and outputed as warning messages if a critical error occurred.
     This is done so that debug messages will appear on the normal kodi log file without having to enable debug logging.
 
-    :cvar list debug_msgs: Local store of degub messages.
+    :ivar debug_msgs: Local store of degub messages.
     """
-    debug_msgs = []
-
     def __init__(self):
         super(KodiLogHandler, self).__init__()
         self.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
         self.log_level_map = LoggingMap()
+        self.debug_msgs = []
 
     def emit(self, record):
         """
@@ -178,7 +177,7 @@ class Route(object):
                 dispatcher.run_delayed()
 
             # Reset global datasets
-            KodiLogHandler.debug_msgs = []
+            kodi_logger.debug_msgs = []
             dispatcher.reset()
             auto_sort.clear()
 
@@ -189,13 +188,6 @@ class Dispatcher(object):
     def __init__(self):
         self.registered_delayed = []
         self.registered_routes = {}
-
-        # Setup kodi logging
-        kodi_logger = KodiLogHandler()
-        base_logger = logging.getLogger()
-        base_logger.addHandler(kodi_logger)
-        base_logger.setLevel(logging.DEBUG)
-        base_logger.propagate = False
 
         # Extract arguments given by Kodi
         _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
@@ -216,9 +208,6 @@ class Dispatcher(object):
         else:
             self.callback_params = {}
             self.params = {}
-
-        logger.debug("Callback parameters: '%s'", self.callback_params)
-        logger.debug("Dispatching to route: '%s'", self.selector)
 
     def reset(self):
         """Reset session parameters."""
@@ -280,6 +269,8 @@ class Dispatcher(object):
         try:
             # Fetch the controling class and callback function/method
             route = self[self.selector]
+            logger.debug("Dispatching to route: '%s'", self.selector)
+            logger.debug("Callback parameters: '%s'", self.callback_params)
             execute_time = time.time()
 
             # Initialize controller and execute callback
@@ -355,6 +346,13 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, route.path, query, ""))
 
+
+# Setup kodi logging
+kodi_logger = KodiLogHandler()
+base_logger = logging.getLogger()
+base_logger.addHandler(kodi_logger)
+base_logger.setLevel(logging.DEBUG)
+base_logger.propagate = False
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
