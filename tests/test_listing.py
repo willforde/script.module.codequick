@@ -368,8 +368,9 @@ class TestListitem(unittest.TestCase):
         self.assertTrue(isfolder)
 
     def test_close_no_callback(self):
-        with self.assertRaises(ValueError):
-            self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem._close()
+        self.assertEqual(path, "")
+        self.assertFalse(isfolder)
 
     def test_close_route_params(self):
         self.listitem.set_callback(self.route_callback, "yes", full=True)
