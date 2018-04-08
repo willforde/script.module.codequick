@@ -155,8 +155,7 @@ class Art(Params):
         :param image: Filename of the image.
         :type image: str or unicode
         """
-        # Here we can't be sure if 'image' only contains ascii characters
-        # So ensure_native_str is needed
+        # Here we can't be sure if 'image' only contains ascii characters, so ensure_native_str is needed
         self.raw_dict["thumb"] = local_image.format(ensure_native_str(image))
 
     def global_thumb(self, image):
@@ -596,13 +595,11 @@ class Listitem(object):
             self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
             path = build_path(callback, self._args, self.params.raw_dict)
             isfolder = callback.route.is_folder
-        elif callback:
+        else:
             self.listitem.setProperty("isplayable", "true" if callback else "false")
             self.listitem.setProperty("folder", "false")
             path = callback
             isfolder = False
-        else:
-            raise ValueError("Missing required callback")
 
         if isfolder:
             # Set Kodi icon image if not already set
