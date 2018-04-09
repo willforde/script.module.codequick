@@ -90,26 +90,37 @@ class Route(object):
     """
     Handle callback route data.
 
-    :param parent: The parent class that will handle the response from callback.
     :param callback: The callable callback function.
-    :param org_callback: The decorated func/class.
+    :param parent: The parent class that will handle the response from callback.
     :param str path: The route path to func/class.
 
     :ivar bool is_playable: True if callback is playable, else False.
     :ivar bool is_folder: True if callback is a folder, else False.
-    :ivar org_callback: The decorated func/class.
+    :ivar decorated_callback: The decorated func/class.
     :ivar callback: The callable callback function.
     :ivar parent: The parent class that will handle the response from callback.
     :ivar str path: The route path to func/class.
     """
-    __slots__ = ("parent", "callback", "org_callback", "path", "is_playable", "is_folder")
+    __slots__ = ("parent", "callback", "decorated_callback", "path", "is_playable", "is_folder")
 
-    def __init__(self, parent, callback, org_callback, path):
+    def __init__(self, callback, parent, path):
+        # Register a class callback
+        if inspect.isclass(callback):
+            if hasattr(callback, "run"):
+                self.parent = parent = callback
+                self.callback = callback.run
+                callback.test = staticmethod(self.unittest_caller)
+            else:
+                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
+        else:
+            # Register a function callback
+            self.parent = parent
+            self.callback = callback
+            callback.test = self.unittest_caller
+
+        self.decorated_callback = callback
         self.is_playable = parent.is_playable
         self.is_folder = parent.is_folder
-        self.org_callback = org_callback
-        self.callback = callback
-        self.parent = parent
         self.path = path
 
     def args_to_kwargs(self, args, kwargs):
@@ -228,32 +239,18 @@ class Dispatcher(object):
         :param parent: Parent class that will handle the callback, used when callback is a function.
         :returns: The callback function with extra attributes added, 'route', 'testcall'.
         """
-        if callback.__name__.lower() == "root":
-            path = callback.__name__.lower()
-        else:
+        # Construct route path
+        path = callback.__name__.lower()
+        if path != "root":
             path = "/{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
+        # Register callback only if it's route path is unique
         if path in self.registered_routes:
             raise ValueError("encountered duplicate route: '{}'".format(path))
-
-        # Register a class callback
-        elif inspect.isclass(callback):
-            if hasattr(callback, "run"):
-                # Set the callback as the parent and the run method as the 'run' function
-                route = Route(callback, callback.run, callback, path)
-                tester = staticmethod(route.unittest_caller)
-            else:
-                raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
-            # Register a function callback
-            route = Route(parent, callback, callback, path)
-            tester = route.unittest_caller
-
-        # Return original function undecorated
-        self.registered_routes[path] = route
-        callback.route = route
-        callback.test = tester
-        return callback
+            self.registered_routes[path] = route = Route(callback, parent, path)
+            callback.route = route
+            return callback
 
     def register_delayed(self, func, args, kwargs):
         callback = (func, args, kwargs)

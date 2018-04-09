@@ -51,7 +51,7 @@ class TestRoute(unittest.TestCase):
             return return_data
 
         path = test_callback.__name__.lower()
-        self.route = support.Route(route.Route, test_callback, test_callback, path)
+        self.route = support.Route(test_callback, route.Route, path)
 
     def test_arg_names(self):
         args = self.route.arg_names()
