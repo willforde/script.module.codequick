@@ -162,20 +162,25 @@ class Route(object):
             dispatcher.params.update(kwargs)
 
         # Instantiate the parent
-        controller_ins = self.parent()
+        parent_ins = self.parent()
 
         try:
             # Now we are ready to call the callback function and return its results
-            results = self.callback(controller_ins, *args, **kwargs)
+            results = self.callback(parent_ins, *args, **kwargs)
             if inspect.isgenerator(results):
-                return list(results)
-            else:
-                return results
-        finally:
+                results = list(results)
+
+        except Exception:
+            raise
+
+        else:
             # Execute Delated callback functions if any
             if execute_delayed:
                 dispatcher.run_delayed()
 
+            return results
+
+        finally:
             # Reset global datasets
             kodi_logger.debug_msgs = []
             dispatcher.reset()
@@ -265,11 +270,13 @@ class Dispatcher(object):
 
     def dispatch(self):
         """Dispatch to selected route path."""
+
+        logger.debug("Dispatching to route: '%s'", self.selector)
+        logger.debug("Callback parameters: '%s'", self.callback_params)
+
         try:
             # Fetch the controling class and callback function/method
             route = self[self.selector]
-            logger.debug("Dispatching to route: '%s'", self.selector)
-            logger.debug("Callback parameters: '%s'", self.callback_params)
             execute_time = time.time()
 
             # Initialize controller and execute callback
