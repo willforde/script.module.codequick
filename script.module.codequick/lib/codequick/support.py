@@ -214,27 +214,18 @@ class Dispatcher(object):
             self.params = {}
 
     def reset(self):
-        """Reset session parameters."""
-        self.selector = "root"
+        """Reset session parameters, this is needed for unittests to work properly."""
         self.registered_delayed[:] = []
+        self.callback_params.clear()
+        self.selector = "root"
         self.params.clear()
 
-    @property
-    def current_route(self):
-        """
-        The original callback function/class.
-
-        Primarily used by 'Listitem.next_page' constructor.
-        :returns: The dispatched callback function/class.
-        """
-        return self[self.selector]
-
-    def register(self, callback, cls):
+    def register(self, callback, parent):
         """
         Register route callback function
 
         :param callback: The callback function.
-        :param cls: Parent class that will handle the callback, used when callback is a function.
+        :param parent: Parent class that will handle the callback, used when callback is a function.
         :returns: The callback function with extra attributes added, 'route', 'testcall'.
         """
         if callback.__name__.lower() == "root":
@@ -255,7 +246,7 @@ class Dispatcher(object):
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Register a function callback
-            route = Route(cls, callback, callback, path)
+            route = Route(parent, callback, callback, path)
             tester = route.unittest_caller
 
         # Return original function undecorated
@@ -268,7 +259,7 @@ class Dispatcher(object):
         callback = (func, args, kwargs)
         self.registered_delayed.append(callback)
 
-    def dispatch(self):
+    def run(self):
         """Dispatch to selected route path."""
 
         logger.debug("Dispatching to route: '%s'", self.selector)
@@ -276,7 +267,7 @@ class Dispatcher(object):
 
         try:
             # Fetch the controling class and callback function/method
-            route = self[self.selector]
+            route = self.registered_routes[self.selector]
             execute_time = time.time()
 
             # Initialize controller and execute callback
@@ -313,6 +304,16 @@ class Dispatcher(object):
 
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
+
+    @property
+    def current_route(self):
+        """
+        The original callback function/class.
+
+        Primarily used by 'Listitem.next_page' constructor.
+        :returns: The dispatched callback function/class.
+        """
+        return self[self.selector]
 
     def __getitem__(self, route):
         """:rtype: Route"""
@@ -362,4 +363,4 @@ base_logger.propagate = False
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
-run = dispatcher.dispatch
+run = dispatcher.run

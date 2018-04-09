@@ -148,18 +148,20 @@ class Script(object):
     #: The Kodi handle that this add-on was started with.
     handle = int(sys.argv[1])
 
-    # Underlining logger object, for advanced use.
+    #: Underlining logger object, for advanced use.
     logger = addon_logger
+
+    #: Dictionary of all kodi parameters, for advanced use.
+    params = dispatcher.params
 
     setting = Settings()
     """
-    Dictionary like interface of add-on settings,
+    Dictionary like interface of add-on settings, 
     See :class:`script.Settings<codequick.script.Settings>` for more details.
     """
 
     def __init__(self):
-        self._title = dispatcher.params.get(u"_title_", u"")
-        self.params = dispatcher.params
+        self._title = self.params.get(u"_title_", u"")
 
     @classmethod
     def register(cls, callback):
@@ -169,7 +171,7 @@ class Script(object):
         :param callback: The callback function to register.
         :returns: The original callback function.
         """
-        return dispatcher.register(callback, cls=cls)
+        return dispatcher.register(callback, parent=cls)
 
     @staticmethod
     def register_delayed_callback(func, *args, **kwargs):

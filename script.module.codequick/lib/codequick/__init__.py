@@ -25,7 +25,7 @@ websites and passing it to Kodi.
 
 Github: https://github.com/willforde/script.module.codequick
 Documentation: http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=latest
-Integrated Testing: https://travis-ci.org/willforde/script.module.codequick
+Integrated Unit Tests: https://travis-ci.org/willforde/script.module.codequick
 Code Coverage: https://coveralls.io/github/willforde/script.module.codequick?branch=master
 Codacy: https://app.codacy.com/app/willforde/script.module.codequick/dashboard
 """

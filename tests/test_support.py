@@ -198,7 +198,7 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.register(root, route.Route)
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
-            self.dispatcher.dispatch()
+            self.dispatcher.run()
 
         self.assertTrue(Executed.yes)
 
@@ -214,7 +214,7 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.register(root, route.Route)
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
-            self.dispatcher.dispatch()
+            self.dispatcher.run()
 
         self.assertTrue(Executed.yes)
 
