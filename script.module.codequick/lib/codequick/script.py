@@ -174,7 +174,7 @@ class Script(object):
         return dispatcher.register(callback, parent=cls)
 
     @staticmethod
-    def register_delayed_callback(func, *args, **kwargs):
+    def register_delayed(func, *args, **kwargs):
         """
         Register a function that will be executed after kodi has finished listing all listitems.
         Sence the function is called after the listitems have been shown, it will not slow anything down.

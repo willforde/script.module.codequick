@@ -120,7 +120,7 @@ class Script(unittest.TestCase):
         def tester():
             pass
 
-        self.script.register_delayed_callback(tester)
+        self.script.register_delayed(tester)
         for callback, _, _ in script.dispatcher.registered_delayed:
             if callback is tester:
                 self.assertTrue(True, "")

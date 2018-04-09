@@ -340,7 +340,7 @@ class Resolver(Script):
             # Fetch the first element of the generator and process the rest in the background
             elif inspect.isgenerator(resolved):
                 listitem = self._create_playlist([next(resolved)])
-                self.register_delayed_callback(self._process_generator, resolved)
+                self.register_delayed(self._process_generator, resolved)
 
             # Create playlist if resolved is a dict of {title: url}
             elif hasattr(resolved, "items"):

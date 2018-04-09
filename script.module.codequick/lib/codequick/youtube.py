@@ -372,7 +372,7 @@ class APIControl(Route):
     def __init__(self):
         super(APIControl, self).__init__()
         self.db = Database()
-        self.register_delayed_callback(self.db.cleanup)
+        self.register_delayed(self.db.cleanup)
         self.api = API()
 
     def valid_playlistid(self, contentid):
