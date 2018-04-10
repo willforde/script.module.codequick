@@ -694,7 +694,7 @@ class Listitem(object):
             >>> item.next_page(url="http://example.com/videos?page2")
         """
         # Current running callback
-        callback = dispatcher.current_route.decorated_callback
+        route = dispatcher.get_route()
 
         # Add support params to callback params
         kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.params else False
@@ -707,7 +707,7 @@ class Listitem(object):
         item.info["plot"] = "Show the next page of content."
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb("next.png")
-        item.set_callback(callback, *args, **kwargs)
+        item.set_callback(route.decorated_callback, *args, **kwargs)
         return item
 
     @classmethod

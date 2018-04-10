@@ -302,19 +302,16 @@ class Dispatcher(object):
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
 
-    @property
-    def current_route(self):
+    def get_route(self, path=None):
         """
-        The original callback function/class.
+        Return the given route object.
+        
+        :param str path: The route path to fetch the route object for.
 
-        Primarily used by 'Listitem.next_page' constructor.
-        :returns: The dispatched callback function/class.
+        :returns: A callback route.
+        :rtype: Route
         """
-        return self[self.selector]
-
-    def __getitem__(self, route):
-        """:rtype: Route"""
-        return self.registered_routes[route]
+        return self.registered_routes[path if path else self.selector]
 
 
 def build_path(callback=None, args=None, query=None, **extra_query):
@@ -331,7 +328,7 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     """
 
     # Set callback to current callback if not given
-    route = callback.route if callback else dispatcher.current_route
+    route = callback.route if callback else dispatcher.get_route()
 
     # Convert args to keyword args if required
     if args:

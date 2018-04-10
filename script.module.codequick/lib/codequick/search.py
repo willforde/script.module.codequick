@@ -70,12 +70,14 @@ class SavedSearches(Route):
         self.category = search_term.title()
         callback_params = extras.copy()
         callback_params["search_query"] = search_term
+
+        # We switch selector to redirected callback to allow next page to work properly
         route = callback_params.pop("route")
         dispatcher.selector = route
 
         # Fetch search results from callback
-        callback = dispatcher.current_route.callback
-        listitems = callback(self, **callback_params)
+        func = dispatcher.get_route().callback
+        listitems = func(self, **callback_params)
 
         # Check that we have valid listitems
         valid_listitems = validate_listitems(listitems)
@@ -107,7 +109,8 @@ class SavedSearches(Route):
 
         # Set the callback function to the route that was given
         callback_params = extras.copy()
-        callback = dispatcher[callback_params.pop("route")].callback
+        route = callback_params.pop("route")
+        callback = dispatcher.get_route(route).callback
 
         # Prefetch the localized string for the context menu lable
         str_remove = self.localize(REMOVE)
