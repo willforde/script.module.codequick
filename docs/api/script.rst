@@ -2,7 +2,7 @@ Script
 ======
 This module is used for creating script callbacks witch are also used as the base for all other types of callbacks.
 
-.. autoclass:: codequick.Script
+.. autoclass:: codequick.script.Script
     :members:
 
 .. autoclass:: codequick.script.Settings
