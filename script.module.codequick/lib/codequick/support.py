@@ -96,29 +96,29 @@ class Route(object):
 
     :ivar bool is_playable: True if callback is playable, else False.
     :ivar bool is_folder: True if callback is a folder, else False.
-    :ivar decorated_callback: The decorated func/class.
+    :ivar callback: The decorated func/class.
     :ivar callback: The callable callback function.
     :ivar parent: The parent class that will handle the response from callback.
     :ivar str path: The route path to func/class.
     """
-    __slots__ = ("parent", "callback", "decorated_callback", "path", "is_playable", "is_folder")
+    __slots__ = ("parent", "function", "callback", "path", "is_playable", "is_folder")
 
     def __init__(self, callback, parent, path):
         # Register a class callback
         if inspect.isclass(callback):
             if hasattr(callback, "run"):
                 self.parent = parent = callback
-                self.callback = callback.run
+                self.function = callback.run
                 callback.test = staticmethod(self.unittest_caller)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Register a function callback
             self.parent = parent
-            self.callback = callback
+            self.function = callback
             callback.test = self.unittest_caller
 
-        self.decorated_callback = callback
+        self.callback = callback
         self.is_playable = parent.is_playable
         self.is_folder = parent.is_folder
         self.path = path
@@ -140,10 +140,10 @@ class Route(object):
         """Return a list of argument names, positional and keyword arguments."""
         try:
             # noinspection PyUnresolvedReferences
-            return inspect.getfullargspec(self.callback).args
+            return inspect.getfullargspec(self.function).args
         except AttributeError:
             # "inspect.getargspec" is deprecated in python 3
-            return inspect.getargspec(self.callback).args
+            return inspect.getargspec(self.function).args
 
     def unittest_caller(self, *args, **kwargs):
         """
@@ -177,7 +177,7 @@ class Route(object):
 
         try:
             # Now we are ready to call the callback function and return its results
-            results = self.callback(parent_ins, *args, **kwargs)
+            results = self.function(parent_ins, *args, **kwargs)
             if inspect.isgenerator(results):
                 results = list(results)
 
@@ -264,12 +264,12 @@ class Dispatcher(object):
 
         try:
             # Fetch the controling class and callback function/method
-            route = self.registered_routes[self.selector]
+            route = self.get_route()
             execute_time = time.time()
 
             # Initialize controller and execute callback
             parent_ins = route.parent()
-            results = route.callback(parent_ins, **self.callback_params)
+            results = route.function(parent_ins, **self.callback_params)
             if hasattr(parent_ins, "_process_results"):
                 # noinspection PyProtectedMember
                 parent_ins._process_results(results)

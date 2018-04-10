@@ -707,7 +707,7 @@ class Listitem(object):
         item.info["plot"] = "Show the next page of content."
         item.label = "[B]%s[/B]" % label
         item.art.global_thumb("next.png")
-        item.set_callback(route.decorated_callback, *args, **kwargs)
+        item.set_callback(route.callback, *args, **kwargs)
         return item
 
     @classmethod

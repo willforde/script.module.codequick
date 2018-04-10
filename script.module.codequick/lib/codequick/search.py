@@ -76,7 +76,7 @@ class SavedSearches(Route):
         dispatcher.selector = route
 
         # Fetch search results from callback
-        func = dispatcher.get_route().callback
+        func = dispatcher.get_route().function
         listitems = func(self, **callback_params)
 
         # Check that we have valid listitems
