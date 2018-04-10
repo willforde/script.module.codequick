@@ -436,7 +436,18 @@ class TestListitem(unittest.TestCase):
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertTrue(listitem.art["thumb"].endswith("recent.png"))
 
-    def test_search(self):
+    def test_search_with_args(self):
+        # noinspection PyUnusedLocal
+        @route.Route.register
+        def search_results(_, url="", search_query=""):
+            pass
+
+        listitem = listing.Listitem.search(search_results)
+        self.assertIsInstance(listitem, listing.Listitem)
+        self.assertEqual(listitem.label, "[B]Search[/B]")
+        self.assertTrue(listitem.art["thumb"].endswith("search.png"))
+
+    def test_search_without_args(self):
         # noinspection PyUnusedLocal
         @route.Route.register
         def search_results(_, url="", search_query=""):

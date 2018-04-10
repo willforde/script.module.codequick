@@ -5,7 +5,7 @@ import inspect
 import sys
 
 # Testing specific imports
-from codequick import support, route
+from codequick import support, route, script
 import xbmc
 
 PY3 = sys.version_info >= (3, 0)
@@ -74,6 +74,16 @@ class TestRoute(unittest.TestCase):
     def test_unittest_caller_no_args(self):
         ret = self.route.unittest_caller()
         self.assertIsNone(ret, ["data"])
+
+    def test_unittest_caller_error(self):
+        def test_callback(_):
+            raise RuntimeError
+
+        path = test_callback.__name__.lower()
+        route_obj = support.Route(test_callback, route.Route, path)
+
+        with self.assertRaises(RuntimeError):
+            route_obj.unittest_caller()
 
 
 class TestDispatcher(unittest.TestCase):
@@ -200,6 +210,18 @@ class TestDispatcher(unittest.TestCase):
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
             self.dispatcher.run_callback()
 
+        self.assertTrue(Executed.yes)
+
+    def test_dispatch_script(self):
+        class Executed(object):
+            yes = False
+
+        def root(_):
+            Executed.yes = True
+            return False
+
+        self.dispatcher.register_callback(root, script.Script)
+        self.dispatcher.run_callback()
         self.assertTrue(Executed.yes)
 
     def test_dispatch_fail(self):
