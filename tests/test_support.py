@@ -148,7 +148,7 @@ class TestDispatcher(unittest.TestCase):
         def root():
             pass
 
-        callback = self.dispatcher.register(root, route.Route)
+        callback = self.dispatcher.register_callback(root, route.Route)
         self.assertIn("root", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
@@ -157,7 +157,7 @@ class TestDispatcher(unittest.TestCase):
         def listing():
             pass
 
-        callback = self.dispatcher.register(listing, route.Route)
+        callback = self.dispatcher.register_callback(listing, route.Route)
         self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
@@ -166,16 +166,16 @@ class TestDispatcher(unittest.TestCase):
         def root():
             pass
 
-        self.dispatcher.register(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route)
         with self.assertRaises(ValueError):
-            self.dispatcher.register(root, route.Route)
+            self.dispatcher.register_callback(root, route.Route)
 
     def test_register_class(self):
         class Videos(route.Route):
             def run(self):
                 pass
 
-        callback = self.dispatcher.register(Videos, route.Route)
+        callback = self.dispatcher.register_callback(Videos, route.Route)
         self.assertIn("/tests/test_support/videos", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
@@ -185,7 +185,7 @@ class TestDispatcher(unittest.TestCase):
             pass
 
         with self.assertRaises(NameError):
-            self.dispatcher.register(Videos, route.Route)
+            self.dispatcher.register_callback(Videos, route.Route)
 
     def test_dispatch(self):
         class Executed(object):
@@ -195,10 +195,10 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             return False
 
-        self.dispatcher.register(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route)
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
-            self.dispatcher.run()
+            self.dispatcher.run_callback()
 
         self.assertTrue(Executed.yes)
 
@@ -211,10 +211,10 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             raise RuntimeError("testing error")
 
-        self.dispatcher.register(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route)
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
-            self.dispatcher.run()
+            self.dispatcher.run_callback()
 
         self.assertTrue(Executed.yes)
 

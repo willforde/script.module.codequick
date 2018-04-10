@@ -171,7 +171,7 @@ class Script(object):
         :param callback: The callback function to register.
         :returns: The original callback function.
         """
-        return dispatcher.register(callback, parent=cls)
+        return dispatcher.register_callback(callback, parent=cls)
 
     @staticmethod
     def register_delayed(func, *args, **kwargs):

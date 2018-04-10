@@ -118,9 +118,9 @@ class Route(object):
             self.function = callback
             callback.test = self.unittest_caller
 
-        self.callback = callback
         self.is_playable = parent.is_playable
         self.is_folder = parent.is_folder
+        self.callback = callback
         self.path = path
 
     def args_to_kwargs(self, args, kwargs):
@@ -231,7 +231,18 @@ class Dispatcher(object):
         self.selector = "root"
         self.params.clear()
 
-    def register(self, callback, parent):
+    def get_route(self, path=None):
+        """
+        Return the given route object.
+
+        :param str path: The route path to fetch the route object for.
+
+        :returns: A callback route.
+        :rtype: Route
+        """
+        return self.registered_routes[path if path else self.selector]
+
+    def register_callback(self, callback, parent):
         """
         Register route callback function
 
@@ -253,11 +264,12 @@ class Dispatcher(object):
             return callback
 
     def register_delayed(self, func, args, kwargs):
+        """Register a function that will be called later, after content has been listed."""
         callback = (func, args, kwargs)
         self.registered_delayed.append(callback)
 
-    def run(self):
-        """Dispatch to selected route path."""
+    def run_callback(self):
+        """Execute selected route callback."""
 
         logger.debug("Dispatching to route: '%s'", self.selector)
         logger.debug("Callback parameters: '%s'", self.callback_params)
@@ -287,7 +299,7 @@ class Dispatcher(object):
             self.run_delayed()
 
     def run_delayed(self):
-        """Execute all callbacks, if any."""
+        """Execute all delayed callbacks, if any."""
         if self.registered_delayed:
             # Time before executing callbacks
             start_time = time.time()
@@ -301,17 +313,6 @@ class Dispatcher(object):
 
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)
-
-    def get_route(self, path=None):
-        """
-        Return the given route object.
-        
-        :param str path: The route path to fetch the route object for.
-
-        :returns: A callback route.
-        :rtype: Route
-        """
-        return self.registered_routes[path if path else self.selector]
 
 
 def build_path(callback=None, args=None, query=None, **extra_query):
@@ -357,4 +358,4 @@ base_logger.propagate = False
 
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
-run = dispatcher.run
+run = dispatcher.run_callback
