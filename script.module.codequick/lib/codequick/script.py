@@ -148,17 +148,17 @@ class Script(object):
     #: The Kodi handle that this add-on was started with.
     handle = int(sys.argv[1])
 
-    #: Underlining logger object, for advanced use.
-    logger = addon_logger
-
-    #: Dictionary of all kodi parameters, for advanced use.
-    params = dispatcher.params
-
     setting = Settings()
     """
     Dictionary like interface of add-on settings, 
     See :class:`script.Settings<codequick.script.Settings>` for more details.
     """
+
+    #: Underlining logger object, for advanced use.
+    logger = addon_logger
+
+    #: Dictionary of all kodi parameters, for advanced use.
+    params = dispatcher.params
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")

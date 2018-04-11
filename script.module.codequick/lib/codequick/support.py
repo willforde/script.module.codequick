@@ -269,7 +269,16 @@ class Dispatcher(object):
         self.registered_delayed.append(callback)
 
     def run_callback(self):
-        """Execute selected route callback."""
+        """
+        The starting point of the add-on.
+
+        This function will handle the execution of the callback functions.
+        The callback function to execute, will be auto selected based on the route path given
+        within the kodi plugin path.
+
+        The 'root' callback is the callback that will be executed
+        when no plugin path is given. i.e. when the add-on starts.
+        """
 
         logger.debug("Dispatching to route: '%s'", self.selector)
         logger.debug("Callback parameters: '%s'", self.callback_params)

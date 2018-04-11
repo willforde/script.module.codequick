@@ -97,7 +97,7 @@ class _PersistentBase(object):
             self._stream.flush()
 
     def close(self):
-        """Close file object."""
+        """Flush content to disk & close file object."""
         self.flush()
         if self._stream:
             self._stream.close()
@@ -131,6 +131,11 @@ class PersistentDict(_PersistentBase, MutableMapping):
         If the 'ttl' parameter is given, any expired data will be removed on initialization.
 
     .. note:: This class is also designed as a context manager.
+
+    .. note::
+
+        Data will only be synced to disk when connection to file is closed or
+        when flush method is explicitly called.
 
     :Example:
         >>> with PersistentDict("dictfile.pickle") as db:
@@ -203,6 +208,11 @@ class PersistentList(_PersistentBase, MutableSequence):
         If the 'ttl' parameter is given, any expired data will be removed on initialization.
 
     .. note:: This class is also designed as a context manager.
+
+    .. note::
+
+        Data will only be synced to disk when connection to file is closed or
+        when flush method is explicitly called.
 
     :Example:
         >>> with PersistentList("listfile.pickle") as db:

@@ -12,3 +12,6 @@ Table of Contents.
     listitem
     storage
     utils
+
+
+ .. autofunction:: codequick.run
