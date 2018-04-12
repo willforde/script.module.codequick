@@ -222,7 +222,7 @@ class PersistentList(_PersistentBase, MutableSequence):
     """
 
     def __len__(self):
-        len(self._data)
+        return len(self._data)
 
     def __getitem__(self, index):
         return self._data[index][0]
