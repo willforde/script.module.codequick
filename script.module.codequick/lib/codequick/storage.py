@@ -171,7 +171,7 @@ class PersistentDict(_PersistentBase, MutableMapping):
             version = data.get(self._version_string, 1)
             if version == 1:
                 self._data = {key: (val, time.time()) for key, val in data.items()}
-            elif version == 2:
+            else:
                 data = data[self._data_string]
                 if ttl:
                     self._data = {key: item for key, item in data.items() if time.time() - item[1] < ttl}
