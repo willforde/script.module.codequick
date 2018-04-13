@@ -95,13 +95,14 @@ class _PersistentBase(object):
             self._stream.write(content)
             self._hash = current_hash
             self._stream.flush()
+        else:
+            pass
 
     def close(self):
         """Flush content to disk & close file object."""
         self.flush()
-        if self._stream:
-            self._stream.close()
-            self._stream = None
+        self._stream.close()
+        self._stream = None
 
     def _serialize(self):  # pragma: no cover
         pass
