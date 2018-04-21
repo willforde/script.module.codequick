@@ -62,9 +62,9 @@ Parsing of the html source will be done using HTMLement witch is integrated into
         url = url_constructor("/mobile/category.html")
         resp = urlquick.get(url, headers={"Cookie": "COOKIE_DEVICE=mobile"})
 
-        # Filter source down to needed section by giving the name and
-        # attributes of the element containing the required data
-        # It is a lot faster to limit the parser to required section
+        # Filter source down to required section by giving the name and
+        # attributes of the element containing the required data.
+        # It's a lot faster, to limit the parser to required section.
         root_elem = resp.parse(u"ul", attrs={"id": "category_listing"})
 
         # Parse each category
@@ -77,16 +77,16 @@ Parsing of the html source will be done using HTMLement witch is integrated into
             # Find the video count 'span' tag
             vidcount = elem.find("span").text
 
-            # Set label with video count added
+            # Set label with video count added.
             item.label = "%s (%s)" % (a_tag.text, vidcount)
 
-            # This will set the callback that will be called when listitem is activated
-            # 'video_list' is the route callback function that we will create later
+            # This will set the callback that will be called when listitem is activated.
+            # 'video_list' is the route callback function that we will create later.
             # The 'url' argument is the url of the category that will be passed
-            # to the 'video_list' callback
+            # to the 'video_list' callback.
             item.set_callback(video_list, url=a_tag.get("href"))
 
-            # Return the listitem as a generator
+            # Return the listitem as a generator.
             yield item
 
 Now we can create the video parser callback that will return playable listitems.
@@ -97,7 +97,7 @@ And since this is another function that will return listitems, it will be regist
 
     @Route.register
     def video_list(plugin, url):
-        # Request the online resource
+        # Request the online resource.
         url = url_constructor(url)
         resp = urlquick.get(url)
         root_elem = resp.parse("div", attrs={"id": "browse_main"})
@@ -106,33 +106,33 @@ And since this is another function that will return listitems, it will be regist
         for elem in root_elem.iterfind(u".//div[@class='video_i']"):
             item = Listitem()
 
-            # Set the thumbnail image of the video
+            # Set the thumbnail image of the video.
             item.art["thumb"] = elem.find(".//img").get("src")
 
-            # Extract url from first 'a' element and remove it from source tree
-            # This makes it easier to extract 'artist' and 'song' names later
+            # Extract url from first 'a' element and remove it from source tree.
+            # This makes it easier to extract 'artist' and 'song' names later.
             a_tag = elem.find("a")
             url = a_tag.get("href")
             elem.remove(a_tag)
 
-            # Set title as 'artist - song'
+            # Set title as 'artist - song'.
             span_tags = tuple(node.text for node in elem.findall(".//span"))
             item.label = "%s - %s" % span_tags
             item.info["artist"] = [span_tags[0]]
 
-            # 'play_video' is the resolver callback function that we will create later
+            # 'play_video' is the resolver callback function that we will create later.
             # The 'url' argument is the url of the video that will be passed
-            # to the 'play_video' resolver callback
+            # to the 'play_video' resolver callback.
             item.set_callback(play_video, url=url)
 
-            # Return the listitem as a generator
+            # Return the listitem as a generator.
             yield item
 
-        # Extract the next page url if one exists
+        # Extract the next page url if one exists.
         next_tag = root_elem.findall(".//div[@class='pagination']/a")
         if next_tag and next_tag[-1].text.startswith("next"):
-            # This will return a listitem that will link back to this
-            # callback function with url of the next page of content
+            # This will return a listitem, that will link back to this
+            # callback function with the url of the next page of content.
             yield Listitem.next_page(url=next_tag[-1].get("href"))
 
 Lastly is the :class:`Resolver<codequick.resolver.Resolver>` callback and as so, it will need to be registered as one.
@@ -145,7 +145,7 @@ This callback is expected to return a playable video url. The first argument tha
     @Resolver.register
     def play_video(plugin, url):
         # Sence http://metalvideo.com uses enbeaded youtube videos,
-        # we can use 'plugin.extract_source' to extract the video url
+        # we can use 'plugin.extract_source' to extract the video url.
         url = url_constructor(url)
         return plugin.extract_source(url)
 
