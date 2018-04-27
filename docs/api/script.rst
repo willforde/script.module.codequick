@@ -5,6 +5,11 @@ This module is used for creating script callbacks witch are also used as the bas
 .. autoclass:: codequick.script.Script
     :members:
 
+    .. attribute:: handle
+        :annotation: = -1
+
+        The Kodi handle that this add-on was started with.
+
 .. autoclass:: codequick.script.Settings
 
     .. automethod:: __getitem__

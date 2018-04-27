@@ -158,8 +158,6 @@ class Script(object):
 
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
-
-        #: The Kodi handle that this add-on was started with.
         self.handle = dispatcher.handle
 
     @classmethod
