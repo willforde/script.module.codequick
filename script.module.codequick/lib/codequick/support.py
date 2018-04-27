@@ -204,25 +204,10 @@ class Dispatcher(object):
     def __init__(self):
         self.registered_delayed = []
         self.registered_routes = {}
-
-        # Extract arguments given by Kodi
-        _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
-        self.selector = route if len(route) > 1 else "root"
-
-        if raw_params:
-            self.params = params = parse_qs(raw_params)
-
-            # Unpickle pickled data
-            if "_pickle_" in params:
-                unpickled = pickle.loads(binascii.unhexlify(params.pop("_pickle_")))
-                params.update(unpickled)
-
-            # Construct a separate dictionary for callback specific parameters
-            self.callback_params = {key: value for key, value in params.items()
-                                    if not (key.startswith(u"_") and key.endswith(u"_"))}
-        else:
-            self.callback_params = {}
-            self.params = {}
+        self.callback_params = {}
+        self.selector = "root"
+        self.params = {}
+        self.handle = -1
 
     def reset(self):
         """Reset session parameters, this is needed for unittests to work properly."""
@@ -242,6 +227,25 @@ class Dispatcher(object):
         """
         return self.registered_routes[path if path else self.selector]
 
+    def parse_args(self):
+        """Extract arguments given by Kodi"""
+        _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
+        self.selector = route if len(route) > 1 else "root"
+        self.handle = int(sys.argv[1])
+
+        if raw_params:
+            params = parse_qs(raw_params)
+            self.params.update(params)
+
+            # Unpickle pickled data
+            if "_pickle_" in params:
+                unpickled = pickle.loads(binascii.unhexlify(self.params.pop("_pickle_")))
+                self.params.update(unpickled)
+
+            # Construct a separate dictionary for callback specific parameters
+            self.callback_params = {key: value for key, value in self.params.items()
+                                    if not (key.startswith(u"_") and key.endswith(u"_"))}
+
     def register_callback(self, callback, parent):
         """
         Register route callback function
@@ -255,13 +259,13 @@ class Dispatcher(object):
         if path != "root":
             path = "/{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
-        # Register callback only if it's route path is unique
+        # Register callback
         if path in self.registered_routes:
-            raise ValueError("encountered duplicate route: '{}'".format(path))
-        else:
-            self.registered_routes[path] = route = Route(callback, parent, path)
-            callback.route = route
-            return callback
+            logger.debug("encountered duplicate route: '%s'", path)
+
+        self.registered_routes[path] = route = Route(callback, parent, path)
+        callback.route = route
+        return callback
 
     def register_delayed(self, func, args, kwargs):
         """Register a function that will be called later, after content has been listed."""
@@ -279,7 +283,8 @@ class Dispatcher(object):
         The 'root' callback is the callback that will be executed
         when no plugin path is given. i.e. when the add-on starts.
         """
-
+        self.reset()
+        self.parse_args()
         logger.debug("Dispatching to route: '%s'", self.selector)
         logger.debug("Callback parameters: '%s'", self.callback_params)
 
@@ -313,8 +318,10 @@ class Dispatcher(object):
             # Time before executing callbacks
             start_time = time.time()
 
-            # Execute each callback one by one
-            for func, args, kwargs in self.registered_delayed:
+            # Execute in order of last in first out (LIFO).
+            while self.registered_delayed:
+                func, args, kwargs = self.registered_delayed.pop()
+
                 try:
                     func(*args, **kwargs)
                 except Exception as e:

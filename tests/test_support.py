@@ -101,15 +101,17 @@ class TestDispatcher(unittest.TestCase):
         self.assertDictEqual(self.dispatcher.params, dict())
 
     def test_parse_sysargs(self):
+        dispatcher = support.Dispatcher()
         with mock_argv(["plugin://script.module.codequick/test/tester", 96, ""]):
-            dispatcher = support.Dispatcher()
+            dispatcher.parse_args()
 
         self.assertEqual(dispatcher.selector, "/test/tester")
 
     def test_parse_sysargs_with_args(self):
+        dispatcher = support.Dispatcher()
         with mock_argv(["plugin://script.module.codequick/test/tester", 96,
                         "?testdata=true&worker=false&_title_=test"]):
-            dispatcher = support.Dispatcher()
+            dispatcher.parse_args()
 
         self.assertEqual(dispatcher.selector, "/test/tester")
         self.assertDictContainsSubset({"testdata": "true", "worker": "false", "_title_": "test"}, dispatcher.params)
@@ -117,20 +119,22 @@ class TestDispatcher(unittest.TestCase):
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_parse_params_pickle_py2(self):
+        dispatcher = support.Dispatcher()
         with mock_argv(["plugin://script.module.codequick/test/tester", 96,
                         "?_pickle_=80027d7100285506776f726b65727101895508746573746461746171028855075f7469746c655f710355"
                         "04746573747104752e"]):
-            dispatcher = support.Dispatcher()
+            dispatcher.parse_args()
 
         self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, dispatcher.params)
         self.assertDictContainsSubset({"testdata": True, "worker": False}, dispatcher.callback_params)
 
     @unittest.skipUnless(PY3, "The pickled string is specific to python 3")
     def test_parse_params_pickle_py3(self):
+        dispatcher = support.Dispatcher()
         with mock_argv(["plugin://script.module.codequick/test/tester", 96,
                         "?_pickle_=8004952c000000000000007d94288c08746573746461746194888c06776f726b657294898c075f74697"
                         "46c655f948c047465737494752e"]):
-            dispatcher = support.Dispatcher()
+            dispatcher.parse_args()
 
         self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, dispatcher.params)
         self.assertDictContainsSubset({"testdata": True, "worker": False}, dispatcher.callback_params)
@@ -171,14 +175,6 @@ class TestDispatcher(unittest.TestCase):
         self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
-
-    def test_register_duplicate(self):
-        def root():
-            pass
-
-        self.dispatcher.register_callback(root, route.Route)
-        with self.assertRaises(ValueError):
-            self.dispatcher.register_callback(root, route.Route)
 
     def test_register_class(self):
         class Videos(route.Route):
