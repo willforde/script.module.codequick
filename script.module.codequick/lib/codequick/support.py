@@ -210,22 +210,11 @@ class Dispatcher(object):
         self.handle = -1
 
     def reset(self):
-        """Reset session parameters, this is needed for unittests to work properly."""
+        """Reset session parameters."""
         self.registered_delayed[:] = []
         self.callback_params.clear()
         self.selector = "root"
         self.params.clear()
-
-    def get_route(self, path=None):
-        """
-        Return the given route object.
-
-        :param str path: The route path to fetch the route object for.
-
-        :returns: A callback route.
-        :rtype: Route
-        """
-        return self.registered_routes[path if path else self.selector]
 
     def parse_args(self):
         """Extract arguments given by Kodi"""
@@ -245,6 +234,17 @@ class Dispatcher(object):
             # Construct a separate dictionary for callback specific parameters
             self.callback_params = {key: value for key, value in self.params.items()
                                     if not (key.startswith(u"_") and key.endswith(u"_"))}
+
+    def get_route(self, path=None):
+        """
+        Return the given route object.
+
+        :param str path: The route path to fetch the route object for.
+
+        :returns: A callback route.
+        :rtype: Route
+        """
+        return self.registered_routes[path if path else self.selector]
 
     def register_callback(self, callback, parent):
         """
