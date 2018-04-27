@@ -193,6 +193,13 @@ class TestDispatcher(unittest.TestCase):
         with self.assertRaises(NameError):
             self.dispatcher.register_callback(Videos, route.Route)
 
+    def test_register_duplicate(self):
+        def root():
+            pass
+
+        self.dispatcher.register_callback(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route)
+
     def test_dispatch(self):
         class Executed(object):
             yes = False
