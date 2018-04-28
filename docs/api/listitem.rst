@@ -1,6 +1,6 @@
 Listitem
 ========
-The list item control is used for creating item lists in Kodi.
+The "listitem" control is used for the creating  of item lists in Kodi.
 
 .. autoclass:: codequick.listing.Listitem
     :members:

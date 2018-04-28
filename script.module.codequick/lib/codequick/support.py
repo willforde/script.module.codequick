@@ -193,7 +193,6 @@ class Route(object):
 
         finally:
             # Reset global datasets
-            kodi_logger.debug_msgs = []
             dispatcher.reset()
             auto_sort.clear()
 
@@ -213,6 +212,7 @@ class Dispatcher(object):
         """Reset session parameters."""
         self.registered_delayed[:] = []
         self.callback_params.clear()
+        kodi_logger.debug_msgs = []
         self.selector = "root"
         self.params.clear()
 
@@ -276,12 +276,11 @@ class Dispatcher(object):
         """
         The starting point of the add-on.
 
-        This function will handle the execution of the callback functions.
-        The callback function to execute, will be auto selected based on the route path given
-        within the kodi plugin path.
+        This function will handle the execution of the "callback" functions.
+        The callback function that will be executed, will be auto selected.
 
-        The 'root' callback is the callback that will be executed
-        when no plugin path is given. i.e. when the add-on starts.
+        The "root" callback, is the callback that will be the initial
+        starting point for the add-on.
         """
         self.reset()
         self.parse_args()

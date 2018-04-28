@@ -1,58 +1,56 @@
 ########
 Tutorial
 ########
-Here we will document the creation of an add-on.
-In this case, plugin.video.metalvideo. This will be a simplifyed version of the full add-on
-witch can be found over @ https://github.com/willforde/plugin.video.metalvideo
+Here we will document the creation of an "add-on".
+In this instance, “plugin.video.metalvideo”. This will be a simplified version of the full add-on
+that can be found over at https://github.com/willforde/plugin.video.metalvideo
 
-First thing is to import the required codequick components.
+First of all, import the required “Codequick” components.
 
-    * :class:`Route<codequick.route.Route>` will be used to list folder items.
-    * :class:`Resolver<codequick.resolver.Resolver>` will be used to resolve video urls.
-    * :class:`Listitem<codequick.listing.Listitem>` is used to create items within kodi.
-    * ``utils`` is a module containing some useful functions.
-    * ``run`` is the function that controls the execution of the add-on.
+    * :class:`Route<codequick.route.Route>` will be used to list folder"items.
+    * :class:`Resolver<codequick.resolver.Resolver>` will be used to resolve video URLs.
+    * :class:`Listitem<codequick.listing.Listitem>` is used to create "items" within Kodi.
+    * :mod:`utils<codequick.utils>` is a module, containing some useful functions.
+    * :func:`run<codequick.run>` is the function that controls the execution of the add-on.
 
 .. code-block:: python
 
     from codequick import Route, Resolver, Listitem, utils, run
 
 
-Next we will import urlquick, witch is a light-weight http client with requests like interface
-featuring caching support
+Next we will import "urlquick", which is a "light-weight" HTTP client with a "requests" like interface,
+featuring caching support.
 
 .. code-block:: python
 
     import urlquick
 
-Now we will use :func:`utils.urljoin_partial<codequick.utils.urljoin_partial>` to create a url constructor
-with the base url of the site. This is use to convert relative urls to absolute urls.
-Normally 'html' is full of relative urls and this makes it easier to work with them,
-guaranteeing that you will always have an absolute url to use.
+Now, we will use :func:`utils.urljoin_partial<codequick.utils.urljoin_partial>` to create a URL constructor
+with the "base" URL of the site. This is use to convert relative URLs to absolute URLs.
+Normally HTML is full of relative URLs and this makes it easier to work with them,
+guaranteeing that you will always have an absolute URL to use.
 
 .. code-block:: python
 
     # Base url constructor
     url_constructor = utils.urljoin_partial("http://metalvideo.com")
 
-Next we will create the root function that will be the starting point for the add-on.
-It is very important that the root function is called 'root'.
-This function will first have to be registered as a callback function.
-Since this is a function that will return listitems, it will be registered as a :class:`Route<codequick.route.Route>`
-callback. It is expected that a :class:`Route<codequick.route.Route>` callback will return a generator or list, of
-:class:`codequick.Listitem<codequick.listing.Listitem>` objects.
-The first argument that will be passed to a :class:`Route<codequick.route.Route>` callback will always be a
+Next we will create the "Root" function which will be the starting point for the add-on.
+It is very important that the "Root" function is called "root". This function will first have to be registered
+as a "callback" function. Since this is a function that will return "listitems", this will be registered as a
+:class:`Route<codequick.route.Route>` callback. It is expected that a :class:`Route<codequick.route.Route>`
+callback should return a "generator" or "list", of :class:`codequick.Listitem<codequick.listing.Listitem>` objects.
+The first argument that will be passed to a :class:`Route<codequick.route.Route>` callback, will always be the
 :class:`Route<codequick.route.Route>` instance.
 
-This callback will parse the list of music video categories available on http://metalvideo.com, then return a
-generator of listitems linking to a sub directory of videos within that category.
-Parsing of the html source will be done using HTMLement witch is integrated into the urlquick request response.
+This "callback" will parse the list of the “Music Video Categories” available on: http://metalvideo.com,
+This will return a "generator" of "listitems" linking to a sub-directory of videos within that category.
+Parsing of the HTML source will be done using "HTMLement" which is integrated into the "urlquick" request response.
+
 
 .. seealso:: http://urlquick.readthedocs.io/en/stable/#urlquick.Response.parse
 
              http://python-htmlement.readthedocs.io/en/stable/
-
-
 
 .. code-block:: python
 
@@ -89,9 +87,8 @@ Parsing of the html source will be done using HTMLement witch is integrated into
             # Return the listitem as a generator.
             yield item
 
-Now we can create the video parser callback that will return playable listitems.
-And since this is another function that will return listitems, it will be registered as a
-:class:`Route<codequick.route.Route>` callback as well.
+Now, we can create the "video parser" callback that will return "playable" listitems. Since this is another
+function that will return listitems, it will be registered as a :class:`Route<codequick.route.Route>` callback.
 
 .. code-block:: python
 
@@ -135,9 +132,9 @@ And since this is another function that will return listitems, it will be regist
             # callback function with the url of the next page of content.
             yield Listitem.next_page(url=next_tag[-1].get("href"))
 
-Lastly is the :class:`Resolver<codequick.resolver.Resolver>` callback and as so, it will need to be registered as one.
-This callback is expected to return a playable video url. The first argument that will be passed to a
-:class:`Resolver<codequick.resolver.Resolver>` callback will always be a
+Finally we need to create the :class:`Resolver<codequick.resolver.Resolver>` "callback", and register it as so.
+This callback is expected to return a playable video URL. The first argument that will be passed to a
+:class:`Resolver<codequick.resolver.Resolver>` callback, will always be a
 :class:`Resolver<codequick.resolver.Resolver>` instance.
 
 .. code-block:: python
@@ -149,13 +146,13 @@ This callback is expected to return a playable video url. The first argument tha
         url = url_constructor(url)
         return plugin.extract_source(url)
 
-:func:`plugin.extract_source<codequick.resolver.Resolver.extract_source>` uses youtube-dl to extract the
-video url, and sence it uses Youtube-dl, it will work with way more than just youtube.
+:func:`plugin.extract_source<codequick.resolver.Resolver.extract_source>` uses "YouTube.DL" to extract the
+video URL. Since it uses YouTube.DL, it will work with way-more than just youtube.
 
 .. seealso:: https://rg3.github.io/youtube-dl/supportedsites.html
 
-And finally we just need to initiate the codequick startup process.
-This will call the callback functions automatically for you.
+So to finish, we need to initiate the "codequick" startup process.
+This will call the "callback functions" automatically for you.
 
 .. code-block:: python
 

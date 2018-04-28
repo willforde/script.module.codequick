@@ -72,7 +72,7 @@ class _PersistentBase(object):
 
     def flush(self):
         """
-        Syncrnize data back to disk.
+        Synchronize data back to disk.
 
         Data will only be written to disk if content has changed.
         """
@@ -120,23 +120,21 @@ class PersistentDict(_PersistentBase, MutableMapping):
 
     :param name: Filename or path to storage file.
     :type name: str or unicode
-    :param int ttl: [opt] The amount of time in seconds that a value can be stored before it expires, if required.
+    :param int ttl: [opt] The amount of time in "seconds" that a value can be stored before it expires.
 
     .. note::
 
         ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
 
-    .. note::
+    .. note:: If the ``ttl`` parameter is given, "any" expired data will be removed on initialization.
 
-        If the 'ttl' parameter is given, any expired data will be removed on initialization.
-
-    .. note:: This class is also designed as a context manager.
+    .. note:: This class is also designed as a "Context Manager".
 
     .. note::
 
-        Data will only be synced to disk when connection to file is closed or
-        when flush method is explicitly called.
+        Data will only be synced to disk when connection to file is
+        "closed" or when "flush" method is explicitly called.
 
     :Example:
         >>> with PersistentDict("dictfile.pickle") as db:
@@ -193,27 +191,25 @@ class PersistentDict(_PersistentBase, MutableMapping):
 
 class PersistentList(_PersistentBase, MutableSequence):
     """
-    Persistent storage with a :class:`list` like interface.
+    Persistent storage with a :class:`list<list>` like interface.
 
     :param name: Filename or path to storage file.
     :type name: str or unicode
-    :param int ttl: [opt] The amount of time in seconds that a value can be stored before it expires, if required.
+    :param int ttl: [opt] The amount of time in "seconds" that a value can be stored before it expires.
 
     .. note::
 
         ``name`` can be a filename, or the full path to a file.
         The add-on profile directory will be the default location for files, unless a full path is given.
 
-    .. note::
+    .. note:: If the ``ttl`` parameter is given, "any" expired data will be removed on initialization.
 
-        If the 'ttl' parameter is given, any expired data will be removed on initialization.
-
-    .. note:: This class is also designed as a context manager.
+    .. note:: This class is also designed as a "Context Manager".
 
     .. note::
 
-        Data will only be synced to disk when connection to file is closed or
-        when flush method is explicitly called.
+        Data will only be synced to disk when connection to file is
+        "closed" or when "flush" method is explicitly called.
 
     :Example:
         >>> with PersistentList("listfile.pickle") as db:

@@ -50,8 +50,8 @@ def validate_listitems(raw_listitems):
 
 class Route(Script):
     """
-    This class is used to create Route callbacks. Route callbacks, are callbacks that
-    return listitems witch show up as folders in kodi.
+    This class is used to create "Route" callbacks. “Route" callbacks, are callbacks that
+    return "listitems" which will show up as folders in Kodi.
 
     Route inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
 
@@ -157,12 +157,12 @@ class Route(Script):
 
     def add_sort_methods(self, *methods):
         """
-        Adds sorting method(s) for the media list.
+        Add sorting method(s).
 
-        Any number of sort methods can be given as multiple arguments.
-        Normally this should not be needed as sort methods are auto detected.
+        Any number of sort method's can be given as multiple arguments.
+        Normally this should not be needed, as sort method's are auto detected.
 
-        :param int methods: One or more kodi sort methods.
+        :param int methods: One or more Kodi sort method's.
 
         .. seealso:: The full list of sort methods can be found at.\n
                      https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#ga85b3bff796fd644fb28f87b136025f40

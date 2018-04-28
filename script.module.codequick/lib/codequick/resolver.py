@@ -58,20 +58,20 @@ $"""
 
 class Resolver(Script):
     """
-    This class is used to create Resolver callbacks. Resolver callbacks, are callbacks that
-    return playable video urls witch kodi can play.
+    This class is used to create "Resolver" callbacks. Resolver callbacks are callbacks that
+    return playable video URL's which Kodi can play.
 
-    Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
+    Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.0
 
-    The possible return types from resolver callbacks are.
-        * ``bytes``: Url as type bytes.
-        * ``unicode``: Url as type unicode.
-        * ``iterable``: List or tuple, consisting of url's, listItem's or a tuple consisting of title and url.
-        * ``dict``: Dictionary consisting of title as the key and the url as the value.
-        * ``listItem``: A listitem object with required data already set e.g. label and path.
-        * ``generator``: A python generator that return's one or more urls.
+    The possible return types from Resolver Callbacks are.
+        * ``bytes``: URL as type "bytes".
+        * ``unicode``: URL as type "unicode".
+        * ``iterable``: "List" or "tuple", consisting of URL's, "listItem's" or a "tuple" consisting of (title, URL).
+        * ``dict``: "Dictionary" consisting of "title" as the key and the URL as the value.
+        * ``listItem``: A "listitem" object with required data already set e.g. "label" and "path".
+        * ``generator``: A Python "generator" that return's one or more URL's.
 
-    .. note:: If multiple url's are given, a playlist will be automaticly created.
+    .. note:: If multiple URL's are given, a playlist will be automaticly created.
 
     :example:
         >>> from codequick import Resolver, Route, Listitem
@@ -93,18 +93,18 @@ class Resolver(Script):
         super(Resolver, self).__init__()
         self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
-    def create_loopback(self, url, **next_params):
+    def create_loopback(self, url, **next_params):  # Undocumented
         """
-        Create a playlist where the second item loops back to addon to load next video.
+        Create a playlist where the second item loops back to add-on to load next video.
 
         Also useful for continuous playback of videos with no foreseeable end. For example, party mode.
 
-        :param url: Url of the first playable item.
+        :param url: URL of the first playable item.
         :type url: str or unicode
 
-        :param next_params: [opt] Keyword arguments to add to the loopback request when accessing the next video.
+        :param next_params: [opt] "Keyword" arguments to add to the loopback request when accessing the next video.
 
-        :returns: The Listitem that kodi will play.
+        :returns: The Listitem that Kodi will play.
         :rtype: xbmcgui.ListItem
         """
         # Video Playlist
@@ -140,9 +140,15 @@ class Resolver(Script):
 
     def extract_source(self, url, quality=None, **params):
         """
-        Extract video url using YoutubeDL.
+        Extract video URL using "YouTube.DL".
 
-        YoutubeDL provides access to hundreds of sites.
+        YouTube.DL provides access to hundreds of sites.
+
+        .. seealso::
+
+            The list of supported sites can be found at:
+
+            https://rg3.github.io/youtube-dl/supportedsites.html
 
         Quality options are.
             * 0 = SD,
@@ -150,19 +156,13 @@ class Resolver(Script):
             * 2 = 1080p,
             * 3 = Highest Available
 
-        :param url: Url of the video source to extract the playable video from.
+        :param url: URL of the video source, where the playable video can be extracted from.
         :type url: str or unicode
-        :param int quality: [opt] Override youtubeDL's quality setting.
-        :param params: Optional Keyword arguments of youtube_dl parameters.
+        :param int quality: [opt] Override YouTube.DL's quality setting.
+        :param params: Optional "Keyword" arguments of YouTube.DL parameters.
 
         :returns: The playable video url
         :rtype: str
-
-        .. seealso::
-
-            The list of supported sites can be found at:
-
-            https://rg3.github.io/youtube-dl/supportedsites.html
 
         .. seealso::
 
@@ -172,8 +172,8 @@ class Resolver(Script):
 
         .. note::
 
-            Unfortunately the kodi Youtube-DL module is python2 only.
-            It should be ported to python3 when kodi switches to python 3 for version 19.
+            Unfortunately the Kodi YouTube.DL module is Python 2 only. It should be
+            ported to Python 3 when Kodi switches to Python 3 for version 19.
         """
 
         def ytdl_logger(record):
@@ -303,7 +303,7 @@ class Resolver(Script):
         # Populate Playlis
         self.playlist.add(listitem.getPath(), listitem)
 
-    def _process_generator(self, resolved):
+    def _process_generator(self, resolved):  # Undocumented
         """
         Populate the kodi playlist in the background from a generator.
 
@@ -312,7 +312,7 @@ class Resolver(Script):
         for item in enumerate(filter(None, resolved), 2):
             self._playlist_item(*item)
 
-    def _process_results(self, resolved):
+    def _process_results(self, resolved):  # Undocumented
         """
         Construct playable listitem and send to kodi.
 

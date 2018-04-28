@@ -21,15 +21,15 @@ addon_logger = logging.getLogger(logger_id)
 
 
 class Settings(object):
-    """Settings class to handle the getting and setting of addon settings."""
+    """Settings class to handle the getting and setting of "add-on" settings."""
 
     def __getitem__(self, key):
         """
-        Returns the value of a setting as a unicode string.
+        Returns the value of a setting as a "unicode string".
 
-        :param str key: Id of the setting to access.
+        :param str key: ID of the setting to access.
 
-        :return: Setting as a unicode string.
+        :return: Setting as a "unicode string".
         :rtype: unicode
         """
         return addon_data.getSetting(key)
@@ -38,7 +38,7 @@ class Settings(object):
         """
         Set add-on setting.
 
-        :param str key: Id of the setting.
+        :param str key: ID of the setting.
         :param value: Value of the setting.
         :type value: str or unicode
         """
@@ -52,14 +52,14 @@ class Settings(object):
     @staticmethod
     def get_string(key, addon_id=None):
         """
-        Returns the value of a setting as a unicode string.
+        Returns the value of a setting as a "unicode string".
 
-        :param str key: Id of the setting to access.
-        :param str addon_id: [opt] Id of another addon to extract settings from.
+        :param str key: ID of the setting to access.
+        :param str addon_id: [opt] ID of another add-on to extract settings from.
 
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
+        :raises RuntimeError: If ``addon_id`` is given and there is no add-on with given ID.
 
-        :return: Setting as a unicode string.
+        :return: Setting as a "unicode string".
         :rtype: unicode
         """
         if addon_id:
@@ -70,14 +70,14 @@ class Settings(object):
     @staticmethod
     def get_boolean(key, addon_id=None):
         """
-        Returns the value of a setting as a boolean.
+        Returns the value of a setting as a "Boolean".
 
-        :param str key: Id of the setting to access.
-        :param str addon_id: [opt] Id of another addon to extract settings from.
+        :param str key: ID of the setting to access.
+        :param str addon_id: [opt] ID of another add-on to extract settings from.
 
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
+        :raises RuntimeError: If ``addon_id`` is given and there is no add-on with given ID.
 
-        :return: Setting as a boolean.
+        :return: Setting as a "Boolean".
         :rtype: bool
         """
         setting = Settings.get_string(key, addon_id).lower()
@@ -86,14 +86,14 @@ class Settings(object):
     @staticmethod
     def get_int(key, addon_id=None):
         """
-        Returns the value of a setting as a integer.
+        Returns the value of a setting as a "Integer".
 
-        :param str key: Id of the setting to access.
-        :param str addon_id: [opt] Id of another addon to extract settings from.
+        :param str key: ID of the setting to access.
+        :param str addon_id: [opt] ID of another add-on to extract settings from.
 
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
+        :raises RuntimeError: If ``addon_id`` is given and there is no add-on with given ID.
 
-        :return: Setting as a integer.
+        :return: Setting as a "Integer".
         :rtype: int
         """
         return int(Settings.get_string(key, addon_id))
@@ -101,14 +101,14 @@ class Settings(object):
     @staticmethod
     def get_number(key, addon_id=None):
         """
-        Returns the value of a setting as a float.
+        Returns the value of a setting as a "Float".
 
-        :param str key: Id of the setting to access.
-        :param str addon_id: [opt] Id of another addon to extract settings from.
+        :param str key: ID of the setting to access.
+        :param str addon_id: [opt] ID of another addon to extract settings from.
 
-        :raises RuntimeError: If addon_id is given and there is no addon with given id.
+        :raises RuntimeError: If ``addon_id`` is given and there is no addon with given ID.
 
-        :return: Setting as a float.
+        :return: Setting as a "Float".
         :rtype: float
         """
         return float(Settings.get_string(key, addon_id))
@@ -116,8 +116,8 @@ class Settings(object):
 
 class Script(object):
     """
-    This class is used to create Script callbacks. Script callbacks are callbacks that
-    just execute code and return nothing.
+    This class is used to create "Script" callbacks. Script callbacks are callbacks
+    that just execute code and return nothing.
 
     This class is also used as the base for all other types of callbacks i.e.
     :class:`Route<codequick.route.Route>` and :class:`Resolver<codequick.resolver.Resolver>`.
@@ -126,15 +126,15 @@ class Script(object):
     is_playable = False
     is_folder = False
 
-    #: Critical logging level, maps to 'xbmc.LOGFATAL'
+    #: Critical logging level, maps to "xbmc.LOGFATAL"
     CRITICAL = 50
-    #: Critical logging level, maps to 'xbmc.LOGWARNING'
+    #: Critical logging level, maps to "xbmc.LOGWARNING"
     WARNING = 30
-    #: Critical logging level, maps to 'xbmc.LOGERROR'
+    #: Critical logging level, maps to "xbmc.LOGERROR"
     ERROR = 40
-    #: Critical logging level, maps to 'xbmc.LOGDEBUG'
+    #: Critical logging level, maps to "xbmc.LOGDEBUG"
     DEBUG = 10
-    #: Critical logging level, maps to 'xbmc.LOGNOTICE'
+    #: Critical logging level, maps to "xbmc.LOGNOTICE"
     INFO = 20
 
     #: Kodi notification warning image
@@ -146,14 +146,14 @@ class Script(object):
 
     setting = Settings()
     """
-    Dictionary like interface of add-on settings, 
+    Dictionary like interface of "add-on" settings.
     See :class:`script.Settings<codequick.script.Settings>` for more details.
     """
 
     #: Underlining logger object, for advanced use.
     logger = addon_logger
 
-    #: Dictionary of all kodi parameters, for advanced use.
+    #: Dictionary of all Kodi parameters, for advanced use.
     params = dispatcher.params
 
     def __init__(self):
@@ -173,24 +173,24 @@ class Script(object):
     @staticmethod
     def register_delayed(func, *args, **kwargs):
         """
-        Register a function that will be executed after kodi has finished listing all listitems.
-        Sence the function is called after the listitems have been shown, it will not slow anything down.
-        Very useful for fetching extra metadata for later use without slowing down the listing of content.
+        Registers a function that will be executed after Kodi has finished listing all "listitems".
+        Since this function is called after the listitems has been shown, it will not slow down the
+        listing of content. This is very useful for fetching extra metadata, for later use.
 
         .. note::
 
             Functions will be called in reverse order to the order they are added (LIFO).
 
-        :param func: Function that will be called after endOfDirectory is called.
-        :param args: Positional arguments that will be passed to function.
-        :param kwargs: Keyword arguments that will be passed to function.
+        :param func: Function that will be called after "xbmcplugin.endOfDirectory" is called.
+        :param args: "Positional" arguments that will be passed to function.
+        :param kwargs: "Keyword" arguments that will be passed to function.
         """
         dispatcher.register_delayed(func, args, kwargs)
 
     @staticmethod
     def log(msg, args=None, lvl=10):
         """
-        Logs a message with logging level of 'lvl'.
+        Logs a message with logging level of "lvl".
 
         Logging Levels.
             * :attr:`Script.DEBUG<codequick.script.Script.DEBUG>`
@@ -202,12 +202,13 @@ class Script(object):
         :param msg: The message format string.
         :type args: list or tuple
         :param args: List of arguments which are merged into msg using the string formatting operator.
-        :param lvl: The logging level to use. default => 10 (Debug).
+        :param int lvl: The logging level to use. default => 10 (Debug).
 
         .. Note::
-            When a log level of 50(CRITICAL) is given, then all debug messages that were previously logged
-            will now be logged as level 30(WARNING). This will allow for debug messages to show in the normal kodi
-            log file when a CRITICAL error has occurred, without having to enable kodi's debug mode.
+
+            When a log level of 50(CRITICAL) is given, all debug messages that were previously logged will
+            now be logged as level 30(WARNING). This allows for debug messages to show in the normal Kodi
+            log file when a CRITICAL error has occurred, without having to enable Kodi's debug mode.
         """
         if args:
             addon_logger.log(lvl, msg, *args)
@@ -217,7 +218,7 @@ class Script(object):
     @staticmethod
     def notify(heading, message, icon=None, display_time=5000, sound=True):
         """
-        Send a notification to kodi.
+        Send a notification to Kodi.
 
         Options for icon are.
             * :attr:`Script.NOTIFY_INFO<codequick.script.Script.NOTIFY_INFO>`
@@ -233,7 +234,7 @@ class Script(object):
         :type icon: str or unicode
         :param icon: [opt] Icon image to use. (default => 'add-on icon image')
 
-        :param int display_time: [opt] Ttime in milliseconds to show dialog. (default => 5000)
+        :param int display_time: [opt] Ttime in "milliseconds" to show dialog. (default => 5000)
         :param bool sound: [opt] Whether or not to play notification sound. (default => True)
         """
         # Ensure that heading, message and icon
@@ -248,9 +249,9 @@ class Script(object):
     @staticmethod
     def localize(string_id):
         """
-        Returns an add-on's localized 'unicode string'.
+        Returns an add-on's localized "unicode string".
 
-        :param int string_id: The id or reference string to be localized.
+        :param int string_id: The ID or of the localized string
 
         :returns: Localized unicode string.
         :rtype: unicode
@@ -265,7 +266,7 @@ class Script(object):
     @staticmethod
     def get_info(key, addon_id=None):
         """
-        Returns the value of an addon property as a unicode string.
+        Returns the value of an add-on property as a unicode string.
 
         Properties.
             * author
@@ -283,13 +284,13 @@ class Script(object):
             * type
             * version
 
-        :param str key: Id of the property to access.
-        :param str addon_id: [opt] Id of another addon to extract properties from.
+        :param str key: "Name" of the property to access.
+        :param str addon_id: [opt] ID of another add-on to extract properties from.
 
         :return: Add-on property as a unicode string.
         :rtype: unicode
 
-        :raises RuntimeError: If addon_id is given and there is no add-on with given id.
+        :raises RuntimeError: If add-on ID is given and there is no add-on with given ID.
         """
         if addon_id:
             # Extract property from a different add-on

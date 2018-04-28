@@ -1,6 +1,6 @@
 Utils
 =====
-A collection of useful function.
+A collection of useful functions.
 
 .. automodule:: codequick.utils
    :members:

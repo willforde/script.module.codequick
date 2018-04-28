@@ -1,8 +1,7 @@
 Resolver
 ========
-This module is used to create Resolver callbacks. Resolver callbacks, are callbacks that
-return playable video urls witch kodi can play.
+This module is used for the creation of “Route callbacks”.
 
 .. autoclass:: codequick.resolver.Resolver
-   :members:
-   :exclude-members: create_loopback
+    :members:
+    :exclude-members: create_loopback

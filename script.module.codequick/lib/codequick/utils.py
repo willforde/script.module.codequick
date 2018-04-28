@@ -63,26 +63,26 @@ def keyboard(heading, default="", hidden=False):
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     """
-    Parse a urlencoded query string, and return the data as a dictionary.
+    Parse a "urlencoded" query string, and return the data as a dictionary.
 
-    Parse a query string given as a string or unicode argument (data of type application/x-www-form-urlencoded).
-    Data is returned as a dictionary. The dictionary keys are the unique query variable names and the values
-    are unicode values for each name
+    Parse a query string given as a string or unicode argument (data of type application/x-www-form- urlencoded).
+    Data is returned as a dictionary. The dictionary keys are the "Unique Query" variable names and
+    the values are "Unicode" values for each name.
 
-    The optional argument keep_blank_values is a flag indicating whether blank values in percent-encoded queries
-    should be treated as blank strings. A ``True`` value indicates that blanks should be retained as blank strings.
+    The optional argument ``keep_blank_values``, is a flag indicating whether blank values in percent-encoded queries
+    should be treated as a blank strings.  A ``True`` value indicates that blanks should be retained as a blank strings.
     The default ``False`` value indicates that blank values are to be ignored and treated as if they were not included.
 
-    The optional argument strict_parsing is a flag indicating what to do with parsing errors.
-    If ``False`` (the default), errors are silently ignored. If ``True``, errors raise a ValueError exception.
+    The optional argument ``strict_parsing``, is a flag indicating what to do with parsing errors. If ``False``
+    (the default), errors are silently ignored. If ``True``, errors raise a "ValueError" exception.
 
-    :param qs: Percent-encoded query string to be parsed, or a url with a query string.
+    :param qs: Percent-encoded "query string" to be parsed, or a URL with a "query string".
     :type qs: str or unicode
 
     :param bool keep_blank_values: ``True`` to keep blank values, else discard.
-    :param bool strict_parsing: ``True`` to raise ValueError if there are parsing errors, else silently ignore.
+    :param bool strict_parsing: ``True`` to raise "ValueError" if there are parsing errors, else silently ignore.
 
-    :return: Returns a dict of key/value pairs, with all keys and values as unicode.
+    :return: Returns a dictionary of key/value pairs, with all keys and values as "Unicode".
     :rtype: dict
 
     :raises ValueError: If duplicate query field names exists or if there is a parsing error.
@@ -120,17 +120,17 @@ def urljoin_partial(base_url):
     """
     Construct a full (absolute) URL by combining a base URL with another URL.
 
-    This is useful when parsing html as the majority of links would be relative links.
+    This is useful when parsing HTML, as the majority of links would be relative links.
 
     Informally, this uses components of the base URL, in particular the addressing scheme,
     the network location and (part of) the path, to provide missing components in the relative URL.
 
-    Returns a new partial object which when called will pass base_url to urlparse.urljoin along with the
+    Returns a new "partial" object which when called, will pass ``base_url`` to :func:`urlparse.urljoin` along with the
     supplied relative URL.
 
     :type base_url: str or unicode
-    :param base_url: The absolute url to use as the base.
-    :returns: A partial function that accepts a relative url and returns a full absolute url.
+    :param base_url: The absolute URL to use as the base.
+    :returns: A partial function that accepts a relative URL and returns a full absolute URL.
     
     :example:
         >>> url_constructor = urljoin_partial("https://google.ie/")
@@ -156,7 +156,7 @@ def urljoin_partial(base_url):
 
 def strip_tags(html):
     """
-    Strips out html tags and return plain text.
+    Strips out HTML tags and return plain text.
 
     :param html: HTML with text to extract.
     :type html: bytes or unicode
@@ -176,24 +176,24 @@ def safe_path(path, encoding="utf8"):
 
     Unicode when on windows, bytes when on linux/bsd.
 
-    This is needed because a path operation may fail on windows if path is of type ``bytes`` and it's contains
-    non ascii characters. Same if path is of type ``unicode`` on linux and locale is set to
-    'C'(ascii) instead of something like 'UTF-8'.
+    This is needed because a path operation may fail on windows if path is of type ``bytes`` and it contains non
+    ASCII characters. The path operation may also fail if path is of type ``unicode`` on Linux and
+    locale is set to "C"(ASCII) instead of "UTF-8".
 
     :type path: str or unicode
     :param path: The path to convert.
-    :param str encoding: [opt] The encoding to use if needed.
-    :return: Returns the path as unicode or bytes base on platform os.
+    :param str encoding: [opt] The encoding to use.
+    :return: Returns the path as ``unicode`` or ``bytes`` base on platform os.
     """
     return ensure_unicode(path, encoding) if sys.platform.startswith("win") else ensure_bytes(path, encoding)
 
 
 def ensure_bytes(data, encoding="utf8"):
     """
-    Ensures that given string is returned as type ``bytes``.
+    Ensures that the given string is returned as type ``bytes``.
 
     :param data: String to convert if needed.
-    :param str encoding: [opt] The encoding to use if needed..
+    :param str encoding: [opt] The encoding to use.
     :returns: The given string as type ``bytes``
     :rtype: bytes
     """
@@ -202,7 +202,7 @@ def ensure_bytes(data, encoding="utf8"):
 
 def ensure_native_str(data, encoding="utf8"):
     """
-    Ensures that given string is returned as a native ``str`` type, ``bytes`` on python2, ``unicode`` on python3.
+    Ensures that the given string is returned as a native str type, ``bytes`` on Python 2, ``unicode`` on Python 3.
 
     :param data: String to convert if needed.
     :param str encoding: [opt] The encoding to use if needed..
@@ -223,7 +223,7 @@ def ensure_native_str(data, encoding="utf8"):
 
 def ensure_unicode(data, encoding="utf8"):
     """
-    Ensures that given string is return as type ``unicode``.
+    Ensures that the given string is return as type ``unicode``.
 
     :param data: String to convert if needed.
     :param str encoding: [opt] The encoding to use if needed..

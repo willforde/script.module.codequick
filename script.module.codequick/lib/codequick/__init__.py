@@ -18,9 +18,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Codequick is a framework for kodi add-on's. The goal for this framework is to simplify add-on development.
-This is achieved by reducing the amount of boilerplate code to a minimum while automating as many tasks
-that can be automated. Ultimately allowing the developer to focus primarily on scraping content from
+Codequick is a framework for kodi add-on’s. The goal for this framework is to simplify add-on development.
+This  is achieved by reducing the amount of boilerplate code to a minimum, while automating as many tasks
+that can be automated. Ultimately, allowing the developer to focus primarily on scraping content from
 websites and passing it to Kodi.
 
 Github: https://github.com/willforde/script.module.codequick
