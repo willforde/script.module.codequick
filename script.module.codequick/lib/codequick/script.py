@@ -120,28 +120,28 @@ class Script(object):
     that just execute code and return nothing.
 
     This class is also used as the base for all other types of callbacks i.e.
-    :class:`Route<codequick.route.Route>` and :class:`Resolver<codequick.resolver.Resolver>`.
+    :class:`codequick.Route<codequick.route.Route>` and :class:`codequick.Resolver<codequick.resolver.Resolver>`.
     """
     # Set the listitem types to that of a script
     is_playable = False
     is_folder = False
 
-    #: Critical logging level, maps to "xbmc.LOGFATAL"
+    #: Critical logging level, maps to "xbmc.LOGFATAL".
     CRITICAL = 50
-    #: Critical logging level, maps to "xbmc.LOGWARNING"
+    #: Critical logging level, maps to "xbmc.LOGWARNING".
     WARNING = 30
-    #: Critical logging level, maps to "xbmc.LOGERROR"
+    #: Critical logging level, maps to "xbmc.LOGERROR".
     ERROR = 40
-    #: Critical logging level, maps to "xbmc.LOGDEBUG"
+    #: Critical logging level, maps to "xbmc.LOGDEBUG".
     DEBUG = 10
-    #: Critical logging level, maps to "xbmc.LOGNOTICE"
+    #: Critical logging level, maps to "xbmc.LOGNOTICE".
     INFO = 20
 
-    #: Kodi notification warning image
+    #: Kodi notification warning image.
     NOTIFY_WARNING = 'warning'
-    #: Kodi notification error image
+    #: Kodi notification error image.
     NOTIFY_ERROR = 'error'
-    #: Kodi notification info image
+    #: Kodi notification info image.
     NOTIFY_INFO = 'info'
 
     setting = Settings()
@@ -150,10 +150,10 @@ class Script(object):
     See :class:`script.Settings<codequick.script.Settings>` for more details.
     """
 
-    #: Underlining logger object, for advanced use.
+    #: Underlining logger object, for advanced use. See :class:`logging.Logger` for more details.
     logger = addon_logger
 
-    #: Dictionary of all Kodi parameters, for advanced use.
+    #: Dictionary of all callback parameters, for advanced use.
     params = dispatcher.params
 
     def __init__(self):
@@ -175,7 +175,7 @@ class Script(object):
         """
         Registers a function that will be executed after Kodi has finished listing all "listitems".
         Since this function is called after the listitems has been shown, it will not slow down the
-        listing of content. This is very useful for fetching extra metadata, for later use.
+        listing of content. This is very useful for fetching extra metadata for later use.
 
         .. note::
 

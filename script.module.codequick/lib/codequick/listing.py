@@ -160,7 +160,7 @@ class Art(Params):
 
     def global_thumb(self, image):
         """
-        Set the "thumbnail" image to a image file, located in the "codequick" "resources/media" directory.
+        Set the "thumbnail" image to a image file, located in the codequick "resources/media" directory.
         
         The available global thumbnail images are.
             * next.png        - Arrow pointing to the right.
@@ -201,10 +201,11 @@ class Info(Params):
         * "size" would be converted to ``long`` and "xbmcplugin.SORT_METHOD_SIZE"
           sort method will be selected.
 
-    .. seealso:: The full list of listitem "infoLabels" can be found at.\n
+    .. seealso:: The full list of listitem "infoLabels" can be found at:
+
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
 
-    .. note:: Duration "infolabel" value, can be either in "seconds" or as a "hh:mm:ss" string.
+    .. note:: Duration infolabel value can be either in "seconds" or as a "hh:mm:ss" string.
 
     This class inherits all methods and attributes from :class:`collections.MutableMapping`.
 
@@ -258,7 +259,7 @@ class Info(Params):
 
     def date(self, date, date_format):
         """
-        Set the date "infolabel".
+        Set the date infolabel.
         
         :param date: The date for the listitem.
         :type date: str or unicode
@@ -342,7 +343,7 @@ class Stream(Params):
         * audio_language     - str (en)
         * subtitle_language  - str (en)
 
-    Type convertion will be done automatically so manual convertion is not required.
+    Type convertion will be done automatically, so manual convertion is not required.
 
     This class inherits all methods and attributes from :class:`collections.MutableMapping`.
 
@@ -578,7 +579,9 @@ class Listitem(object):
         """
         Set the "callback" object.
 
-        The "callback" object can be any registered "Script", "Route" or "Resolver" callback, or playable URL.
+        The "callback" object can be any registered :class:`codequick.Script<codequick.script.Script>`,
+        :class:`codequick.Route<codequick.route.Route>` or :class:`codequick.Resolver<codequick.resolver.Resolver>`
+        callback, or playable URL.
 
         :param callback: The "callback" or playable URL.
         :param args: "Positional" arguments that will be passed to the callback.
@@ -689,7 +692,7 @@ class Listitem(object):
     @classmethod
     def next_page(cls, *args, **kwargs):
         """
-        Constructor for adding link to Next Page of content.
+        Constructor for adding link to "Next Page" of content.
 
         The current running "callback" will be called with all of the parameters that are given here.
 
@@ -769,7 +772,7 @@ class Listitem(object):
     @classmethod
     def youtube(cls, content_id, label=None, enable_playlists=True):
         """
-        Constructor to add a "YouTube" channel to add-on.
+        Constructor to add a "YouTube channel" to add-on.
 
         This listitem will list all videos from a "YouTube", channel or playlist. All videos will have a
         "Related Videos" option via the context menu. If ``content_id`` is a channel ID and ``enable_playlists``

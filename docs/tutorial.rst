@@ -3,11 +3,11 @@ Tutorial
 ########
 Here we will document the creation of an "add-on".
 In this instance, “plugin.video.metalvideo”. This will be a simplified version of the full add-on
-that can be found over at https://github.com/willforde/plugin.video.metalvideo
+that can be found over at: https://github.com/willforde/plugin.video.metalvideo
 
 First of all, import the required “Codequick” components.
 
-    * :class:`Route<codequick.route.Route>` will be used to list folder"items.
+    * :class:`Route<codequick.route.Route>` will be used to list folder items.
     * :class:`Resolver<codequick.resolver.Resolver>` will be used to resolve video URLs.
     * :class:`Listitem<codequick.listing.Listitem>` is used to create "items" within Kodi.
     * :mod:`utils<codequick.utils>` is a module, containing some useful functions.
@@ -43,14 +43,14 @@ callback should return a "generator" or "list", of :class:`codequick.Listitem<co
 The first argument that will be passed to a :class:`Route<codequick.route.Route>` callback, will always be the
 :class:`Route<codequick.route.Route>` instance.
 
-This "callback" will parse the list of the “Music Video Categories” available on: http://metalvideo.com,
+This "callback" will parse the list of “Music Video Categories” available on: http://metalvideo.com,
 This will return a "generator" of "listitems" linking to a sub-directory of videos within that category.
 Parsing of the HTML source will be done using "HTMLement" which is integrated into the "urlquick" request response.
 
 
-.. seealso:: http://urlquick.readthedocs.io/en/stable/#urlquick.Response.parse
+.. seealso:: URLQuick: http://urlquick.readthedocs.io/en/stable/
 
-             http://python-htmlement.readthedocs.io/en/stable/
+             HTMLement: http://python-htmlement.readthedocs.io/en/stable/
 
 .. code-block:: python
 
@@ -62,7 +62,7 @@ Parsing of the HTML source will be done using "HTMLement" which is integrated in
 
         # Filter source down to required section by giving the name and
         # attributes of the element containing the required data.
-        # It's a lot faster, to limit the parser to required section.
+        # It's a lot faster to limit the parser to required section.
         root_elem = resp.parse(u"ul", attrs={"id": "category_listing"})
 
         # Parse each category

@@ -61,17 +61,20 @@ class Resolver(Script):
     This class is used to create "Resolver" callbacks. Resolver callbacks are callbacks that
     return playable video URL's which Kodi can play.
 
-    Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.0
+    Resolver inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
 
     The possible return types from Resolver Callbacks are.
         * ``bytes``: URL as type "bytes".
         * ``unicode``: URL as type "unicode".
         * ``iterable``: "List" or "tuple", consisting of URL's, "listItem's" or a "tuple" consisting of (title, URL).
         * ``dict``: "Dictionary" consisting of "title" as the key and the URL as the value.
-        * ``listItem``: A "listitem" object with required data already set e.g. "label" and "path".
+        * ``listItem``: A :class:`codequick.Listitem<codequick.listing.Listitem>` object with required data already set e.g. "label" and "path".
         * ``generator``: A Python "generator" that return's one or more URL's.
 
     .. note:: If multiple URL's are given, a playlist will be automaticly created.
+
+    :raises RuntimeError: If no content was returned from callback.
+    :raises ValueError: If returned url is invalid.
 
     :example:
         >>> from codequick import Resolver, Route, Listitem
@@ -207,7 +210,9 @@ class Resolver(Script):
         elif stored_errors:
             raise RuntimeError(stored_errors[0])
 
-    def extract_youtube(self, source):
+    @staticmethod
+    def extract_youtube(source):
+        # TODO: Remove this method as soon as I found out for sure that youtube.dl works on kodi for Xbox
         import htmlement
         import urlquick
 
@@ -350,7 +355,7 @@ class Resolver(Script):
                 # Resolved url must be invalid
                 raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
         else:
-            raise ValueError(self.localize(NO_VIDEO))
+            raise RuntimeError(self.localize(NO_VIDEO))
 
         # Send playable listitem to kodi
         logger.debug("Resolved Url: %s", listitem.getPath())

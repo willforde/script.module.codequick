@@ -2,6 +2,7 @@ Script
 ======
 This module is used for creating "Script" callback's, which are also used as the base for all other types of callbacks.
 
+.. autofunction:: codequick.run
 
 .. autoclass:: codequick.script.Script
     :members:
@@ -9,7 +10,7 @@ This module is used for creating "Script" callback's, which are also used as the
     .. attribute:: handle
         :annotation: = -1
 
-        The Kodi handle that this "add-on" was started with.
+        The Kodi handle that this add-on was started with.
 
 .. autoclass:: codequick.script.Settings
 

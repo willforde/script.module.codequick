@@ -53,7 +53,14 @@ class Route(Script):
     This class is used to create "Route" callbacks. “Route" callbacks, are callbacks that
     return "listitems" which will show up as folders in Kodi.
 
-    Route inherits all methods and attributes from :class:`script.Script<codequick.script.Script>`.
+    Route inherits all methods and attributes from :class:`codequick.Script<codequick.script.Script>`.
+
+    The possible return types from Route Callbacks are.
+        * ``iterable``: "List" or "tuple", consisting of :class:`codequick.listitem<codequick.listing.Listitem>` objects.
+        * ``generator``: A Python "generator" that return's :class:`codequick.listitem<codequick.listing.Listitem>` objects.
+        * ``False``: This will cause the "plugin call" to quit silently, without raising a RuntimeError.
+
+    :raises RuntimeError: If no content was returned from callback.
 
     :example:
         >>> from codequick import Route, Listitem

@@ -66,11 +66,11 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     Parse a "urlencoded" query string, and return the data as a dictionary.
 
     Parse a query string given as a string or unicode argument (data of type application/x-www-form- urlencoded).
-    Data is returned as a dictionary. The dictionary keys are the "Unique Query" variable names and
+    Data is returned as a dictionary. The dictionary keys are the "Unique" query variable names and
     the values are "Unicode" values for each name.
 
     The optional argument ``keep_blank_values``, is a flag indicating whether blank values in percent-encoded queries
-    should be treated as a blank strings.  A ``True`` value indicates that blanks should be retained as a blank strings.
+    should be treated as a blank string.  A ``True`` value indicates that blanks should be retained as a blank string.
     The default ``False`` value indicates that blank values are to be ignored and treated as if they were not included.
 
     The optional argument ``strict_parsing``, is a flag indicating what to do with parsing errors. If ``False``
@@ -172,9 +172,9 @@ def strip_tags(html):
 
 def safe_path(path, encoding="utf8"):
     """
-    Returns path as type ``bytes`` or ``unicode`` base on platform os.
+    Returns path as type ``bytes`` or ``unicode`` base on platform OS.
 
-    Unicode when on windows, bytes when on linux/bsd.
+    Unicode when on Windows, Bytes when on Linux/BSD.
 
     This is needed because a path operation may fail on windows if path is of type ``bytes`` and it contains non
     ASCII characters. The path operation may also fail if path is of type ``unicode`` on Linux and
