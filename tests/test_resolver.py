@@ -54,7 +54,7 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
     def test_no_url(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RuntimeError):
             self.resolver._process_results(None)
 
     def test_invalid_url(self):
