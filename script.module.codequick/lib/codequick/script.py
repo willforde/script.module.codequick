@@ -30,7 +30,7 @@ class Settings(object):
         :param str key: ID of the setting to access.
 
         :return: Setting as a "unicode string".
-        :rtype: unicode
+        :rtype: str
         """
         return addon_data.getSetting(key)
 
@@ -39,13 +39,12 @@ class Settings(object):
         Set add-on setting.
 
         :param str key: ID of the setting.
-        :param value: Value of the setting.
-        :type value: str or unicode
+        :param str value: Value of the setting.
         """
         # noinspection PyTypeChecker
         addon_data.setSetting(key, ensure_unicode(value))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key):  # type: (str) -> None
         """Set an add-on setting to a blank string."""
         addon_data.setSetting(key, "")
 
@@ -60,7 +59,7 @@ class Settings(object):
         :raises RuntimeError: If ``addon_id`` is given and there is no add-on with given ID.
 
         :return: Setting as a "unicode string".
-        :rtype: unicode
+        :rtype: str
         """
         if addon_id:
             return xbmcaddon.Addon(addon_id).getSetting(key)
@@ -199,7 +198,7 @@ class Script(object):
             * :attr:`Script.ERROR<codequick.script.Script.ERROR>`
             * :attr:`Script.CRITICAL<codequick.script.Script.CRITICAL>`
 
-        :param msg: The message format string.
+        :param str msg: The message format string.
         :type args: list or tuple
         :param args: List of arguments which are merged into msg using the string formatting operator.
         :param int lvl: The logging level to use. default => 10 (Debug).
@@ -225,14 +224,9 @@ class Script(object):
             * :attr:`Script.NOTIFY_ERROR<codequick.script.Script.NOTIFY_ERROR>`
             * :attr:`Script.NOTIFY_WARNING<codequick.script.Script.NOTIFY_WARNING>`
 
-        :type heading: str or unicode
-        :param heading: Dialog heading label.
-
-        :type message: str or unicode
-        :param message: Dialog message label.
-
-        :type icon: str or unicode
-        :param icon: [opt] Icon image to use. (default => 'add-on icon image')
+        :param str heading: Dialog heading label.
+        :param str message: Dialog message label.
+        :param str icon: [opt] Icon image to use. (default => 'add-on icon image')
 
         :param int display_time: [opt] Ttime in "milliseconds" to show dialog. (default => 5000)
         :param bool sound: [opt] Whether or not to play notification sound. (default => True)
@@ -254,7 +248,7 @@ class Script(object):
         :param int string_id: The ID or of the localized string
 
         :returns: Localized unicode string.
-        :rtype: unicode
+        :rtype: str
         """
         if 30000 <= string_id <= 30999:
             return addon_data.getLocalizedString(string_id)
@@ -288,7 +282,7 @@ class Script(object):
         :param str addon_id: [opt] ID of another add-on to extract properties from.
 
         :return: Add-on property as a unicode string.
-        :rtype: unicode
+        :rtype: str
 
         :raises RuntimeError: If add-on ID is given and there is no add-on with given ID.
         """

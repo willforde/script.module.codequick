@@ -25,25 +25,20 @@ PY3 = sys.version_info[0] >= 3
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
 
-__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags",
-           "safe_path", "ensure_bytes", "ensure_native_str", "ensure_unicode"]
+__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags", "safe_path", "ensure_bytes",
+           "ensure_native_str", "ensure_unicode", "unicode_type", "long_type", "PY3"]
 
 
 def keyboard(heading, default="", hidden=False):
     """
     Show a keyboard dialog.
 
-    :param heading: Keyboard heading.
-    :type heading: str or unicode
-
-    :param default: [opt] Default text.
-    :type default: str or unicode
-
-    :param hidden: [opt] ``True`` for hidden text entry.
-    :type hidden: bool
+    :param str heading: Keyboard heading.
+    :param str default: [opt] Default text.
+    :param bool hidden: [opt] ``True`` for hidden text entry.
 
     :return: Returns the user input as unicode.
-    :rtype: unicode
+    :rtype: str
     """
     # Convert inputs to strings if required
     heading = ensure_native_str(heading)
@@ -76,9 +71,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
     The optional argument ``strict_parsing``, is a flag indicating what to do with parsing errors. If ``False``
     (the default), errors are silently ignored. If ``True``, errors raise a "ValueError" exception.
 
-    :param qs: Percent-encoded "query string" to be parsed, or a URL with a "query string".
-    :type qs: str or unicode
-
+    :param str qs: Percent-encoded "query string" to be parsed, or a URL with a "query string".
     :param bool keep_blank_values: ``True`` to keep blank values, else discard.
     :param bool strict_parsing: ``True`` to raise "ValueError" if there are parsing errors, else silently ignore.
 
@@ -128,8 +121,7 @@ def urljoin_partial(base_url):
     Returns a new "partial" object which when called, will pass ``base_url`` to :func:`urlparse.urljoin` along with the
     supplied relative URL.
 
-    :type base_url: str or unicode
-    :param base_url: The absolute URL to use as the base.
+    :param str base_url: The absolute URL to use as the base.
     :returns: A partial function that accepts a relative URL and returns a full absolute URL.
     
     :example:
@@ -145,9 +137,9 @@ def urljoin_partial(base_url):
         """
         Construct a full (absolute) using saved base url.
 
-        :param url: The relative URL to combine with base.
+        :param str url: The relative URL to combine with base.
         :return: Absolute url.
-        :rtype: unicode
+        :rtype: str
         """
         return urlparse.urljoin(base_url, ensure_unicode(url))
 
@@ -158,8 +150,9 @@ def strip_tags(html):
     """
     Strips out HTML tags and return plain text.
 
-    :param html: HTML with text to extract.
-    :type html: bytes or unicode
+    :param str html: HTML with text to extract.
+    :returns: Html with tags striped out
+    :rtype: str
 
     :example:
         >>> strip_tags('<a href="http://example.com/">I linked to <i>example.com</i></a>')
@@ -192,8 +185,10 @@ def ensure_bytes(data, encoding="utf8"):
     """
     Ensures that the given string is returned as type ``bytes``.
 
+    :type data: str or bytes
     :param data: String to convert if needed.
     :param str encoding: [opt] The encoding to use.
+
     :returns: The given string as type ``bytes``
     :rtype: bytes
     """
@@ -225,10 +220,12 @@ def ensure_unicode(data, encoding="utf8"):
     """
     Ensures that the given string is return as type ``unicode``.
 
+    :type data: str or bytes
     :param data: String to convert if needed.
     :param str encoding: [opt] The encoding to use if needed..
+
     :returns: The given string as type ``unicode``.
-    :rtype: unicode
+    :rtype: str
     """
     if isinstance(data, bytes):
         return data.decode(encoding)

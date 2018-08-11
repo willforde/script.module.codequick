@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from collections import MutableMapping
 from time import strptime, strftime
 import logging
+import typing
 import os
 import re
 
@@ -89,17 +90,17 @@ class Params(MutableMapping):
     def __init__(self):
         self.raw_dict = {}
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # type: (str) -> typing.Union[str, int, float, list]
         value = self.raw_dict[key]
         return value.decode("utf8") if isinstance(value, bytes) else value
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float, list]) -> None
         self.raw_dict[key] = value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key):  # type: (str) -> None
         del self.raw_dict[key]
 
-    def __contains__(self, key):
+    def __contains__(self, key):  # type: (str) -> bool
         return key in self.raw_dict
 
     def __len__(self):
@@ -138,11 +139,11 @@ class Art(Params):
         >>> item.art.local_thumb("thumbnail.png")
     """
 
-    def __init__(self, listitem):
+    def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Art, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (str, str) -> None
         if value:
             self.raw_dict[key] = ensure_native_str(value)
         else:
@@ -152,8 +153,7 @@ class Art(Params):
         """
         Set the "thumbnail" image to a image file, located in the add-on "resources/media" directory.
         
-        :param image: Filename of the image.
-        :type image: str or unicode
+        :param str image: Filename of the image.
         """
         # Here we can't be sure if 'image' only contains ascii characters, so ensure_native_str is needed
         self.raw_dict["thumb"] = local_image.format(ensure_native_str(image))
@@ -170,8 +170,7 @@ class Art(Params):
             * playlist.png    - Image of three bulleted lines.
             * recent.png      - Image of a clock.
 
-        :param image: Filename of the image.
-        :type image: str or unicode
+        :param str image: Filename of the image.
         """
         # Here we know that 'image' should only contain ascii characters
         # So there is no neeed to use ensure_native_str
@@ -215,11 +214,11 @@ class Info(Params):
         >>> item.info['size'] = 256816
     """
 
-    def __init__(self, listitem):
+    def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Info, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float, list]) -> None
         if value is None or value == "":
             logger.debug("Ignoring empty infolable: '%s'", key)
             return None
@@ -261,8 +260,7 @@ class Info(Params):
         """
         Set the date infolabel.
         
-        :param date: The date for the listitem.
-        :type date: str or unicode
+        :param str date: The date for the listitem.
         :param str date_format: The format of the date as a strftime directive e.g. "june 27, 2017" => "%B %d, %Y"
         
         .. seealso:: The full list of directives can be found at:
@@ -281,15 +279,8 @@ class Info(Params):
         auto_sort_add(xbmcplugin.SORT_METHOD_DATE)
 
     @staticmethod
-    def _duration(duration):
-        """
-        Converts duration from a string of 'hh:mm:ss' into seconds.
-
-        :param duration: The duration of stream.
-        :type duration: int or str or unicode
-        :returns: The duration converted to seconds.
-        :rtype: int
-        """
+    def _duration(duration):  # type: (typing.Union[str, int]) -> int
+        """Converts duration from a string of 'hh:mm:ss' into seconds."""
         if isinstance(duration, (str, unicode_type)):
             duration = duration.strip(";").strip(":")
             if ":" in duration or ";" in duration:
@@ -314,11 +305,11 @@ class Info(Params):
 
 
 class Property(Params):
-    def __init__(self, listitem):
+    def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Property, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (str, str) -> None
         if value:
             self.raw_dict[key] = ensure_unicode(value)
         else:
@@ -353,11 +344,11 @@ class Stream(Params):
         >>> item.stream['audio_codec'] = 'aac'
     """
 
-    def __init__(self, listitem):
+    def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Stream, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float]) -> None
         if not value:
             logger.debug("Ignoring empty stream detail value for: '%s'", key)
             return None
@@ -449,7 +440,7 @@ class Context(list):
                  http://kodi.wiki/view/List_of_Built_In_Functions
     """
 
-    def __init__(self, listitem):
+    def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Context, self).__init__()
         self._listitem = listitem
 
@@ -469,7 +460,7 @@ class Context(list):
         """
         Convenient method to add a context menu item that links to a "container".
 
-        :type label: str or unicode
+        :type label: str
         :param callback: The function that will be called when menu item is activated.
         :param label: The label of the context menu item.
         :param args: [opt] "Positional" arguments that will be passed to the callback.
@@ -558,7 +549,7 @@ class Listitem(object):
         """
 
     @property
-    def label(self):
+    def label(self):  # type: () -> str
         """
         The listitem label property.
 
@@ -569,7 +560,7 @@ class Listitem(object):
         return ensure_unicode(self.listitem.getLabel())
 
     @label.setter
-    def label(self, label):
+    def label(self, label):  # type: (str) -> None
         self.listitem.setLabel(label)
         unformatted_label = strip_formatting("", label)
         self.params["_title_"] = unformatted_label
@@ -652,7 +643,7 @@ class Listitem(object):
 
         This method will create and populate a listitem from a set of given values.
 
-        :type label: str or unicode
+        :type label: str
         :param callback: The "callback" function or playable URL.
         :param label: The listitem's label.
         :param dict art: Dictionary of listitem art.
@@ -778,12 +769,8 @@ class Listitem(object):
         "Related Videos" option via the context menu. If ``content_id`` is a channel ID and ``enable_playlists``
         is ``True``, then a link to the "channel playlists" will also be added to the list of videos.
 
-        :param content_id: Channel ID or playlist ID, of video content.
-        :type content_id: str or unicode
-
-        :param label: [opt] Listitem Label. (default => "All Videos").
-        :type label: str or unicode
-
+        :param str content_id: Channel ID or playlist ID, of video content.
+        :param str label: [opt] Listitem Label. (default => "All Videos").
         :param bool enable_playlists: [opt] Set to ``False`` to disable linking to channel playlists.
                                       (default => ``True``)
 

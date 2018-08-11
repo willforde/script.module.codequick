@@ -27,8 +27,7 @@ class _PersistentBase(object):
     """
     Base class to handle persistent file handling.
 
-    :param name: Filename of persistence storage file.
-    :type name: str or unicode
+    :param str name: Filename of persistence storage file.
     """
 
     def __init__(self, name):
@@ -118,8 +117,7 @@ class PersistentDict(_PersistentBase, MutableMapping):
     """
     Persistent storage with a :class:`dictionary<dict>` like interface.
 
-    :param name: Filename or path to storage file.
-    :type name: str or unicode
+    :param str name: Filename or path to storage file.
     :param int ttl: [opt] The amount of time in "seconds" that a value can be stored before it expires.
 
     .. note::
@@ -193,8 +191,7 @@ class PersistentList(_PersistentBase, MutableSequence):
     """
     Persistent storage with a :class:`list<list>` like interface.
 
-    :param name: Filename or path to storage file.
-    :type name: str or unicode
+    :param str name: Filename or path to storage file.
     :param int ttl: [opt] The amount of time in "seconds" that a value can be stored before it expires.
 
     .. note::

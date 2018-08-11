@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from collections import defaultdict
 import logging
 import inspect
+import typing
 import re
 
 # Kodi imports
@@ -15,7 +16,7 @@ from codequick.script import Script
 from codequick.support import logger_id, auto_sort
 from codequick.utils import ensure_native_str
 
-__all__ = ["Route"]
+__all__ = ["Route", "validate_listitems"]
 
 # Logger specific to this module
 logger = logging.getLogger("%s.route" % logger_id)
@@ -26,12 +27,7 @@ NO_DATA = 33077
 
 
 def validate_listitems(raw_listitems):
-    """
-    Check if listitems are valid
-
-    :return: Listitems as a list.
-    :rtype: list
-    """
+    """Check if listitems are valid"""
 
     # Convert a generator of listitem into a list of listitems
     if inspect.isgenerator(raw_listitems):
@@ -120,7 +116,7 @@ class Route(Script):
         success = xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
         xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
-    def __content_type(self, isfolder, mediatypes):
+    def __content_type(self, isfolder, mediatypes):  # type: (bool, typing.DefaultDict[str, int]) -> None
         """Configure plugin properties, content, category and sort methods."""
 
         # See if we can guess the content_type based on the mediatypes from the listitem
@@ -148,7 +144,7 @@ class Route(Script):
         if not isfolder:
             self.__add_sort_methods(self._manual_sort)
 
-    def __add_sort_methods(self, manual):
+    def __add_sort_methods(self, manual):  # type: (set) -> None
         """Add sort methods to kodi."""
         if self.autosort:
             manual.update(auto_sort)

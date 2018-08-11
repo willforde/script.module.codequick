@@ -30,12 +30,7 @@ Code Coverage: https://coveralls.io/github/willforde/script.module.codequick?bra
 Codacy: https://app.codacy.com/app/willforde/script.module.codequick/dashboard
 """
 
-# Execution start time, used later to report total execution time
 from __future__ import absolute_import
-start_time = __import__("time").time()
-
-__all__ = ["run", "Script", "Route", "Resolver", "Listitem", "utils", "storage"]
-__version__ = (0, 9, 2)
 
 # Package imports
 from codequick.support import run
@@ -44,3 +39,10 @@ from codequick.listing import Listitem
 from codequick.script import Script
 from codequick.route import Route
 from codequick import utils, storage
+
+__all__ = ["run", "Script", "Route", "Resolver", "Listitem", "utils", "storage"]
+__version__ = (0, 9, 3)
+
+# Execution start time, used later
+# to report total execution time
+start_time = __import__("time").time()

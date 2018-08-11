@@ -6,6 +6,7 @@ import binascii
 import logging
 import inspect
 import pickle
+import typing
 import time
 import sys
 import re
@@ -61,12 +62,8 @@ class KodiLogHandler(logging.Handler):
         self.log_level_map = LoggingMap()
         self.debug_msgs = []
 
-    def emit(self, record):
-        """
-        Forward the log record to kodi, lets kodi handle the logging.
-
-        :param logging.LogRecord record: The log event record.
-        """
+    def emit(self, record):  # type: (logging.LogRecord) -> None
+        """Forward the log record to kodi, lets kodi handle the logging."""
         formatted_msg = ensure_native_str(self.format(record))
         log_level = record.levelno
 
@@ -123,20 +120,13 @@ class Route(object):
         self.callback = callback
         self.path = path
 
-    def args_to_kwargs(self, args, kwargs):
-        """
-        Convert positional arguments to keyword arguments and merge into callback parameters.
-
-        :param tuple args: List of positional arguments to extract names for.
-        :param dict kwargs: The dict of callback parameters that will be updated.
-        :returns: A list of tuples consisting of ('arg name', 'arg value)'.
-        :rtype: list
-        """
+    def args_to_kwargs(self, args, kwargs):  # type: (tuple, dict) -> None
+        """Convert positional arguments to keyword arguments and merge into callback parameters."""
         callback_args = self.arg_names()[1:]
         arg_map = zip(callback_args, args)
         kwargs.update(arg_map)
 
-    def arg_names(self):
+    def arg_names(self):  # type: () -> typing.List[str]
         """Return a list of argument names, positional and keyword arguments."""
         try:
             # noinspection PyUnresolvedReferences
@@ -235,15 +225,8 @@ class Dispatcher(object):
             self.callback_params = {key: value for key, value in self.params.items()
                                     if not (key.startswith(u"_") and key.endswith(u"_"))}
 
-    def get_route(self, path=None):
-        """
-        Return the given route object.
-
-        :param str path: The route path to fetch the route object for.
-
-        :returns: A callback route.
-        :rtype: Route
-        """
+    def get_route(self, path=None):  # type: (str) -> Route
+        """Return the given route object."""
         return self.registered_routes[path if path else self.selector]
 
     def register_callback(self, callback, parent):
@@ -267,7 +250,7 @@ class Dispatcher(object):
         callback.route = route
         return callback
 
-    def register_delayed(self, func, args, kwargs):
+    def register_delayed(self, func, args, kwargs):  # type: (typing.Callable, tuple, dict) -> None
         """Register a function that will be called later, after content has been listed."""
         callback = (func, args, kwargs)
         self.registered_delayed.append(callback)

@@ -63,8 +63,8 @@ class SavedSearches(Route):
         Checks if searh term returns valid results before adding to saved searches.
         Then directly farward the results to kodi.
 
-        :param search_term: The serch term used to search for results.
-        :param extras: Extra parameters that will be farwarded on to the callback function.
+        :param str search_term: The serch term used to search for results.
+        :param dict extras: Extra parameters that will be farwarded on to the callback function.
         :return: List if valid search results
         """
         self.category = search_term.title()
@@ -96,6 +96,8 @@ class SavedSearches(Route):
     def list_terms(self, extras):
         """
         List all saved searches.
+
+        :param dict extras: Extra parameters that will be farwarded on to the context.container.
 
         :returns: A generator of listitems.
         :rtype: :class:`types.GeneratorType`
