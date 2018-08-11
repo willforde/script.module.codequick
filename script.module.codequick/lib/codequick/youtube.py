@@ -23,8 +23,7 @@ ALLVIDEOS = 32003
 PLAYLISTS = 136
 
 # Youtube cache directory
-_CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
-CACHEFILE = _CACHEFILE if PY3 else safe_path(_CACHEFILE)
+CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
 
 
 class CustomRow(sqlite3.Row):

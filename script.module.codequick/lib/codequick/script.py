@@ -301,12 +301,11 @@ class Script(object):
             resp = xbmc.translatePath(resp)
 
         # Convert response to unicode
-        resp = resp.decode("utf8") if isinstance(resp, bytes) else resp
+        path = resp.decode("utf8") if isinstance(resp, bytes) else resp
 
         # Create any missing directory
         if key.startswith("profile"):
-            path = safe_path(resp)
             if not os.path.exists(path):  # pragma: no cover
                 os.mkdir(path)
 
-        return resp
+        return path

@@ -29,7 +29,7 @@ global_image = ensure_native_str(os.path.join(Script.get_info("path_global"), u"
 
 # Prefetch fanart/icon for use later
 _fanart = Script.get_info("fanart")
-fanart = ensure_native_str(_fanart) if os.path.exists(safe_path(_fanart)) else None
+fanart = ensure_native_str(_fanart) if os.path.exists(_fanart) else None
 icon = ensure_native_str(Script.get_info("icon"))
 
 # Stream type map to ensure proper stream value types

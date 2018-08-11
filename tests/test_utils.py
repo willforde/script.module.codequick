@@ -43,20 +43,6 @@ class Utils(unittest.TestCase):
         self.assertIsInstance(ret, str)
         self.assertEqual(ret, "101")
 
-    def test_safe_path_bytes(self):
-        ret = utils.safe_path(b"teststring")
-        if sys.platform.startswith("win"):
-            self.assertIsInstance(ret, utils.unicode_type)
-        else:
-            self.assertIsInstance(ret, bytes)
-
-    def test_safe_path_unicode(self):
-        ret = utils.safe_path(u"teststring")
-        if sys.platform.startswith("win"):
-            self.assertIsInstance(ret, utils.unicode_type)
-        else:
-            self.assertIsInstance(ret, bytes)
-
     def test_strip_tags(self):
         ret = utils.strip_tags('<a href="http://example.com/">I linked to <i>example.com</i></a>')
         self.assertEqual(ret, "I linked to example.com")

@@ -25,7 +25,7 @@ PY3 = sys.version_info[0] >= 3
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
 
-__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags", "safe_path", "ensure_bytes",
+__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags", "ensure_bytes",
            "ensure_native_str", "ensure_unicode", "unicode_type", "long_type", "PY3"]
 
 
@@ -161,24 +161,6 @@ def strip_tags(html):
     # This will fail under python3 when html is of type bytes
     # This is ok sence you will have much bigger problems if you are still using bytes on python3
     return re.sub("<[^<]+?>", "", html)
-
-
-def safe_path(path, encoding="utf8"):
-    """
-    Returns path as type ``bytes`` or ``unicode`` base on platform OS.
-
-    Unicode when on Windows, Bytes when on Linux/BSD.
-
-    This is needed because a path operation may fail on windows if path is of type ``bytes`` and it contains non
-    ASCII characters. The path operation may also fail if path is of type ``unicode`` on Linux and
-    locale is set to "C"(ASCII) instead of "UTF-8".
-
-    :type path: str or unicode
-    :param path: The path to convert.
-    :param str encoding: [opt] The encoding to use.
-    :return: Returns the path as ``unicode`` or ``bytes`` base on platform os.
-    """
-    return ensure_unicode(path, encoding) if sys.platform.startswith("win") else ensure_bytes(path, encoding)
 
 
 def ensure_bytes(data, encoding="utf8"):
