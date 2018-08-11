@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from collections import MutableMapping
 from time import strptime, strftime
 import logging
-import typing
 import os
 import re
 
@@ -16,7 +15,7 @@ import xbmcgui
 # Package imports
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
-from codequick.utils import safe_path, ensure_unicode, ensure_native_str, unicode_type, long_type
+from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, long_type
 
 __all__ = ["Listitem", "Art", "Info", "Stream", "Context", "Property", "Params"]
 
@@ -90,11 +89,11 @@ class Params(MutableMapping):
     def __init__(self):
         self.raw_dict = {}
 
-    def __getitem__(self, key):  # type: (str) -> typing.Union[str, int, float, list]
+    def __getitem__(self, key):
         value = self.raw_dict[key]
         return value.decode("utf8") if isinstance(value, bytes) else value
 
-    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float, list]) -> None
+    def __setitem__(self, key, value):
         self.raw_dict[key] = value
 
     def __delitem__(self, key):  # type: (str) -> None
@@ -218,7 +217,7 @@ class Info(Params):
         super(Info, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float, list]) -> None
+    def __setitem__(self, key, value):
         if value is None or value == "":
             logger.debug("Ignoring empty infolable: '%s'", key)
             return None
@@ -279,7 +278,7 @@ class Info(Params):
         auto_sort_add(xbmcplugin.SORT_METHOD_DATE)
 
     @staticmethod
-    def _duration(duration):  # type: (typing.Union[str, int]) -> int
+    def _duration(duration):
         """Converts duration from a string of 'hh:mm:ss' into seconds."""
         if isinstance(duration, (str, unicode_type)):
             duration = duration.strip(";").strip(":")
@@ -348,7 +347,7 @@ class Stream(Params):
         super(Stream, self).__init__()
         self._listitem = listitem
 
-    def __setitem__(self, key, value):  # type: (str, typing.Union[str, int, float]) -> None
+    def __setitem__(self, key, value):
         if not value:
             logger.debug("Ignoring empty stream detail value for: '%s'", key)
             return None

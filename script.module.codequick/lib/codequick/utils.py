@@ -26,7 +26,7 @@ PY3 = sys.version_info[0] >= 3
 unicode_type = type(u"")
 
 __all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags", "ensure_bytes",
-           "ensure_native_str", "ensure_unicode", "unicode_type", "long_type", "PY3"]
+           "ensure_native_str", "ensure_unicode", "unicode_type", "long_type"]
 
 
 def keyboard(heading, default="", hidden=False):

@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from collections import defaultdict
 import logging
 import inspect
-import typing
 import re
 
 # Kodi imports
@@ -116,7 +115,7 @@ class Route(Script):
         success = xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
         xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
-    def __content_type(self, isfolder, mediatypes):  # type: (bool, typing.DefaultDict[str, int]) -> None
+    def __content_type(self, isfolder, mediatypes):  # type: (bool, defaultdict) -> None
         """Configure plugin properties, content, category and sort methods."""
 
         # See if we can guess the content_type based on the mediatypes from the listitem

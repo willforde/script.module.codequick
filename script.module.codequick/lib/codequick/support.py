@@ -6,7 +6,6 @@ import binascii
 import logging
 import inspect
 import pickle
-import typing
 import time
 import sys
 import re
@@ -126,7 +125,7 @@ class Route(object):
         arg_map = zip(callback_args, args)
         kwargs.update(arg_map)
 
-    def arg_names(self):  # type: () -> typing.List[str]
+    def arg_names(self):  # type: () -> list
         """Return a list of argument names, positional and keyword arguments."""
         try:
             # noinspection PyUnresolvedReferences
@@ -250,7 +249,7 @@ class Dispatcher(object):
         callback.route = route
         return callback
 
-    def register_delayed(self, func, args, kwargs):  # type: (typing.Callable, tuple, dict) -> None
+    def register_delayed(self, func, args, kwargs):
         """Register a function that will be called later, after content has been listed."""
         callback = (func, args, kwargs)
         self.registered_delayed.append(callback)

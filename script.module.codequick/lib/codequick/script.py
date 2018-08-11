@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import ensure_unicode, ensure_native_str, safe_path
+from codequick.utils import ensure_unicode, ensure_native_str
 from codequick.support import dispatcher, script_data, addon_data, logger_id
 
 __all__ = ["Script", "Settings"]
