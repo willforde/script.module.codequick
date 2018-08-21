@@ -18,16 +18,6 @@ class Utils(unittest.TestCase):
         self.assertIsInstance(ret, utils.unicode_type)
         self.assertEqual(ret, u"teststring")
 
-    def test_ensure_bytes_with_bytes(self):
-        ret = utils.ensure_bytes(b"teststring")
-        self.assertIsInstance(ret, bytes)
-        self.assertEqual(ret, b"teststring")
-
-    def test_ensure_bytes_with_unicode(self):
-        ret = utils.ensure_bytes(u"teststring")
-        self.assertIsInstance(ret, bytes)
-        self.assertEqual(ret, b"teststring")
-
     def test_ensure_native_str_with_bytes(self):
         ret = utils.ensure_native_str(b"teststring")
         self.assertIsInstance(ret, str)

@@ -16,7 +16,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import parse_qs, ensure_native_str, urlparse
+from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -127,11 +127,10 @@ class Route(object):
 
     def arg_names(self):  # type: () -> list
         """Return a list of argument names, positional and keyword arguments."""
-        try:
-            # noinspection PyUnresolvedReferences
+        if PY3:
             return inspect.getfullargspec(self.function).args
-        except AttributeError:
-            # "inspect.getargspec" is deprecated in python 3
+        else:
+            # noinspection PyDeprecation
             return inspect.getargspec(self.function).args
 
     def unittest_caller(self, *args, **kwargs):
@@ -340,7 +339,8 @@ def build_path(callback=None, args=None, query=None, **extra_query):
 
     # Encode the query parameters using json
     if query:
-        query = "_pickle_=" + ensure_native_str(binascii.hexlify(pickle.dumps(query, protocol=pickle.HIGHEST_PROTOCOL)))
+        pickled = binascii.hexlify(pickle.dumps(query, protocol=pickle.HIGHEST_PROTOCOL))
+        query = "_pickle_=" + pickled.decode("ascii") if PY3 else pickled
 
     # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, route.path, query, ""))

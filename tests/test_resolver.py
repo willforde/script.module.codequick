@@ -200,22 +200,3 @@ class TestResolver(unittest.TestCase):
         YDStreamExtractor.mode = 4  # raise warning
         ret = self.resolver.extract_source("url")
         self.assertEqual(ret, "video.mkv")
-
-    def test_extract_youtube_url(self):
-        ret = self.resolver.extract_youtube("https://www.watchmojo.com/video/id/20838/")
-        self.assertEqual(ret, "plugin://plugin.video.youtube/play/?video_id=P3PvFiCibts")
-
-    def test_extract_youtube_source(self):
-        source = urlquick.get("https://www.watchmojo.com/video/id/20838/").text
-        ret = self.resolver.extract_youtube(source)
-        self.assertEqual(ret, "plugin://plugin.video.youtube/play/?video_id=P3PvFiCibts")
-
-    def test_extract_youtube_node(self):
-        html = urlquick.get("https://www.watchmojo.com/video/id/20838/")
-        video_elem = html.parse("div", attrs={"id": "question"})
-        ret = self.resolver.extract_youtube(video_elem)
-        self.assertEqual(ret, "plugin://plugin.video.youtube/play/?video_id=P3PvFiCibts")
-
-    def test_extract_youtube_no_video(self):
-        ret = self.resolver.extract_youtube("https://www.youtube.com/")
-        self.assertIsNone(ret)

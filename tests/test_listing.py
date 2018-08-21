@@ -2,9 +2,12 @@ import unittest
 
 from codequick import listing, route, resolver
 from codequick.support import dispatcher
-from codequick.utils import unicode_type, long_type
+from codequick.utils import unicode_type
 import xbmcgui
 import xbmc
+import sys
+
+PY3 = sys.version_info >= (3, 0)
 
 
 class TestGlobalLocalization(unittest.TestCase):
@@ -69,15 +72,18 @@ class Art(Params):
         listing.fanart = "fanart"
         self.assertNotIn("thumb", self.base)
         self.assertNotIn("fanart", self.base)
-        self.base._close()
+        self.assertNotIn("icon", self.base)
+        self.base._close(False)
         self.assertIn("thumb", self.base)
         self.assertIn("fanart", self.base)
+        self.assertIn("icon", self.base)
 
     def test_close_with_extras(self):
         listing.fanart = "fanart"
         self.base["fanart"] = ""
         self.base["thumb"] = ""
-        self.base._close()
+        self.base["icon"] = ""
+        self.base._close(False)
         self.assertIn("thumb", self.base)
         self.assertIn("fanart", self.base)
 
@@ -111,9 +117,15 @@ class Info(Params):
         self.assertIsInstance(self.base["duration"], int)
         self.assertEqual(self.base["duration"], 330)
 
-    def test_size(self):
+    @unittest.skipIf(PY3, "Size is an long in python2")
+    def test_size_py2(self):
         self.base["size"] = "256816"
-        self.assertIsInstance(self.base["size"], long_type)
+        self.assertIsInstance(self.base["size"], int)
+
+    @unittest.skipUnless(PY3, "Size is an int in python3")
+    def test_size_py3(self):
+        self.base["size"] = "256816"
+        self.assertIsInstance(self.base["size"], int)
 
     def test_size_invalid(self):
         with self.assertRaises(TypeError):
@@ -142,6 +154,7 @@ class Info(Params):
         self.assertEqual(self.base["year"], "2017")
 
     def test_close(self):
+        self.base["plot"] = "plot"
         self.base._close("video")
 
 

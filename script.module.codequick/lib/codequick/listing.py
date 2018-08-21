@@ -15,9 +15,9 @@ import xbmcgui
 # Package imports
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
-from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, long_type
+from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3
 
-__all__ = ["Listitem", "Art", "Info", "Stream", "Context", "Property", "Params"]
+__all__ = ["Listitem"]
 
 # Logger specific to this module
 logger = logging.getLogger("%s.listitem" % logger_id)
@@ -40,6 +40,7 @@ stream_type_map = {"duration": int,
 
 # Listing sort methods & sort mappings.
 # Skips infolables that have no sortmethod and type is string. As by default they will be string anyway
+# noinspection PyUnresolvedReferences
 infolable_map = {"artist": (None, xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
                  "studio": (ensure_native_str, xbmcplugin.SORT_METHOD_STUDIO_IGNORE_THE),
                  "title": (ensure_native_str, xbmcplugin.SORT_METHOD_TITLE_IGNORE_THE),
@@ -55,7 +56,7 @@ infolable_map = {"artist": (None, xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE),
                  "country": (ensure_native_str, xbmcplugin.SORT_METHOD_COUNTRY),
                  "genre": (None, xbmcplugin.SORT_METHOD_GENRE),
                  "date": (ensure_native_str, xbmcplugin.SORT_METHOD_DATE),
-                 "size": (long_type, xbmcplugin.SORT_METHOD_SIZE),
+                 "size": (int if PY3 else long, xbmcplugin.SORT_METHOD_SIZE),
                  "sortepisode": (int, None),
                  "sortseason": (int, None),
                  "userrating": (int, None),
@@ -94,7 +95,10 @@ class Params(MutableMapping):
         return value.decode("utf8") if isinstance(value, bytes) else value
 
     def __setitem__(self, key, value):
-        self.raw_dict[key] = value
+        if isinstance(value, bytes):
+            self.raw_dict[key] = value.decode("utf8")
+        else:
+            self.raw_dict[key] = value
 
     def __delitem__(self, key):  # type: (str) -> None
         del self.raw_dict[key]
@@ -175,11 +179,14 @@ class Art(Params):
         # So there is no neeed to use ensure_native_str
         self.raw_dict["thumb"] = global_image.format(image)
 
-    def _close(self):
+    def _close(self, isfolder):
         if fanart and "fanart" not in self.raw_dict:  # pragma: no branch
             self.raw_dict["fanart"] = fanart
         if "thumb" not in self.raw_dict:  # pragma: no branch
             self.raw_dict["thumb"] = icon
+        if "icon" not in self.raw_dict:  # pragma: no branch
+            self.raw_dict["icon"] = "DefaultFolder.png" if isfolder else "DefaultVideo.png"
+
         self._listitem.setArt(self.raw_dict)
 
 
@@ -300,7 +307,12 @@ class Info(Params):
         return duration
 
     def _close(self, content_type):
-        self._listitem.setInfo(content_type, self.raw_dict)
+        raw_dict = self.raw_dict
+        # Add label as plot if no plot is found
+        if "plot" not in raw_dict:  # pragma: no branch
+            raw_dict["plot"] = raw_dict["title"]
+
+        self._listitem.setInfo(content_type, raw_dict)
 
 
 class Property(Params):
@@ -527,7 +539,7 @@ class Listitem(object):
 
         self.params = Params()
         """
-        Dictionary like object for parameters that will be passed to the "callback" object.
+        Dictionary like object for parameters that will be passed to the "callback" function.
 
         :example:
             >>> item = Listitem()
@@ -556,7 +568,8 @@ class Listitem(object):
             >>> item = Listitem()
             >>> item.label = "Video Title"
         """
-        return ensure_unicode(self.listitem.getLabel())
+        label = self.listitem.getLabel()
+        return label.decode("utf8") if isinstance(label, bytes) else label
 
     @label.setter
     def label(self, label):  # type: (str) -> None
@@ -596,15 +609,7 @@ class Listitem(object):
             path = callback
             isfolder = False
 
-        if isfolder:
-            # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:  # pragma: no branch
-                self.art.raw_dict["icon"] = "DefaultFolder.png"
-        else:
-            # Set Kodi icon image if not already set
-            if "icon" not in self.art.raw_dict:  # pragma: no branch
-                self.art.raw_dict["icon"] = "DefaultVideo.png"
-
+        if not isfolder:
             # Add mediatype if not already set
             if "mediatype" not in self.info.raw_dict and self._content_type in ("video", "music"):  # pragma: no branch
                 self.info.raw_dict["mediatype"] = self._content_type
@@ -616,21 +621,16 @@ class Listitem(object):
             # Close video related datasets
             self.stream._close()
 
-        label = self.label
         # Set label to UNKNOWN if unset
-        if not label:  # pragma: no branch
-            self.label = label = u"UNKNOWN"
-
-        # Add label as plot if no plot is found
-        if "plot" not in self.info:  # pragma: no branch
-            self.info["plot"] = label
+        if not self.label:  # pragma: no branch
+            self.label = u"UNKNOWN"
 
         # Close common datasets
         self.listitem.setPath(path)
         self.property._close()
         self.context._close()
         self.info._close(self._content_type)
-        self.art._close()
+        self.art._close(isfolder)
 
         # Return a tuple compatible with 'xbmcplugin.addDirectoryItems'
         return path, self.listitem, isfolder

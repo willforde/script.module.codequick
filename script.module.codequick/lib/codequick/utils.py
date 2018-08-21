@@ -14,19 +14,10 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     import urlparse
 
-try:
-    # noinspection PyUnresolvedReferences
-    long_type = long
-except NameError:
-    long_type = int
-
 PY3 = sys.version_info[0] >= 3
 
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
-
-__all__ = ["keyboard", "parse_qs", "urljoin_partial", "strip_tags", "ensure_bytes",
-           "ensure_native_str", "ensure_unicode", "unicode_type", "long_type"]
 
 
 def keyboard(heading, default="", hidden=False):
@@ -98,9 +89,9 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False):
                 raise ValueError("encountered duplicate param field name: '%s'" % key)
     else:
         for bkey, value in parsed:
-            ukey = unicode_type(bkey, encoding="utf8")
+            ukey = bkey.decode("utf8")
             if ukey not in params:
-                params[ukey] = unicode_type(value, encoding="utf8")
+                params[ukey] = value.decode("utf8")
             else:
                 # Only add keys that are not already added, multiple values are not supported
                 raise ValueError("encountered duplicate param field name: '%s'" % bkey)
@@ -163,20 +154,6 @@ def strip_tags(html):
     return re.sub("<[^<]+?>", "", html)
 
 
-def ensure_bytes(data, encoding="utf8"):
-    """
-    Ensures that the given string is returned as type ``bytes``.
-
-    :type data: str or bytes
-    :param data: String to convert if needed.
-    :param str encoding: [opt] The encoding to use.
-
-    :returns: The given string as type ``bytes``
-    :rtype: bytes
-    """
-    return data if isinstance(data, bytes) else unicode_type(data).encode(encoding)
-
-
 def ensure_native_str(data, encoding="utf8"):
     """
     Ensures that the given string is returned as a native str type, ``bytes`` on Python 2, ``unicode`` on Python 3.
@@ -186,6 +163,8 @@ def ensure_native_str(data, encoding="utf8"):
     :returns: The given string as a native ``str`` type.
     :rtype: str
     """
+    # This is the fastest way
+    # that I can find to do this
     if isinstance(data, str):
         return data
     elif isinstance(data, unicode_type):
@@ -209,7 +188,4 @@ def ensure_unicode(data, encoding="utf8"):
     :returns: The given string as type ``unicode``.
     :rtype: str
     """
-    if isinstance(data, bytes):
-        return data.decode(encoding)
-    else:
-        return unicode_type(data)
+    return data.decode(encoding) if isinstance(data, bytes) else unicode_type(data)
