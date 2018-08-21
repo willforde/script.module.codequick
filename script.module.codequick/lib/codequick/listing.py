@@ -78,7 +78,6 @@ quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p,
 strip_formatting = re.compile("\[[^\]]+?\]").sub
 
 # Localized string Constants
-YOUTUBE_CHANNEL = 32001
 RELATED_VIDEOS = 32201
 RECENT_VIDEOS = 32002
 ALLVIDEOS = 32003
@@ -723,7 +722,7 @@ class Listitem(object):
         """
         # Create listitem instance
         item = cls()
-        item.label = Script.localize(RECENT_VIDEOS)
+        item.label = u"[B]{}[/B]".format(Script.localize(RECENT_VIDEOS))
         item.info["plot"] = "Show the most recent videos."
         item.art.global_thumb("recent.png")
         item.set_callback(callback, args, **kwargs)
@@ -779,7 +778,7 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = label if label else Script.localize(ALLVIDEOS)
+        item.label = label if label else u"[B]{}[/B]".format(Script.localize(ALLVIDEOS))
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists

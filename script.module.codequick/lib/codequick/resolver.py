@@ -26,7 +26,6 @@ SELECT_PLAYBACK_ITEM = 25006
 NO_VIDEO = 32401
 NO_DATA = 33077
 
-
 # Patterens to extract video url
 # Copied from the Youtube-DL project
 # https://github.com/rg3/youtube-dl/blob/4471affc348af40409188f133786780edd969623/youtube_dl/extractor/youtube.py#L329

@@ -12,12 +12,15 @@ import xbmc
 
 # Package imports
 from codequick.utils import ensure_unicode, ensure_native_str
-from codequick.support import dispatcher, script_data, addon_data, logger_id
+from codequick.support import dispatcher, script_data, addon_data, logger_id, Gettext
 
 __all__ = ["Script", "Settings"]
 
 # Logger used by the addons
 addon_logger = logging.getLogger(logger_id)
+
+# GNU gettext emulation allowing for string ids instead of numeric ids
+gettext = Gettext()
 
 
 class Settings(object):
@@ -243,14 +246,25 @@ class Script(object):
     @staticmethod
     def localize(string_id):
         """
-        Returns an add-on's localized "unicode string".
+        Retruns a translated UI string from addon localization files.
 
-        :param int string_id: The ID or of the localized string
+        :param string_id: The numeric ID or gettext string id of the localized string
+        :type string_id: str or int
 
         :returns: Localized unicode string.
         :rtype: str
+
+        :raises Keyword: if a gettext string id was given but the string is not found in English :file:`strings.po`.
+
+        :example:
+        >>> Script.localize(30001)
+        u"Toutes les vidéos"
+        >>> Script.localize("All Videos")
+        u"Toutes les vidéos"
         """
-        if 30000 <= string_id <= 30999:
+        if isinstance(string_id, str):
+            return gettext.gettext(string_id)
+        elif 30000 <= string_id <= 30999:
             return addon_data.getLocalizedString(string_id)
         elif 32000 <= string_id <= 32999:
             return script_data.getLocalizedString(string_id)

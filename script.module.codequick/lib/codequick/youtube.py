@@ -602,7 +602,7 @@ class Playlists(APIControl):
         # Display a link for listing all channel videos
         # This is usefull when the root of a addon is the playlist directory
         if show_all:
-            title = self.localize(ALLVIDEOS)
+            title = u"[B]{}[/B]".format(self.localize(ALLVIDEOS))
             yield Listitem.youtube(channel_id, title, enable_playlists=False)
 
         # Loop Entries
