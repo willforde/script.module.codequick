@@ -65,7 +65,7 @@ class KodiLogHandler(logging.Handler):
     def emit(self, record):  # type: (logging.LogRecord) -> None
         """Forward the log record to kodi, lets kodi handle the logging."""
         formatted_msg = ensure_native_str(self.format(record))
-        log_level = 30  # record.levelno
+        log_level = record.levelno
 
         # Forward the log record to kodi with translated log level
         xbmc.log(formatted_msg, self.log_level_map[log_level])
