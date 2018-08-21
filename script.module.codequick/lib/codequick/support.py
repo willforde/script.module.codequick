@@ -90,7 +90,8 @@ class Gettext(object):
 
     def gettext(self, string_id):  # type: (str) -> str
         if string_id in self._strings or (self._loaded is False and string_id in self._parse_po()):
-            return self._strings[string_id]
+            numeric_id = self._strings[string_id]
+            return addon_data.getLocalizedString(numeric_id)
         else:
             raise KeyError("no localization found for string id '%s'" % string_id)
 

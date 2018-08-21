@@ -11,7 +11,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import ensure_unicode, ensure_native_str
+from codequick.utils import ensure_unicode, ensure_native_str, unicode_type
 from codequick.support import dispatcher, script_data, addon_data, logger_id, Gettext
 
 __all__ = ["Script", "Settings"]
@@ -262,7 +262,7 @@ class Script(object):
         >>> Script.localize("All Videos")
         u"Toutes les vidéos"
         """
-        if isinstance(string_id, str):
+        if isinstance(string_id, (str, unicode_type)):
             return gettext.gettext(string_id)
         elif 30000 <= string_id <= 30999:
             return addon_data.getLocalizedString(string_id)
