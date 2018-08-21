@@ -340,7 +340,7 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     # Encode the query parameters using json
     if query:
         pickled = binascii.hexlify(pickle.dumps(query, protocol=pickle.HIGHEST_PROTOCOL))
-        query = "_pickle_=" + pickled.decode("ascii") if PY3 else pickled
+        query = "_pickle_={}".format(pickled.decode("ascii") if PY3 else pickled)
 
     # Build kodi url with new path and query parameters
     return urlparse.urlunsplit(("plugin", plugin_id, route.path, query, ""))

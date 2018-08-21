@@ -120,7 +120,8 @@ class Info(Params):
     @unittest.skipIf(PY3, "Size is an long in python2")
     def test_size_py2(self):
         self.base["size"] = "256816"
-        self.assertIsInstance(self.base["size"], int)
+        # noinspection PyUnresolvedReferences
+        self.assertIsInstance(self.base["size"], long)
 
     @unittest.skipUnless(PY3, "Size is an int in python3")
     def test_size_py3(self):

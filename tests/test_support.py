@@ -268,23 +268,23 @@ class BuildPath(unittest.TestCase):
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_build_path_new_args_py2(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
-        self.assertEqual(ret, "plugin://script.module.codequick/root?_pickle_="
-                              "80027d71005508746573746461746171015504646174617102732e")
+        self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+                         "80027d71005508746573746461746171015504646174617102732e", ret)
 
     @unittest.skipUnless(PY3, "The pickled string is specific to python 2")
     def test_build_path_new_args_py3(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
-        self.assertEqual(ret, "plugin://script.module.codequick/root?_pickle_="
-                              "80049516000000000000007d948c087465737464617461948c046461746194732e")
+        self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+                         "80049516000000000000007d948c087465737464617461948c046461746194732e", ret)
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_build_path_extra_args_py2(self):
         support.dispatcher.params["_title_"] = "video"
         try:
             ret = support.build_path(self.callback, testdata="data")
-            self.assertEqual(ret, "plugin://script.module.codequick/root?_pickle_="
-                                  "80027d71002855075f7469746c655f71015505766964656f71"
-                                  "025508746573746461746171035504646174617104752e")
+            self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+                             "80027d71002855075f7469746c655f71015505766964656f71"
+                             "025508746573746461746171035504646174617104752e", ret)
         finally:
             del support.dispatcher.params["_title_"]
 
@@ -293,8 +293,8 @@ class BuildPath(unittest.TestCase):
         support.dispatcher.params["_title_"] = "video"
         try:
             ret = support.build_path(self.callback, testdata="data")
-            self.assertEqual(ret, "plugin://script.module.codequick/root?_pickle_="
-                                  "80049529000000000000007d94288c075f7469746c655f948c"
-                                  "05766964656f948c087465737464617461948c046461746194752e")
+            self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+                             "80049529000000000000007d94288c075f7469746c655f948c"
+                             "05766964656f948c087465737464617461948c046461746194752e", ret)
         finally:
             del support.dispatcher.params["_title_"]
