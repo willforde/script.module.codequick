@@ -248,7 +248,7 @@ class Script(object):
         """
         Retruns a translated UI string from addon localization files.
 
-        :param string_id: The numeric ID or gettext string id of the localized string
+        :param string_id: The numeric ID or gettext string ID of the localized string
         :type string_id: str or int
 
         :returns: Localized unicode string.
