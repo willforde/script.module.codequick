@@ -258,9 +258,9 @@ class Script(object):
 
         :example:
         >>> Script.localize(30001)
-        u"Toutes les vidéos"
+        "Toutes les vidéos"
         >>> Script.localize("All Videos")
-        u"Toutes les vidéos"
+        "Toutes les vidéos"
         """
         if isinstance(string_id, (str, unicode_type)):
             return gettext.gettext(string_id)
