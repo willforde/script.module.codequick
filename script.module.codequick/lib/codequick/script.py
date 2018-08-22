@@ -254,7 +254,7 @@ class Script(object):
         :returns: Localized unicode string.
         :rtype: str
 
-        :raises Keyword: if a gettext string id was given but the string is not found in English :file:`strings.po`.
+        :raises Keyword: if a gettext string ID was given but the string is not found in English :file:`strings.po`.
 
         :example:
         >>> Script.localize(30001)
