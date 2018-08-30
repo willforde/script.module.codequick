@@ -207,7 +207,7 @@ class Resolver(Script):
             raise RuntimeError(stored_errors[0])
 
     @staticmethod
-    def extract_youtube(source):
+    def extract_youtube(source):  # pragma: no cover
         # TODO: Remove this method as soon as I found out for sure that youtube.dl works on kodi for Xbox
         import htmlement
         import urlquick

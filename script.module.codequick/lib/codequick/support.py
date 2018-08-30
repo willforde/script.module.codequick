@@ -108,16 +108,15 @@ class Gettext(object):
         strings_po = strings_po.decode("utf8") if isinstance(strings_po, bytes) else strings_po
 
         # Check if strings.po actrally exists first
-        if not os.path.exists(strings_po):
-            return {}
+        if os.path.exists(strings_po):  # pragma: no branch
+            with open(strings_po, "rb") as fo:
+                raw_strings = fo.read()
 
-        with open(strings_po, "rb") as fo:
-            raw_strings = fo.read()
+            # Parse strings using Regular Expressions
+            res = u"^msgctxt\s+[\"']#(\d+?)[\"']$[\n\r]^msgid\s+[\"'](.+?)[\"']$"
+            data = re.findall(res, raw_strings.decode("utf8"), re.MULTILINE | re.UNICODE)
+            self._strings.update((key, int(value)) for value, key in data)
 
-        # Parse strings using Regular Expressions
-        res = u"^msgctxt\s+[\"']#(\d+?)[\"']$[\n\r]^msgid\s+[\"'](.+?)[\"']$"
-        data = re.findall(res, raw_strings.decode("utf8"), re.MULTILINE | re.UNICODE)
-        self._strings.update((key, int(value)) for value, key in data)
         return self._strings
 
 
