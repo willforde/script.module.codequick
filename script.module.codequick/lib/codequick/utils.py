@@ -189,3 +189,37 @@ def ensure_unicode(data, encoding="utf8"):
     :rtype: str
     """
     return data.decode(encoding) if isinstance(data, bytes) else unicode_type(data)
+
+
+def bold(text):
+    """
+    Return Bolded text.
+
+    :param str text: Text to bold.
+    :returns: Bolded text.
+    :rtype: str
+    """
+    return "[B]%s[/B]" % text
+
+
+def italic(text):
+    """
+    Return Italic text.
+
+    :param str text: Text to italic.
+    :returns: Italic text.
+    :rtype: str
+    """
+    return "[I]%s[/I]" % text
+
+
+def color(text, color_code):
+    """
+    Return Colorized text of givin color.
+
+    :param str text: Text to italic.
+    :param str color_code: Color to change text to.
+    :returns: Colorized text.
+    :rtype: str
+    """
+    return "[COLOR %s]%s[/COLOR]" % (color_code, text)

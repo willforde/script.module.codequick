@@ -1,7 +1,6 @@
 from addondev import testing
 import unittest
 import types
-import sys
 
 # Testing specific imports
 from codequick import utils
@@ -62,3 +61,39 @@ class Utils(unittest.TestCase):
             ret = utils.keyboard("Test")
 
         self.assertEqual(ret, "Testing input")
+
+    def test_bold(self):
+        test_string = "text"
+        ret = utils.bold(test_string)
+        self.assertEqual(ret, "[B]text[/B]", msg="Text was not bolded")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")
+
+    def test_bold_uni(self):
+        test_string = u"text"
+        ret = utils.bold(test_string)
+        self.assertEqual(ret, "[B]text[/B]", msg="Text was not bolded")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")
+
+    def test_italic(self):
+        test_string = "text"
+        ret = utils.italic(test_string)
+        self.assertEqual(ret, "[I]text[/I]", msg="Text was not italic")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")
+
+    def test_italic_uni(self):
+        test_string = u"text"
+        ret = utils.italic(test_string)
+        self.assertEqual(ret, "[I]text[/I]", msg="Text was not italic")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")
+
+    def test_color(self):
+        test_string = "text"
+        ret = utils.color(test_string, color_code="red")
+        self.assertEqual(ret, "[COLOR red]text[/COLOR]", msg="Text was not colorized")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")
+
+    def test_color_uni(self):
+        test_string = u"text"
+        ret = utils.color(test_string, color_code="red")
+        self.assertEqual(ret, "[COLOR red]text[/COLOR]", msg="Text was not colorized")
+        self.assertIsInstance(ret, type(test_string), msg="Text type was unexpectedly converted")

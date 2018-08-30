@@ -15,7 +15,7 @@ import xbmcgui
 # Package imports
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
-from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3
+from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
 
 __all__ = ["Listitem"]
 
@@ -704,7 +704,7 @@ class Listitem(object):
         item = cls()
         label = u"%s %i" % (Script.localize(NEXT_PAGE), kwargs["_nextpagecount_"])
         item.info["plot"] = "Show the next page of content."
-        item.label = "[B]%s[/B]" % label
+        item.label = bold(label)
         item.art.global_thumb("next.png")
         item.set_callback(route.callback, *args, **kwargs)
         return item
@@ -722,7 +722,7 @@ class Listitem(object):
         """
         # Create listitem instance
         item = cls()
-        item.label = u"[B]{}[/B]".format(Script.localize(RECENT_VIDEOS))
+        item.label = bold(Script.localize(RECENT_VIDEOS))
         item.info["plot"] = "Show the most recent videos."
         item.art.global_thumb("recent.png")
         item.set_callback(callback, args, **kwargs)
@@ -752,7 +752,7 @@ class Listitem(object):
             callback.route.args_to_kwargs(args, kwargs)
 
         item = cls()
-        item.label = u"[B]%s[/B]" % Script.localize(SEARCH)
+        item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = "Search for video content."
         item.set_callback(SavedSearches, route=callback.route.path, first_load=True, **kwargs)
@@ -778,7 +778,7 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = label if label else u"[B]{}[/B]".format(Script.localize(ALLVIDEOS))
+        item.label = label if label else bold(Script.localize(ALLVIDEOS))
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
