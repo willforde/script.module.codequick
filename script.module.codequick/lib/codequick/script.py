@@ -257,10 +257,10 @@ class Script(object):
         :raises Keyword: if a gettext string ID was given but the string is not found in English :file:`strings.po`.
 
         :example:
-        >>> Script.localize(30001)
-        "Toutes les vidéos"
-        >>> Script.localize("All Videos")
-        "Toutes les vidéos"
+            >>> Script.localize(30001)
+            "Toutes les vidéos"
+            >>> Script.localize("All Videos")
+            "Toutes les vidéos"
         """
         if isinstance(string_id, (str, unicode_type)):
             return gettext.gettext(string_id)
