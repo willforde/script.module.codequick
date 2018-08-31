@@ -9,6 +9,7 @@ import os
 
 # Package imports
 from codequick.route import Route
+from codequick.utils import bold
 from codequick.listing import Listitem
 from codequick.resolver import Resolver
 from codequick.support import logger_id
@@ -602,7 +603,7 @@ class Playlists(APIControl):
         # Display a link for listing all channel videos
         # This is usefull when the root of a addon is the playlist directory
         if show_all:
-            title = u"[B]{}[/B]".format(self.localize(ALLVIDEOS))
+            title = bold(self.localize(ALLVIDEOS))
             yield Listitem.youtube(channel_id, title, enable_playlists=False)
 
         # Loop Entries
