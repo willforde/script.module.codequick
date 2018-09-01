@@ -15,7 +15,7 @@
 Codequick
 =========
 Codequick is a framework for kodi add-on's. The goal for this framework is to simplify add-on development.
-This  is achieved by reducing the amount of boilerplate code to a minimum, while automating as many tasks
+This is achieved by reducing the amount of boilerplate code to a minimum, while automating as many tasks
 that can be automated. Ultimately, allowing the developer to focus primarily on scraping content from
 websites and passing it to Kodi.
 
@@ -52,6 +52,6 @@ http://scriptmodulecodequick.readthedocs.io/en/latest
 Example Usage
 -------------
 * https://github.com/willforde/plugin.video.metalvideo/blob/master/addon.py
-* https://github.com/willforde/plugin.video.watchmojo/blob/master/addon.py
+* https://github.com/willforde/plugin.video.watchmojo/blob/master/plugin.video.watchmojo/resources/lib/main.py
 * https://github.com/willforde/plugin.video.science.friday/blob/master/addon.py
 * https://github.com/willforde/plugin.video.earthtouch/blob/master/addon.py
