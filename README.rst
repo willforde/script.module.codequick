@@ -47,11 +47,3 @@ Documentation
 -------------
 Documentation can be found over at ReadTheDocs.
 http://scriptmodulecodequick.readthedocs.io/en/latest
-
-
-Example Usage
--------------
-* https://github.com/willforde/plugin.video.metalvideo/blob/master/addon.py
-* https://github.com/willforde/plugin.video.watchmojo/blob/master/plugin.video.watchmojo/resources/lib/main.py
-* https://github.com/willforde/plugin.video.science.friday/blob/master/addon.py
-* https://github.com/willforde/plugin.video.earthtouch/blob/master/addon.py
