@@ -157,13 +157,6 @@ class Script(unittest.TestCase):
     def test_localize_allvideos(self):
         self.assertEqual("All Videos", self.script.localize(32003))
 
-    def test_localize_allvideos_gettext(self):
-        self.assertEqual(self.script.localize("All Videos"), "All Videos")
-
-    def test_localize_allvideos_gettext_non_exist(self):
-        with self.assertRaises(KeyError):
-            self.script.localize("All V")
-
     def test_localize_nodata(self):
         self.assertEqual(self.script.localize(33077), "No data found!")
 
