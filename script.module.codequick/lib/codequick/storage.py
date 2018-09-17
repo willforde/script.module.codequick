@@ -70,12 +70,6 @@ class _PersistentBase(object):
             return pickle.loads(content)
 
     def flush(self):
-        """
-        Synchronize data back to disk.
-
-        Data will only be written to disk if content has changed.
-        """
-
         # Serialize the storage data
         data = {self._version_string: 2, self._data_string: self._serialize()}
         content = pickle.dumps(data, protocol=2)  # Protocol 2 is used for python2/3 compatibility
