@@ -157,6 +157,21 @@ class Script(unittest.TestCase):
     def test_localize_allvideos(self):
         self.assertEqual("All Videos", self.script.localize(32003))
 
+    def test_localize_allvideos_gettext(self):
+        org_map = script.string_map.copy()
+        try:
+            script.string_map["All Videos"] = 32003
+            self.assertEqual(self.script.localize("All Videos"), "All Videos")
+        finally:
+            script.string_map.clear()
+            script.string_map.update(org_map)
+
+    def test_localize_allvideos_gettext_non_exist(self):
+        with self.assertRaises(KeyError):
+            data = self.script.localize("All Videos")
+            print("###########")
+            print(data)
+
     def test_localize_nodata(self):
         self.assertEqual(self.script.localize(33077), "No data found!")
 

@@ -19,6 +19,24 @@ PY3 = sys.version_info[0] >= 3
 # Unicode Type object, unicode on python2 or str on python3
 unicode_type = type(u"")
 
+string_map = {}
+"""
+Dict of localized string references used in conjunction with 
+:class:`Script.localize<codequick.script.Script.localize>`.
+Allowing you to use the string as the localized string reference.
+
+.. note:: It is best if you set the string references at the top of your add-on python file.
+
+:example:
+    >>> Script.localize(30001)
+    "Toutes les vidéos"
+    >>> 
+    >>> # Add reference id for "All Videos" so you can use the string name instead.
+    >>> utils.string_map["All Videos": 30001]
+    >>> Script.localize("All Videos")
+    "Toutes les vidéos"
+"""
+
 
 def keyboard(heading, default="", hidden=False):
     """
