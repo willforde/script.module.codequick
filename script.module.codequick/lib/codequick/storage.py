@@ -94,8 +94,6 @@ class _PersistentBase(object):
             self._stream.write(content)
             self._hash = current_hash
             self._stream.flush()
-        else:
-            pass
 
     def close(self):
         """Flush content to disk & close file object."""
