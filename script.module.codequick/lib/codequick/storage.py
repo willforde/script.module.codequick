@@ -37,6 +37,7 @@ class _PersistentBase(object):
         self._serializer_obj = object
         self._stream = None
         self._hash = None
+        self._data = None
 
         # Filename is already a fullpath
         if os.path.sep in name:
@@ -70,8 +71,14 @@ class _PersistentBase(object):
             return pickle.loads(content)
 
     def flush(self):
+        """
+        Synchronize data back to disk.
+
+        Data will only be written to disk if content has changed.
+        """
+
         # Serialize the storage data
-        data = {self._version_string: 2, self._data_string: self._serialize()}
+        data = {self._version_string: 2, self._data_string: self._data}
         content = pickle.dumps(data, protocol=2)  # Protocol 2 is used for python2/3 compatibility
         current_hash = sha1(content).hexdigest()
 
@@ -95,14 +102,29 @@ class _PersistentBase(object):
         self._stream.close()
         self._stream = None
 
-    def _serialize(self):  # pragma: no cover
-        pass
-
     def __enter__(self):
         return self
 
     def __exit__(self, *_):
         self.close()
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, index):
+        return self._data[index][0]
+
+    def __setitem__(self, index, value):
+        self._data[index] = (value, time.time())
+
+    def __delitem__(self, index):
+        del self._data[index]
+
+    def __bool__(self):
+        return bool(self._data)
+
+    def __nonzero__(self):
+        return bool(self._data)
 
 
 class PersistentDict(_PersistentBase, MutableMapping):
@@ -135,18 +157,6 @@ class PersistentDict(_PersistentBase, MutableMapping):
     def __iter__(self):
         return iter(self._data)
 
-    def __len__(self):
-        return len(self._data)
-
-    def __getitem__(self, key):
-        return self._data[key][0]
-
-    def __setitem__(self, key, value):
-        self._data[key] = (value, time.time())
-
-    def __delitem__(self, key):
-        del self._data[key]
-
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
@@ -166,17 +176,8 @@ class PersistentDict(_PersistentBase, MutableMapping):
                 else:
                     self._data = data
 
-    def _serialize(self):
-        return self._data
-
     def items(self):
         return map(lambda x: (x[0], x[1][0]), self._data.items())
-
-    def __bool__(self):
-        return bool(self._data)
-
-    def __nonzero__(self):
-        return bool(self._data)
 
 
 class PersistentList(_PersistentBase, MutableSequence):
@@ -207,18 +208,6 @@ class PersistentList(_PersistentBase, MutableSequence):
         >>>     db.flush()
     """
 
-    def __len__(self):
-        return len(self._data)
-
-    def __getitem__(self, index):
-        return self._data[index][0]
-
-    def __setitem__(self, index, value):
-        self._data[index] = (value, time.time())
-
-    def __delitem__(self, index):
-        del self._data[index]
-
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, [val for val, _ in self._data])
 
@@ -242,12 +231,3 @@ class PersistentList(_PersistentBase, MutableSequence):
 
     def append(self, value):
         self._data.append((value, time.time()))
-
-    def _serialize(self):
-        return self._data
-
-    def __bool__(self):
-        return bool(self._data)
-
-    def __nonzero__(self):
-        return bool(self._data)
