@@ -10,6 +10,8 @@ This module is used for the creation of “Route callbacks”.
 
         Set to ``False`` to disable auto sortmethod selection.
 
+        .. note::  If autosort is disabled and no sortmethods are given, then SORT_METHOD_UNSORTED will be set.
+
     .. attribute:: update_listing
         :annotation: = False
 
