@@ -203,6 +203,7 @@ class Dispatcher(object):
         kodi_logger.debug_msgs = []
         self.selector = "root"
         self.params.clear()
+        auto_sort.clear()
 
     def parse_args(self):
         """Extract arguments given by Kodi"""
