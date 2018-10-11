@@ -660,7 +660,7 @@ class Playlist(APIControl):
 
         # Fetch video ids for all public videos
         for item in feed[u"items"]:
-            if item[u"status"][u"privacyStatus"] == u"public":  # pragma: no branch
+            if u"status" in item and item[u"status"][u"privacyStatus"] == u"public":  # pragma: no branch
                 channel_list.add(item[u"snippet"][u"channelId"])
                 video_list.append(item[u"snippet"][u"resourceId"][u"videoId"])
             else:  # pragma: no cover
