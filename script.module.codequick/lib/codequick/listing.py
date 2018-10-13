@@ -725,7 +725,7 @@ class Listitem(object):
         item.label = bold(Script.localize(RECENT_VIDEOS))
         item.info["plot"] = "Show the most recent videos."
         item.art.global_thumb("recent.png")
-        item.set_callback(callback, args, **kwargs)
+        item.set_callback(callback, *args, **kwargs)
         return item
 
     @classmethod
