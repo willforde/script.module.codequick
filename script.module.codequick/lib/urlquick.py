@@ -721,7 +721,7 @@ class Request(object):
         """Make sure that query is urlencoded and ascii compatible."""
         if query:
             # Ensure that query contains only valid characters
-            qsl = parse_qsl(query)
+            qsl = parse_qsl(query, keep_blank_values=True)
             # noinspection PyTypeChecker
             query = urlencode(qsl)
 
