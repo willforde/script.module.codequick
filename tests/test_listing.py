@@ -441,14 +441,21 @@ class TestListitem(unittest.TestCase):
         self.assertTrue(listitem.art["thumb"].endswith("videos.png"))
 
     def test_recent_with_arg(self):
-        listitem = listing.Listitem.recent(self.route_callback, "")
+        listitem = listing.Listitem.recent(self.route_callback, "data", work=True)
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertTrue(listitem.art["thumb"].endswith("recent.png"))
+        self.assertIsInstance(listitem._args, tuple)
+        self.assertIn("data", listitem._args)
+        self.assertTrue(len(listitem._args) == 1)
+        self.assertIn("work", listitem.params)
+        self.assertTrue(listitem.params["work"] is True)
 
     def test_recent_without_arg(self):
         listitem = listing.Listitem.recent(self.route_callback)
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertTrue(listitem.art["thumb"].endswith("recent.png"))
+        self.assertIsInstance(listitem._args, tuple)
+        self.assertTrue(len(listitem._args) == 0)
 
     def test_search_with_args(self):
         # noinspection PyUnusedLocal
@@ -456,7 +463,7 @@ class TestListitem(unittest.TestCase):
         def search_results(_, url="", search_query=""):
             pass
 
-        listitem = listing.Listitem.search(search_results)
+        listitem = listing.Listitem.search(search_results, "url", search_query="working")
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Search[/B]")
         self.assertTrue(listitem.art["thumb"].endswith("search.png"))
@@ -471,6 +478,8 @@ class TestListitem(unittest.TestCase):
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Search[/B]")
         self.assertTrue(listitem.art["thumb"].endswith("search.png"))
+        self.assertIsInstance(listitem._args, tuple)
+        self.assertTrue(len(listitem._args) == 0)
 
     def test_search_missing_param(self):
         # noinspection PyUnusedLocal
