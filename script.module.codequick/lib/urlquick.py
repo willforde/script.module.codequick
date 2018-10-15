@@ -50,9 +50,9 @@ __all__ = ["request", "get", "head", "post", "put", "patch", "delete", "cache_cl
 __version__ = "0.9.4"
 
 # Standard library imports
-from collections import MutableMapping, defaultdict
 from codecs import open as _open, getencoder
 from base64 import b64encode, b64decode
+from collections import defaultdict
 from datetime import datetime
 import json as _json
 import logging
@@ -74,6 +74,8 @@ if py3:
     from urllib.parse import urlsplit, urlunsplit, urljoin, SplitResult, urlencode, parse_qsl, quote, unquote
     # noinspection PyUnresolvedReferences, PyCompatibility
     from http.cookies import SimpleCookie
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections.abc import MutableMapping
 
     # Under kodi this constant is set to the addon data directory
     # code for whitch is at the bottom of this file
@@ -90,6 +92,8 @@ else:
     from urllib import urlencode as _urlencode, quote as _quote, unquote as _unquote
     # noinspection PyUnresolvedReferences, PyCompatibility
     from Cookie import SimpleCookie
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections import MutableMapping
 
     # Under kodi this constant is set to the addon data directory
     # code for whitch is at the bottom of this file
