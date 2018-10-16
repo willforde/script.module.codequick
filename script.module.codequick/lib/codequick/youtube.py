@@ -23,8 +23,9 @@ ALLVIDEOS = 32003
 PLAYLISTS = 136
 PLAYLISTS_PLOT = 32007
 
-# Youtube cache directory
-CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
+# Constants
+CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")  # Youtube cache directory
+EXCEPTED_STATUS = [u"public", "unlisted"]
 
 
 class CustomRow(sqlite3.Row):
@@ -661,7 +662,7 @@ class Playlist(APIControl):
 
         # Fetch video ids for all public videos
         for item in feed[u"items"]:
-            if u"status" in item and item[u"status"][u"privacyStatus"] == u"public":  # pragma: no branch
+            if u"status" in item and item[u"status"][u"privacyStatus"] in EXCEPTED_STATUS:  # pragma: no branch
                 channel_list.add(item[u"snippet"][u"channelId"])
                 video_list.append(item[u"snippet"][u"resourceId"][u"videoId"])
             else:  # pragma: no cover

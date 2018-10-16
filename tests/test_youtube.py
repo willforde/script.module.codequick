@@ -52,6 +52,10 @@ class Testcallbacks(unittest.TestCase):
         ret = route_caller(youtube.Playlist, "PLmZTDWJGfRq3dT8teArT8RGg-SPpXErHK")
         self.assertGreaterEqual(len(ret), 10)
 
+    def test_playlist_unlisted(self):
+        ret = route_caller(youtube.Playlist, "PLCnUnV3yCIYt_cgn_1UIU1w2YQ_TfFa6L")
+        self.assertGreaterEqual(len(ret), 31)
+
     def test_playlist_playlist_muilti_page(self):
         ret = route_caller(youtube.Playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=False)
         self.assertGreaterEqual(len(ret), 49)
