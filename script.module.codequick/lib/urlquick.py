@@ -527,9 +527,11 @@ class ConnectionManager(CacheAdapter):
             if cached_resp:
                 return cached_resp
 
+            def callback():
+                return resp.getheaders(), resp.read(), resp.status, resp.reason
+
             # Request resource and cache it if possible
             resp = self.connect(req, timeout, verify)
-            callback = lambda: (resp.getheaders(), resp.read(), resp.status, resp.reason)
             cached_resp = self.handle_response(req.method, resp.status, callback)
             if cached_resp:
                 return cached_resp
