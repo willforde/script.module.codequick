@@ -25,7 +25,7 @@ PLAYLISTS_PLOT = 32007
 
 # Constants
 CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")  # Youtube cache directory
-EXCEPTED_STATUS = [u"public", "unlisted"]
+EXCEPTED_STATUS = [u"public", u"unlisted"]
 
 
 class CustomRow(sqlite3.Row):
