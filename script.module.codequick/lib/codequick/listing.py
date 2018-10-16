@@ -92,8 +92,8 @@ RECENT_VIDEOS_PLOT = 32004
 ALLVIDEOS = 32003
 NEXT_PAGE = 33078
 NEXT_PAGE_PLOT = 32005
-SEARCH = 137
 SEARCH_PLOT = 32006
+SEARCH = 137
 
 
 class Params(MutableMapping):
@@ -714,7 +714,7 @@ class Listitem(object):
         # Create listitem instance
         item = cls()
         label = u"%s %i" % (Script.localize(NEXT_PAGE), kwargs["_nextpagecount_"])
-        item.info["plot"] = "Show the next page of content."
+        item.info["plot"] = Script.localize(NEXT_PAGE_PLOT)
         item.label = bold(label)
         item.art.global_thumb("next.png")
         item.set_callback(route.callback, *args, **kwargs)
