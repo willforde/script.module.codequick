@@ -2,11 +2,19 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
-from collections import MutableMapping
 from time import strptime, strftime
 import logging
 import os
 import re
+
+try:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections import MutableMapping, MutableSequence
+    # Directly importing Abstract Base Classes from Collections is deprecated
+    # with python 3.7 and will be removed with python 3.8
+except ImportError:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections.abc import MutableMapping, MutableSequence
 
 # Kodi imports
 import xbmcplugin
