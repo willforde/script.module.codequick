@@ -21,6 +21,7 @@ logger = logging.getLogger("%s.youtube" % logger_id)
 # Localized string Constants
 ALLVIDEOS = 32003
 PLAYLISTS = 136
+PLAYLISTS_PLOT = 32007
 
 # Youtube cache directory
 CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")
@@ -676,7 +677,7 @@ class Playlist(APIControl):
         if enable_playlists and contentid.startswith("UC") and pagetoken is None:
             item = Listitem()
             item.label = u"[B]%s[/B]" % self.localize(PLAYLISTS)
-            item.info["plot"] = "Show all channel playlists."
+            item.info["plot"] = self.localize(PLAYLISTS_PLOT)
             item.art["icon"] = "DefaultVideoPlaylists.png"
             item.art.global_thumb("playlist.png")
             item.set_callback(Playlists, channel_id=contentid, show_all=False)

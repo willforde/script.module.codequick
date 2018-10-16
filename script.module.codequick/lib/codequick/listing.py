@@ -88,9 +88,12 @@ strip_formatting = re.compile("\[[^\]]+?\]").sub
 # Localized string Constants
 RELATED_VIDEOS = 32201
 RECENT_VIDEOS = 32002
+RECENT_VIDEOS_PLOT = 32004
 ALLVIDEOS = 32003
 NEXT_PAGE = 33078
+NEXT_PAGE_PLOT = 32005
 SEARCH = 137
+SEARCH_PLOT = 32006
 
 
 class Params(MutableMapping):
@@ -162,7 +165,7 @@ class Art(Params):
     def local_thumb(self, image):
         """
         Set the "thumbnail" image to a image file, located in the add-on "resources/media" directory.
-        
+
         :param str image: Filename of the image.
         """
         # Here we can't be sure if 'image' only contains ascii characters, so ensure_native_str is needed
@@ -171,7 +174,7 @@ class Art(Params):
     def global_thumb(self, image):
         """
         Set the "thumbnail" image to a image file, located in the codequick "resources/media" directory.
-        
+
         The available global thumbnail images are.
             * next.png        - Arrow pointing to the right.
             * videos.png      - Circle with a play button in the middle.
@@ -272,10 +275,10 @@ class Info(Params):
     def date(self, date, date_format):
         """
         Set the date infolabel.
-        
+
         :param str date: The date for the listitem.
         :param str date_format: The format of the date as a strftime directive e.g. "june 27, 2017" => "%B %d, %Y"
-        
+
         .. seealso:: The full list of directives can be found at:
 
                     https://docs.python.org/3.6/library/time.html#time.strftime
@@ -467,7 +470,7 @@ class Context(list):
         Convenient method to add a "Related Videos" context menu item.
 
         All this really does is to call "context.container" and sets "label" for you.
-        
+
         :param callback: The function that will be called when menu item is activated.
         :param args: [opt] "Positional" arguments that will be passed to the callback.
         :param kwargs: [opt] "Keyword" arguments that will be passed to the callback.
@@ -556,9 +559,9 @@ class Listitem(object):
         self.property = Property(listitem)
         """
         Dictionary like object that allows you to add "listitem properties". e.g. "StartOffset".
-        
-        Some of these are processed internally by Kodi, such as the "StartOffset" property, 
-        which is the offset in seconds at which to start playback of an item. Others may be used 
+
+        Some of these are processed internally by Kodi, such as the "StartOffset" property,
+        which is the offset in seconds at which to start playback of an item. Others may be used
         in the skin to add extra information, such as "WatchedCount" for tvshow items.
 
         :examples:
@@ -731,7 +734,7 @@ class Listitem(object):
         # Create listitem instance
         item = cls()
         item.label = bold(Script.localize(RECENT_VIDEOS))
-        item.info["plot"] = "Show the most recent videos."
+        item.info["plot"] = Script.localize(RECENT_VIDEOS_PLOT)
         item.art.global_thumb("recent.png")
         item.set_callback(callback, *args, **kwargs)
         return item
@@ -762,7 +765,7 @@ class Listitem(object):
         item = cls()
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
-        item.info["plot"] = "Search for video content."
+        item.info["plot"] = Script.localize(SEARCH_PLOT)
         item.set_callback(SavedSearches, route=callback.route.path, first_load=True, **kwargs)
         return item
 
