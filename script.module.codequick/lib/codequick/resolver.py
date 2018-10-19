@@ -69,6 +69,7 @@ class Resolver(Script):
         * ``dict``: "Dictionary" consisting of "title" as the key and the URL as the value.
         * ``listItem``: A :class:`codequick.Listitem<codequick.listing.Listitem>` object with required data already set e.g. "label" and "path".
         * ``generator``: A Python "generator" that return's one or more URL's.
+        * ``False``: This will cause the "plugin call" to quit silently, without raising a RuntimeError.
 
     .. note:: If multiple URL's are given, a playlist will be automaticly created.
 
@@ -349,12 +350,20 @@ class Resolver(Script):
             else:
                 # Resolved url must be invalid
                 raise ValueError("resolver returned invalid url of type: '%s'" % type(resolved))
+
+            logger.debug("Resolved Url: %s", listitem.getPath())
+
+        elif resolved is False:
+            # A empty listitem is still required even if 'resolved' is False
+            # From time to time Kodi will report that 'Playback failed'
+            # there is nothing that can be done about that.
+            listitem = xbmcgui.ListItem()
+
         else:
             raise RuntimeError(self.localize(NO_VIDEO))
 
         # Send playable listitem to kodi
-        logger.debug("Resolved Url: %s", listitem.getPath())
-        xbmcplugin.setResolvedUrl(self.handle, True, listitem)
+        xbmcplugin.setResolvedUrl(self.handle, bool(resolved), listitem)
 
 
 # Now we can import the listing module

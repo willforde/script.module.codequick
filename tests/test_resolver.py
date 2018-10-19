@@ -53,6 +53,10 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
+    def test_return_false(self):
+        self.resolver._process_results(False)
+        self.assertFalse(plugin_data["succeeded"])
+
     def test_no_url(self):
         with self.assertRaises(RuntimeError):
             self.resolver._process_results(None)
