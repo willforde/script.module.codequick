@@ -16,7 +16,7 @@ import xbmcgui
 import xbmc
 
 # Package imports
-from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3
+from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3, unicode_type
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -282,10 +282,18 @@ class Dispatcher(object):
                 parent_ins._process_results(results)
 
         except Exception as e:
+            try:
+                msg = str(e)
+            except UnicodeEncodeError:
+                # This is python 2 only code
+                # We only use unicode to fetch message when we
+                # know that we are dealing with unicode data
+                msg = unicode_type(e).encode("utf8")
+
             # Log the error in both the gui and the kodi log file
             dialog = xbmcgui.Dialog()
-            dialog.notification(e.__class__.__name__, str(e), addon_data.getAddonInfo("icon"))
-            logger.critical(str(e), exc_info=1)
+            dialog.notification(e.__class__.__name__, msg, addon_data.getAddonInfo("icon"))
+            logger.critical(msg, exc_info=1)
 
         else:
             from . import start_time

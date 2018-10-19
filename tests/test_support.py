@@ -243,6 +243,21 @@ class TestDispatcher(unittest.TestCase):
 
         self.assertTrue(Executed.yes)
 
+    def test_dispatch_fail_unicode_error(self):
+        """Checks that error is caught and not raised."""
+        class Executed(object):
+            yes = False
+
+        def root(_):
+            Executed.yes = True
+            raise RuntimeError(u"testing \xe9")
+
+        self.dispatcher.register_callback(root, route.Route)
+        with mock_argv(["plugin://script.module.codequick", 96, ""]):
+            self.dispatcher.run_callback()
+
+        self.assertTrue(Executed.yes)
+
 
 class BuildPath(unittest.TestCase):
     def setUp(self):
