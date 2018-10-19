@@ -69,7 +69,7 @@ class Resolver(Script):
         * ``dict``: "Dictionary" consisting of "title" as the key and the URL as the value.
         * ``listItem``: A :class:`codequick.Listitem<codequick.listing.Listitem>` object with required data already set e.g. "label" and "path".
         * ``generator``: A Python "generator" that return's one or more URL's.
-        * ``False``: This will cause the "plugin call" to quit silently, without raising a RuntimeError.
+        * ``False``: This will cause the "resolver call" to quit silently, without raising a RuntimeError.
 
     .. note:: If multiple URL's are given, a playlist will be automaticly created.
 
