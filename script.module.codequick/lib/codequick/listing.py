@@ -766,7 +766,7 @@ class Listitem(object):
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback(SavedSearches, route=callback.route.path, first_load=True, **kwargs)
+        item.set_callback(SavedSearches, _route=callback.route.path, first_load=True, **kwargs)
         return item
 
     @classmethod

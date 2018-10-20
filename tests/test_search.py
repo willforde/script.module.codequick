@@ -43,7 +43,7 @@ class Search(unittest.TestCase):
             yield Listitem.from_dict(results, "listitem two")
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(first_load=True, route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Rock", db)
@@ -59,7 +59,7 @@ class Search(unittest.TestCase):
             return False
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(first_load=True, route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertNotIn("Rock", db)
@@ -88,7 +88,7 @@ class Search(unittest.TestCase):
             yield Listitem.from_dict(results, "listitem two")
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(search=True, route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Rock", db)
@@ -109,7 +109,7 @@ class Search(unittest.TestCase):
             db.flush()
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(search=True, route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Rock", db)
@@ -130,7 +130,7 @@ class Search(unittest.TestCase):
             db.flush()
 
         with testing.mock_keyboard(""):
-            listitems = search.SavedSearches.test(search=True, route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Pop", db)
@@ -150,7 +150,7 @@ class Search(unittest.TestCase):
             db.append("Pop")
             db.flush()
 
-        listitems = search.SavedSearches.test(first_load=True, route=results.route.path, execute_delayed=True)
+        listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Rock", db)
@@ -173,7 +173,7 @@ class Search(unittest.TestCase):
             db.flush()
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(_route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertIn("Rock", db)
@@ -195,7 +195,7 @@ class Search(unittest.TestCase):
             db.append("Pop")
             db.flush()
 
-        listitems = search.SavedSearches.test(remove_entry="Rock", route=results.route.path, execute_delayed=True)
+        listitems = search.SavedSearches.test(remove_entry="Rock", _route=results.route.path, execute_delayed=True)
 
         with storage.PersistentList(search.SEARCH_DB) as db:
             self.assertNotIn("Rock", db)

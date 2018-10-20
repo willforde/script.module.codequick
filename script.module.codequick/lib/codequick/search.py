@@ -72,7 +72,7 @@ class SavedSearches(Route):
         callback_params["search_query"] = search_term
 
         # We switch selector to redirected callback to allow next page to work properly
-        route = callback_params.pop("route")
+        route = callback_params.pop("_route")
         dispatcher.selector = route
 
         # Fetch search results from callback
@@ -111,7 +111,7 @@ class SavedSearches(Route):
 
         # Set the callback function to the route that was given
         callback_params = extras.copy()
-        route = callback_params.pop("route")
+        route = callback_params.pop("_route")
         callback = dispatcher.get_route(route).callback
 
         # Prefetch the localized string for the context menu lable
