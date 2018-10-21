@@ -7,6 +7,7 @@ import os
 from codequick import search, route, storage
 from codequick.support import dispatcher
 from codequick.listing import Listitem
+from codequick.search import hash_params
 
 
 class TestGlobalLocalization(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestGlobalLocalization(unittest.TestCase):
 class Search(unittest.TestCase):
     def setUp(self):
         self.org_routes = dispatcher.registered_routes.copy()
-        path = os.path.join(storage.profile_dir, u"_searches.pickle")
+        path = os.path.join(storage.profile_dir, search.SEARCH_DB)
         if os.path.exists(path):
             os.remove(path)
 
@@ -42,11 +43,15 @@ class Search(unittest.TestCase):
             yield Listitem.from_dict(results, "listitem one")
             yield Listitem.from_dict(results, "listitem two")
 
-        with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Rock", db)
+        with testing.mock_keyboard("Rock"):
+            listitems = search.SavedSearches.test(first_load=True, execute_delayed=True, **params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Rock", db[session_id])
 
         self.assertEqual(len(listitems), 2)
         self.assertEqual(listitems[0].label, "listitem one")
@@ -58,11 +63,15 @@ class Search(unittest.TestCase):
             self.assertEqual(search_query, "Rock")
             return False
 
-        with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertNotIn("Rock", db)
+        with testing.mock_keyboard("Rock"):
+            listitems = search.SavedSearches.test(first_load=True, execute_delayed=True, **params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertNotIn("Rock", db[session_id])
 
         self.assertFalse(listitems)
 
@@ -72,11 +81,15 @@ class Search(unittest.TestCase):
         def results(_, search_query):
             pass
 
-        with testing.mock_keyboard(""):
-            listitems = search.SavedSearches.test(first_load=True, route=results.route.path, execute_delayed=True)
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertFalse(bool(db))
+        with testing.mock_keyboard(""):
+            listitems = search.SavedSearches.test(first_load=True, execute_delayed=True, **params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertFalse(bool(db[session_id]))
 
         self.assertFalse(listitems)
 
@@ -87,11 +100,15 @@ class Search(unittest.TestCase):
             yield Listitem.from_dict(results, "listitem one")
             yield Listitem.from_dict(results, "listitem two")
 
-        with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Rock", db)
+        with testing.mock_keyboard("Rock"):
+            listitems = search.SavedSearches.test(search=True, execute_delayed=True, **params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Rock", db[session_id])
 
         self.assertEqual(len(listitems), 2)
         self.assertEqual(listitems[0].label, "listitem one")
@@ -104,16 +121,21 @@ class Search(unittest.TestCase):
             yield Listitem.from_dict(results, "listitem one")
             yield Listitem.from_dict(results, "listitem two")
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            db.append("Pop")
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_id, [])
+            dbstore.append("Pop")
             db.flush()
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(search=True, execute_delayed=True, **params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Rock", db)
-            self.assertIn("Pop", db)
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Rock", db[session_id])
+            self.assertIn("Pop", db[session_id])
 
         self.assertEqual(len(listitems), 2)
         self.assertEqual(listitems[0].label, "listitem one")
@@ -125,15 +147,20 @@ class Search(unittest.TestCase):
         def results(_, search_query):
             pass
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            db.append("Pop")
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_id, [])
+            dbstore.append("Pop")
             db.flush()
 
         with testing.mock_keyboard(""):
-            listitems = search.SavedSearches.test(search=True, _route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(search=True, execute_delayed=True, **params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Pop", db)
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Pop", db[session_id])
 
         self.assertEqual(len(listitems), 2)
         self.assertIn("Search", listitems[0].label)
@@ -145,16 +172,21 @@ class Search(unittest.TestCase):
         def results(_, search_query):
             pass
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            db.append("Rock")
-            db.append("Pop")
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_id, [])
+            dbstore.append("Rock")
+            dbstore.append("Pop")
             db.flush()
 
-        listitems = search.SavedSearches.test(first_load=True, _route=results.route.path, execute_delayed=True)
+        listitems = search.SavedSearches.test(first_load=True, execute_delayed=True, **params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Rock", db)
-            self.assertIn("Pop", db)
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Rock", db[session_id])
+            self.assertIn("Pop", db[session_id])
 
         self.assertEqual(len(listitems), 3)
         self.assertIn("Search", listitems[0].label)
@@ -167,17 +199,22 @@ class Search(unittest.TestCase):
         def results(_, search_query):
             pass
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            db.append("Rock")
-            db.append("Pop")
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_id, [])
+            dbstore.append("Rock")
+            dbstore.append("Pop")
             db.flush()
 
         with testing.mock_keyboard("Rock"):
-            listitems = search.SavedSearches.test(_route=results.route.path, execute_delayed=True)
+            listitems = search.SavedSearches.test(execute_delayed=True, **params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertIn("Rock", db)
-            self.assertIn("Pop", db)
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertIn("Rock", db[session_id])
+            self.assertIn("Pop", db[session_id])
 
         self.assertEqual(len(listitems), 3)
         self.assertIn("Search", listitems[0].label)
@@ -190,16 +227,21 @@ class Search(unittest.TestCase):
         def results(_, search_query):
             pass
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            db.append("Rock")
-            db.append("Pop")
+        params = dict(_route=results.route.path)
+        session_id = hash_params(params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_id, [])
+            dbstore.append("Rock")
+            dbstore.append("Pop")
             db.flush()
 
-        listitems = search.SavedSearches.test(remove_entry="Rock", _route=results.route.path, execute_delayed=True)
+        listitems = search.SavedSearches.test(remove_entry="Rock", execute_delayed=True, **params)
 
-        with storage.PersistentList(search.SEARCH_DB) as db:
-            self.assertNotIn("Rock", db)
-            self.assertIn("Pop", db)
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_id, db)
+            self.assertNotIn("Rock", db[session_id])
+            self.assertIn("Pop", db[session_id])
 
         self.assertEqual(len(listitems), 2)
         self.assertIn("Search", listitems[0].label)
