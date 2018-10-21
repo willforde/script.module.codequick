@@ -79,7 +79,7 @@ class Route(Script):
         super(Route, self).__init__()
         self.update_listing = self.params.get(u"_updatelisting_", False)
         self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
-        self.cache_to_disc = False
+        self.cache_to_disc = True
         self._manual_sort = set()
         self.content_type = None
         self.autosort = True
