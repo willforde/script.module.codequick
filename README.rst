@@ -1,5 +1,5 @@
-.. image:: https://readthedocs.org/projects/scriptmodulecodequick/badge/?version=latest
-    :target: http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/scriptmodulecodequick/badge/?version=stable
+    :target: http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=stable
 
 .. image:: https://travis-ci.org/willforde/script.module.codequick.svg?branch=master
     :target: https://travis-ci.org/willforde/script.module.codequick
