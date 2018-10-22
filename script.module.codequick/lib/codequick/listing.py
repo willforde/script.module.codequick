@@ -699,6 +699,7 @@ class Listitem(object):
         Constructor for adding link to "Next Page" of content.
 
         The current running "callback" will be called with all of the parameters that are given here.
+        You can also specify which "callback" will be called by setting a keywork only argument called 'callback'.
 
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
@@ -708,7 +709,8 @@ class Listitem(object):
             >>> item.next_page(url="http://example.com/videos?page2")
         """
         # Current running callback
-        route = dispatcher.get_route()
+        callback = dispatcher.get_route().callback
+        callback = kwargs.pop("callback", callback)
 
         # Add support params to callback params
         kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.params else False
@@ -721,7 +723,7 @@ class Listitem(object):
         item.info["plot"] = Script.localize(NEXT_PAGE_PLOT)
         item.label = bold(label)
         item.art.global_thumb("next.png")
-        item.set_callback(route.callback, *args, **kwargs)
+        item.set_callback(callback, *args, **kwargs)
         return item
 
     @classmethod
