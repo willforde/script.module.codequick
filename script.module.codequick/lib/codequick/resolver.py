@@ -4,7 +4,6 @@ from __future__ import absolute_import
 # Standard Library Imports
 import logging
 import inspect
-import re
 
 # Kodi imports
 import xbmcplugin
@@ -25,34 +24,6 @@ logger = logging.getLogger("%s.resolver" % logger_id)
 SELECT_PLAYBACK_ITEM = 25006
 NO_VIDEO = 32401
 NO_DATA = 33077
-
-# Patterens to extract video url
-# Copied from the Youtube-DL project
-# https://github.com/rg3/youtube-dl/blob/4471affc348af40409188f133786780edd969623/youtube_dl/extractor/youtube.py#L329
-VALID_YOUTUBE_URL = r"""(?x)^
-(
- (?:https?://|//)                                     # http(s):// or protocol-independent URL
- (?:(?:(?:(?:\w+\.)?[yY][oO][uU][tT][uU][bB][eE](?:-nocookie)?\.com/|
-    youtube\.googleapis\.com/)                        # the various hostnames, with wildcard subdomains
- (?:.*?\#/)?                                          # handle anchor (#/) redirect urls
- (?:                                                  # the various things that can precede the ID:
-     (?:(?:v|embed|e)/(?!videoseries))                # v/ or embed/ or e/
-     |(?:                                             # or the v= param in all its forms
-         (?:(?:watch|movie)(?:_popup)?(?:\.php)?/?)?  # preceding watch(_popup|.php) or nothing (like /?v=xxxx)
-         (?:\?|\#!?)                                  # the params delimiter ? or # or #!
-         (?:.*?[&;])??                                # any other preceding param (like /?s=tuff&v=xxxx or
-         v=                                           # ?s=tuff&amp;v=V36LpHqtcDY)
-     )
- ))
- |(?:
-    youtu\.be|                                        # just youtu.be/xxxx
-    vid\.plus|                                        # or vid.plus/xxxx
-    zwearz\.com/watch|                                # or zwearz.com/watch/xxxx
- ))
-)?                                                       # all until now is optional -> you can pass the naked ID
-([0-9A-Za-z_-]{11})                                      # here is it! the YouTube video ID
-(?(1).+)?                                                # if we found the ID, everything can follow
-$"""
 
 
 class Resolver(Script):
@@ -206,36 +177,6 @@ class Resolver(Script):
         # Raise any stored errors
         elif stored_errors:
             raise RuntimeError(stored_errors[0])
-
-    @staticmethod
-    def extract_youtube(source):  # pragma: no cover
-        # TODO: Remove this method as soon as I found out for sure that youtube.dl works on kodi for Xbox
-        import htmlement
-        import urlquick
-
-        # The Element class isn't been exposed directly by the C implementation
-        # So the type trick is needed here
-        if isinstance(source, type(htmlement.Etree.Element(None))):
-            video_elem = source
-        else:
-            # Tempeary method to extract video url from an embeded youtube video.
-            if source.startswith("http://") or source.startswith("https://"):
-                source = urlquick.get(source, max_age=0).text
-            try:
-                video_elem = htmlement.fromstring(source)
-            except RuntimeError:  # pragma: no cover
-                return None
-
-        # Search for all types of embeded videos
-        video_urls = []
-        video_urls.extend(video_elem.findall(".//iframe[@src]"))
-        video_urls.extend(video_elem.findall(".//embed[@src]"))
-
-        for url in video_urls:
-            match = re.match(VALID_YOUTUBE_URL, url.get("src"))
-            if match is not None:  # pragma: no branch
-                videoid = match.group(2)
-                return u"plugin://plugin.video.youtube/play/?video_id={}".format(videoid)
 
     def _source_selection(self, video_info):
         """
