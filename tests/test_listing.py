@@ -266,6 +266,11 @@ class Context(unittest.TestCase):
         def test_callback(_, test):
             pass
 
+        # noinspection PyUnusedLocal
+        @route.Route.register
+        def root(_):
+            pass
+
         self.test_callback = test_callback
 
     def tearDown(self):
