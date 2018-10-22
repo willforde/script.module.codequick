@@ -66,7 +66,6 @@ class SavedSearches(Route):
         # First load is used to only allow auto search to work when first loading the saved search container.
         # Fixes an issue when there is no saved searches left after removing them.
         elif search or (first_load is True and not session_data):
-            self.cache_to_disc = True
             search_term = keyboard(self.localize(ENTER_SEARCH_STRING))
             if search_term:
                 return self.redirect_search(search_term, extras)
