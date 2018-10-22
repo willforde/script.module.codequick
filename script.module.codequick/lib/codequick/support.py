@@ -99,6 +99,9 @@ class Route(object):
     """
     __slots__ = ("parent", "function", "callback", "path", "is_playable", "is_folder")
 
+    def __eq__(self, other):
+        return self.path == other.path
+
     def __init__(self, callback, parent, path):
         # Register a class callback
         if inspect.isclass(callback):

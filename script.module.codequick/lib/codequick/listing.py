@@ -475,6 +475,10 @@ class Context(list):
         :param args: [opt] "Positional" arguments that will be passed to the callback.
         :param kwargs: [opt] "Keyword" arguments that will be passed to the callback.
         """
+        # Add '_updatelisting_ = True' to callback params if called from the same callback as is given here
+        if callback.route == dispatcher.get_route():
+            kwargs["_updatelisting_"] = True
+
         self.container(callback, Script.localize(RELATED_VIDEOS), *args, **kwargs)
 
     def container(self, callback, label, *args, **kwargs):
