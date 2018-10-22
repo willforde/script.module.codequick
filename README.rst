@@ -47,3 +47,8 @@ Documentation
 -------------
 Documentation can be found over at ReadTheDocs.
 http://scriptmodulecodequick.readthedocs.io/en/latest
+
+
+.. image:: https://api.codacy.com/project/badge/Grade/169396ed505642e9a21e9a4926d31277
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/willforde/script.module.codequick?utm_source=github.com&utm_medium=referral&utm_content=willforde/script.module.codequick&utm_campaign=Badge_Grade_Dashboard
