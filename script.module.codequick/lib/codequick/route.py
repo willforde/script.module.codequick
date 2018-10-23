@@ -28,19 +28,27 @@ NO_DATA = 33077
 def validate_listitems(raw_listitems):
     """Check if listitems are valid"""
 
-    # Convert a generator of listitem into a list of listitems
-    if inspect.isgenerator(raw_listitems):
-        raw_listitems = list(raw_listitems)
-
-    # If raw_listitems is False then, that was deliberate, so return False
-    if raw_listitems is False or (raw_listitems and isinstance(raw_listitems, list) and raw_listitems[0] is False):
+    # Silently ignore False values
+    if raw_listitems is False:
         return False
 
-    # Checks if raw_listitems is None or an empty list
-    elif not raw_listitems:
-        raise RuntimeError("No items found")
+    # Convert a generator of listitem into a list of listitems
+    elif inspect.isgenerator(raw_listitems):
+        raw_listitems = list(raw_listitems)
+
+    if raw_listitems:
+        if isinstance(raw_listitems, (list, tuple)):
+            if len(raw_listitems) == 1:
+                value = raw_listitems[0]
+                if value is False:
+                    return False
+                elif value is None:
+                    raise RuntimeError("No items found")
+            return filter(None, raw_listitems)
+        else:
+            raise ValueError("Unexpected return object: {}".format(type(raw_listitems)))
     else:
-        return raw_listitems
+        raise RuntimeError("No items found")
 
 
 class Route(Script):
