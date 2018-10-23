@@ -44,7 +44,7 @@ def validate_listitems(raw_listitems):
                     return False
                 elif value is None:
                     raise RuntimeError("No items found")
-            return filter(None, raw_listitems)
+            return raw_listitems
         else:
             raise ValueError("Unexpected return object: {}".format(type(raw_listitems)))
     else:
