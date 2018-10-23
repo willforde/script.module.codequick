@@ -193,6 +193,49 @@ class Search(unittest.TestCase):
         self.assertEqual(listitems[1].label, "Rock")
         self.assertEqual(listitems[2].label, "Pop")
 
+    def test_saved_sessions(self):
+        # noinspection PyUnusedLocal
+        @route.Route.register
+        def session_one(_, search_query):
+            self.assertEqual(search_query, "Rock")
+            yield Listitem.from_dict(session_one, "listitem one")
+            yield Listitem.from_dict(session_one, "listitem two")
+
+        # noinspection PyUnusedLocal
+        @route.Route.register
+        def session_two(_, search_query):
+            self.assertEqual(search_query, "Pop")
+            yield Listitem.from_dict(session_two, "listitem one")
+            yield Listitem.from_dict(session_two, "listitem two")
+
+        session_one_params = dict(_route=session_one.route.path)
+        session_one_id = hash_params(session_one_params)
+
+        session_two_params = dict(_route=session_two.route.path)
+        session_two_id = hash_params(session_two_params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            dbstore = db.setdefault(session_one_id, [])
+            dbstore.append("Jazz")
+            dbstore = db.setdefault(session_two_id, [])
+            dbstore.append("Chill")
+            db.flush()
+
+        with testing.mock_keyboard("Rock"):
+            search.SavedSearches.test(search=True, execute_delayed=True, **session_one_params)
+
+        with testing.mock_keyboard("Pop"):
+            search.SavedSearches.test(search=True, execute_delayed=True, **session_two_params)
+
+        with storage.PersistentDict(search.SEARCH_DB) as db:
+            self.assertIn(session_one_id, db)
+            self.assertIn("Rock", db[session_one_id])
+            self.assertNotIn("Pop", db[session_one_id])
+
+            self.assertIn(session_two_id, db)
+            self.assertIn("Pop", db[session_two_id])
+            self.assertNotIn("Rock", db[session_two_id])
+
     def test_saved_not_firstload(self):
         # noinspection PyUnusedLocal
         @route.Route.register
