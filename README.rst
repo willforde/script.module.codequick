@@ -1,5 +1,5 @@
 .. image:: https://readthedocs.org/projects/scriptmodulecodequick/badge/?version=stable
-    :target: http://scriptmodulecodequick.readthedocs.io/en/latest/?badge=stable
+    :target: http://scriptmodulecodequick.readthedocs.io/en/stable/?badge=stable
 
 .. image:: https://travis-ci.org/willforde/script.module.codequick.svg?branch=master
     :target: https://travis-ci.org/willforde/script.module.codequick
@@ -46,4 +46,4 @@ websites and passing it to Kodi.
 Documentation
 -------------
 Documentation can be found over at ReadTheDocs.
-http://scriptmodulecodequick.readthedocs.io/en/latest
+https://scriptmodulecodequick.readthedocs.io/en/stable/
