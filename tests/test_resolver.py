@@ -155,6 +155,20 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
         self.assertEqual(1, len(plugin_data["playlist"]))
 
+    def test_gen_multi_none(self):
+        del plugin_data["playlist"][:]
+
+        def eg_resolver():
+            yield "test_one.mkv"
+            yield None
+            yield "test_two.mkv"
+
+        self.resolver._process_results(eg_resolver())
+        dispatcher.run_delayed()
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
+        self.assertEqual(1, len(plugin_data["playlist"]))
+
     def test_playlist_kodi_listitem(self):
         del plugin_data["playlist"][:]
 
