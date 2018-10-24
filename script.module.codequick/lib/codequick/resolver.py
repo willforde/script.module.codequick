@@ -319,8 +319,7 @@ class Resolver(Script):
         """
         for item in enumerate(filter(None, resolved), 2):
             listitem = self._process_item(*item)
-            if listitem:
-                self.playlist.add(listitem.getPath(), listitem)
+            self.playlist.add(listitem.getPath(), listitem)
 
     def _process_results(self, resolved):
         """
