@@ -272,7 +272,7 @@ class Resolver(Script):
         :rtype: xbmcgui.ListItem
         """
         # Loop each item to create playlist
-        listitems = list(filter(None, (self._process_item(*item) for item in enumerate(filter(None, urls), 1))))
+        listitems = [self._process_item(*item) for item in enumerate(urls, 1)]
 
         # Populate Playlis
         for item in listitems[1:]:
@@ -304,12 +304,11 @@ class Resolver(Script):
             else:
                 title = self._title
 
-            if url:
-                # Create listitem with new title
-                listitem.setLabel(u"%s Part %i" % (title, count) if count > 1 else title)
-                listitem.setInfo("video", {"title": title})
-                listitem.setPath(url)
-                return listitem
+            # Create listitem with new title
+            listitem.setLabel(u"%s Part %i" % (title, count) if count > 1 else title)
+            listitem.setInfo("video", {"title": title})
+            listitem.setPath(url)
+            return listitem
 
     def _process_generator(self, resolved):
         """

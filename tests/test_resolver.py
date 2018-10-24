@@ -99,10 +99,18 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 1)
 
+    def test_list_none(self):
+        del plugin_data["playlist"][:]
+
+        self.resolver._process_results([u"test.mkv", u"tester.mkv"])
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 1)
+
     def test_tuple_single(self):
         del plugin_data["playlist"][:]
 
-        self.resolver._process_results((u"test.mkv"))
+        self.resolver._process_results((u"test.mkv",))
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 0)
@@ -160,7 +168,6 @@ class TestResolver(unittest.TestCase):
 
         def eg_resolver():
             yield "test_one.mkv"
-            yield None
             yield "test_two.mkv"
 
         self.resolver._process_results(eg_resolver())
