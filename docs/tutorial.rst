@@ -33,7 +33,7 @@ guaranteeing that you will always have an absolute URL to use.
 .. code-block:: python
 
     # Base url constructor
-    url_constructor = utils.urljoin_partial("http://metalvideo.com")
+    url_constructor = utils.urljoin_partial("https://metalvideo.com")
 
 Next we will create the "Root" function which will be the starting point for the add-on.
 It is very important that the "Root" function is called "root". This function will first have to be registered
@@ -57,32 +57,35 @@ Parsing of the HTML source will be done using "HTMLement" which is integrated in
     @Route.register
     def root(plugin):
         # Request the online resource
-        url = url_constructor("/mobile/category.html")
-        resp = urlquick.get(url, headers={"Cookie": "COOKIE_DEVICE=mobile"})
+        url = url_constructor("/browse.html")
+        resp = urlquick.get(url)
 
         # Filter source down to required section by giving the name and
         # attributes of the element containing the required data.
         # It's a lot faster to limit the parser to required section.
-        root_elem = resp.parse(u"ul", attrs={"id": "category_listing"})
+        root_elem = resp.parse("div", attrs={"id": "primary"})
 
         # Parse each category
-        for elem in root_elem.iterfind("li"):
+        for elem in root_elem.iterfind("ul/li"):
             item = Listitem()
 
-            # Find the 'a' element containing the label & url info
-            a_tag = elem.find("a")
+            # The image tag contains both the image url and title
+            img = elem.find(".//img")
 
-            # Find the video count 'span' tag
-            vidcount = elem.find("span").text
+            # Set the title
+            item.art["thumb"] = img.get("src")
 
-            # Set label with video count added.
-            item.label = "%s (%s)" % (a_tag.text, vidcount)
+            # Set the thumbnail image
+            item.label = img.get("alt")
+
+            # Fetch the url to content
+            url = elem.find("div/a").get("href")
 
             # This will set the callback that will be called when listitem is activated.
             # 'video_list' is the route callback function that we will create later.
             # The 'url' argument is the url of the category that will be passed
             # to the 'video_list' callback.
-            item.set_callback(video_list, url=a_tag.get("href"))
+            item.set_callback(video_list, url=url)
 
             # Return the listitem as a generator.
             yield item
@@ -97,25 +100,39 @@ function that will return listitems, it will be registered as a :class:`Route<co
         # Request the online resource.
         url = url_constructor(url)
         resp = urlquick.get(url)
-        root_elem = resp.parse("div", attrs={"id": "browse_main"})
+
+        # Parse the html source
+        root_elem = resp.parse("div", attrs={"class": "primary-content"})
 
         # Parse each video
-        for elem in root_elem.iterfind(u".//div[@class='video_i']"):
+        for elem in root_elem.find("ul").iterfind("./li/div"):
             item = Listitem()
 
             # Set the thumbnail image of the video.
             item.art["thumb"] = elem.find(".//img").get("src")
 
-            # Extract url from first 'a' element and remove it from source tree.
-            # This makes it easier to extract 'artist' and 'song' names later.
-            a_tag = elem.find("a")
-            url = a_tag.get("href")
-            elem.remove(a_tag)
+            # Set the duration of the video
+            item.info["duration"] = elem.find("span/span/span").text
 
-            # Set title as 'artist - song'.
-            span_tags = tuple(node.text for node in elem.findall(".//span"))
-            item.label = "%s - %s" % span_tags
-            item.info["artist"] = [span_tags[0]]
+            # Set thel plot info
+            item.info["plot"] = elem.find("p").text
+
+            # Set view count
+            views = elem.find("./div/span[@class='pm-video-attr-numbers']/small").text
+            item.info["count"] = views.split(" ", 1)[0].strip()
+
+            # Set date of video
+            date = elem.find(".//time[@datetime]").get("datetime")
+            date = date.split("T", 1)[0]
+            item.info.date(date, "%Y-%m-%d")  # 2018-10-19
+
+            # Url to video & name
+            a_tag = elem.find("h3/a")
+            url = a_tag.get("href")
+            item.label = a_tag.text
+
+            # Extract the artist name from the title
+            item.info["artist"] = [a_tag.text.split("-", 1)[0].strip()]
 
             # 'play_video' is the resolver callback function that we will create later.
             # The 'url' argument is the url of the video that will be passed
@@ -126,11 +143,18 @@ function that will return listitems, it will be registered as a :class:`Route<co
             yield item
 
         # Extract the next page url if one exists.
-        next_tag = root_elem.findall(".//div[@class='pagination']/a")
-        if next_tag and next_tag[-1].text.startswith("next"):
-            # This will return a listitem, that will link back to this
-            # callback function with the url of the next page of content.
-            yield Listitem.next_page(url=next_tag[-1].get("href"))
+        next_tag = root_elem.find("./div[@class='pagination pagination-centered']/ul")
+        if next_tag is not None:
+            # Find all page links
+            next_tag = next_tag.findall("li/a")
+            # Reverse list if links so the next page should be the first item
+            next_tag.reverse()
+            # Atempt to find the next page link with the text of '>>'
+            for node in next_tag:
+                if node.text == u"\xbb":
+                    yield Listitem.next_page(url=node.get("href"), callback=video_list)
+                    # We found the link so we can now break from the loop
+                    break
 
 Finally we need to create the :class:`Resolver<codequick.resolver.Resolver>` "callback", and register it as so.
 This callback is expected to return a playable video URL. The first argument that will be passed to a
@@ -141,7 +165,7 @@ This callback is expected to return a playable video URL. The first argument tha
 
     @Resolver.register
     def play_video(plugin, url):
-        # Sence http://metalvideo.com uses enbeaded youtube videos,
+        # Sence https://metalvideo.com uses enbeaded youtube videos,
         # we can use 'plugin.extract_source' to extract the video url.
         url = url_constructor(url)
         return plugin.extract_source(url)
