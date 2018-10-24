@@ -83,13 +83,29 @@ class TestResolver(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
 
+    def test_list_single(self):
+        del plugin_data["playlist"][:]
+
+        self.resolver._process_results([u"test.mkv"])
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 0)
+
     def test_list(self):
         del plugin_data["playlist"][:]
 
         self.resolver._process_results([u"test.mkv", u"tester.mkv"])
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
-        self.assertEqual(len(plugin_data["playlist"]), 2)
+        self.assertEqual(len(plugin_data["playlist"]), 1)
+
+    def test_tuple_single(self):
+        del plugin_data["playlist"][:]
+
+        self.resolver._process_results((u"test.mkv"))
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 0)
 
     def test_tuple(self):
         del plugin_data["playlist"][:]
@@ -97,12 +113,20 @@ class TestResolver(unittest.TestCase):
         self.resolver._process_results((u"test.mkv", u"tester.mkv"))
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
-        self.assertEqual(len(plugin_data["playlist"]), 2)
+        self.assertEqual(len(plugin_data["playlist"]), 1)
 
     def test_dict(self):
         del plugin_data["playlist"][:]
 
         self.resolver._process_results({"test": "test.mkv"})
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(len(plugin_data["playlist"]), 0)
+
+    def test_dict_muili(self):
+        del plugin_data["playlist"][:]
+
+        self.resolver._process_results({"test": "test.mkv", "work": "work.mkv"})
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
         self.assertEqual(len(plugin_data["playlist"]), 1)
@@ -116,7 +140,7 @@ class TestResolver(unittest.TestCase):
         self.resolver._process_results(eg_resolver())
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
-        self.assertEqual(len(plugin_data["playlist"]), 1)
+        self.assertEqual(len(plugin_data["playlist"]), 0)
 
     def test_gen_multi(self):
         del plugin_data["playlist"][:]
@@ -129,7 +153,7 @@ class TestResolver(unittest.TestCase):
         dispatcher.run_delayed()
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["resolved"]["path"], u"test_one.mkv")
-        self.assertEqual(len(plugin_data["playlist"]), 2)
+        self.assertEqual(1, len(plugin_data["playlist"]))
 
     def test_playlist_kodi_listitem(self):
         del plugin_data["playlist"][:]
