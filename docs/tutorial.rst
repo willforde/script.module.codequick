@@ -78,7 +78,7 @@ Parsing of the HTML source will be done using "HTMLement" which is integrated in
             # Set the title
             item.label = img.get("alt")
 
-            # Fetch the url to content
+            # Fetch the url
             url = elem.find("div/a").get("href")
 
             # This will set the callback that will be called when listitem is activated.
@@ -112,16 +112,16 @@ function that will return listitems, it will be registered as a :class:`Route<co
             item.art["thumb"] = elem.find(".//img").get("src")
 
             # Set the duration of the video
-            item.info["duration"] = elem.find("span/span/span").text
+            item.info["duration"] = elem.find("span/span/span").text.strip()
 
             # Set thel plot info
-            item.info["plot"] = elem.find("p").text
+            item.info["plot"] = elem.find("p").text.strip()
 
             # Set view count
             views = elem.find("./div/span[@class='pm-video-attr-numbers']/small").text
             item.info["count"] = views.split(" ", 1)[0].strip()
 
-            # Set date of video
+            # Set the date that the video was published
             date = elem.find(".//time[@datetime]").get("datetime")
             date = date.split("T", 1)[0]
             item.info.date(date, "%Y-%m-%d")  # 2018-10-19
@@ -147,9 +147,9 @@ function that will return listitems, it will be registered as a :class:`Route<co
         if next_tag is not None:
             # Find all page links
             next_tag = next_tag.findall("li/a")
-            # Reverse list if links so the next page should be the first item
+            # Reverse list of links so the next page link should be the first item
             next_tag.reverse()
-            # Atempt to find the next page link with the text of '>>'
+            # Attempt to find the next page link with the text of '>>'
             for node in next_tag:
                 if node.text == u"\xbb":
                     yield Listitem.next_page(url=node.get("href"), callback=video_list)
