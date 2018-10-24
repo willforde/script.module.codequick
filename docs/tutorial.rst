@@ -72,10 +72,10 @@ Parsing of the HTML source will be done using "HTMLement" which is integrated in
             # The image tag contains both the image url and title
             img = elem.find(".//img")
 
-            # Set the title
+            # Set the thumbnail image
             item.art["thumb"] = img.get("src")
 
-            # Set the thumbnail image
+            # Set the title
             item.label = img.get("alt")
 
             # Fetch the url to content
