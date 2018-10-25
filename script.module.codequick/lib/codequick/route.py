@@ -28,23 +28,19 @@ NO_DATA = 33077
 def validate_listitems(raw_listitems):
     """Check if listitems are valid"""
 
-    # Silently ignore False values
-    if raw_listitems is False:
-        return False
-
     # Convert a generator of listitem into a list of listitems
-    elif inspect.isgenerator(raw_listitems):
+    if inspect.isgenerator(raw_listitems):
         raw_listitems = list(raw_listitems)
+    # Silently ignore False values
+    elif raw_listitems is False:
+        return False
 
     if raw_listitems:
         if isinstance(raw_listitems, (list, tuple)):
-            if len(raw_listitems) == 1:
-                value = raw_listitems[0]
-                if value is False:
-                    return False
-                elif value is None:
-                    raise RuntimeError("No items found")
-            return raw_listitems
+            if len(raw_listitems) == 1 and raw_listitems[0] is False:
+                return False
+            else:
+                return raw_listitems
         else:
             raise ValueError("Unexpected return object: {}".format(type(raw_listitems)))
     else:

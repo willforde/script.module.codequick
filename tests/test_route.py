@@ -52,6 +52,10 @@ class TestRoute(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.route._process_results([])
 
+    def test_no_invalid(self):
+        with self.assertRaises(ValueError):
+            self.route._process_results(1)
+
     def test_one_mediatype(self):
         def route_list():
             yield Listitem.from_dict(callback_test, "test item", info={"mediatype": "video"})
