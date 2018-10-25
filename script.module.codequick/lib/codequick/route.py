@@ -179,5 +179,4 @@ class Route(Script):
         """
         # Can't use sets here as sets don't keep order
         for method in methods:
-            if method not in self._manual_sort:
-                self._manual_sort.append(method)
+            self._manual_sort.append(method)
