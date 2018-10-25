@@ -84,7 +84,7 @@ class Route(Script):
         self.update_listing = self.params.get(u"_updatelisting_", False)
         self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
         self.cache_to_disc = self.params.get(u"_cache_to_disc_", True)
-        self._manual_sort = set()
+        self._manual_sort = list()
         self.content_type = None
         self.autosort = True
 
@@ -147,19 +147,23 @@ class Route(Script):
         if not isfolder:
             self.__add_sort_methods(self._manual_sort)
 
-    def __add_sort_methods(self, manual):  # type: (set) -> None
+    def __add_sort_methods(self, sortmethods):  # type: (list) -> None
         """Add sort methods to kodi."""
-        if self.autosort:
-            manual.update(auto_sort)
+        _addSortMethod = xbmcplugin.addSortMethod
 
-        if manual:
-            # Sort the list of sort methods before adding to kodi
-            _addSortMethod = xbmcplugin.addSortMethod
-            for sortMethod in sorted(manual):
+        if self.autosort:
+            # Keep the order of the manually set sort methods
+            # Only sort the auto sort methods
+            for method in sorted(auto_sort):
+                if method not in sortmethods:
+                    sortmethods.append(method)
+
+        if sortmethods:
+            for sortMethod in sortmethods:
                 _addSortMethod(self.handle, sortMethod)
         else:
             # If no sortmethods are given then set sort mehtod to unsorted
-            xbmcplugin.addSortMethod(self.handle, xbmcplugin.SORT_METHOD_UNSORTED)
+            _addSortMethod(self.handle, xbmcplugin.SORT_METHOD_UNSORTED)
 
     def add_sort_methods(self, *methods):
         """
@@ -173,4 +177,7 @@ class Route(Script):
         .. seealso:: The full list of sort methods can be found at.\n
                      https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#ga85b3bff796fd644fb28f87b136025f40
         """
-        self._manual_sort.update(methods)
+        # Can't use sets here as sets don't keep order
+        for method in methods:
+            if method not in self._manual_sort:
+                self._manual_sort.append(method)
