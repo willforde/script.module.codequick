@@ -479,7 +479,7 @@ class TestListitem(unittest.TestCase):
         def search_results(_, url="", search_query=""):
             pass
 
-        listitem = listing.Listitem.search(search_results, "")
+        listitem = listing.Listitem.search(search_results)
         self.assertIsInstance(listitem, listing.Listitem)
         self.assertEqual(listitem.label, "[B]Search[/B]")
         self.assertTrue(listitem.art["thumb"].endswith("search.png"))
