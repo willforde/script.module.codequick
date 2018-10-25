@@ -152,6 +152,10 @@ class Route(Script):
         _addSortMethod = xbmcplugin.addSortMethod
 
         if self.autosort:
+            # Add unsorted sort method if not sorted by date and no manually set sortmethods are given
+            if auto_sort and not (sortmethods or xbmcplugin.SORT_METHOD_DATE in auto_sort):
+                sortmethods.append(xbmcplugin.SORT_METHOD_UNSORTED)
+
             # Keep the order of the manually set sort methods
             # Only sort the auto sort methods
             for method in sorted(auto_sort):
