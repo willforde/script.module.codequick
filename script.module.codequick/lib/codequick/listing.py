@@ -7,15 +7,6 @@ import logging
 import os
 import re
 
-try:
-    # noinspection PyUnresolvedReferences, PyCompatibility
-    from collections import MutableMapping, MutableSequence
-    # Directly importing Abstract Base Classes from Collections is deprecated
-    # with python 3.7 and will be removed with python 3.8
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyCompatibility
-    from collections.abc import MutableMapping, MutableSequence
-
 # Kodi imports
 import xbmcplugin
 import xbmcgui
@@ -24,6 +15,13 @@ import xbmcgui
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
+
+if PY3:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections.abc import MutableMapping, MutableSequence
+else:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections import MutableMapping, MutableSequence
 
 __all__ = ["Listitem"]
 

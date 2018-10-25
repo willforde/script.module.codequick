@@ -8,15 +8,6 @@ import sys
 import os
 
 try:
-    # noinspection PyUnresolvedReferences, PyCompatibility
-    from collections import MutableMapping, MutableSequence
-    # Directly importing Abstract Base Classes from Collections is deprecated
-    # with python 3.7 and will be removed with python 3.8
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyCompatibility
-    from collections.abc import MutableMapping, MutableSequence
-
-try:
     # noinspection PyPep8Naming
     import cPickle as pickle
 except ImportError:  # pragma: no cover
@@ -24,7 +15,14 @@ except ImportError:  # pragma: no cover
 
 # Package imports
 from codequick.script import Script
-from codequick.utils import ensure_unicode
+from codequick.utils import ensure_unicode, PY3
+
+if PY3:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections.abc import MutableMapping, MutableSequence
+else:
+    # noinspection PyUnresolvedReferences, PyCompatibility
+    from collections import MutableMapping, MutableSequence
 
 __all__ = ["PersistentDict", "PersistentList"]
 
