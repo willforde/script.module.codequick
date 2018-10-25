@@ -113,7 +113,7 @@ else:
     def parse_qsl(qs, encoding="utf8", errors="replace", **kwargs):
         qs = qs.encode(encoding, errors)
         qsl = _parse_qsl(qs, **kwargs)
-        return [(key.decode(encoding, errors), value.decode(encoding, errors)) for key, value in qsl]
+        return [(k.decode(encoding, errors), v.decode(encoding, errors)) for k, v in qsl]  # pragma: no branch
 
 
     def urlencode(query, doseq=False, encoding="utf8", errors=""):
@@ -125,7 +125,7 @@ else:
         for key, value in items:
             key = key.encode(encoding, errors)
             if isinstance(value, (list, tuple)):
-                value = [_value.encode(encoding, errors) for _value in value]
+                value = [_value.encode(encoding, errors) for _value in value]  # pragma: no branch
             else:
                 value = value.encode(encoding, errors)
             new_query.append((key, value))
@@ -1023,8 +1023,7 @@ class Session(ConnectionManager):
         # Parse url into it's individual components including params if given
         req = Request(method, url, req_headers, data, json, req_params)
         logger.debug("Requesting resource: %s", req.url)
-        if req_headers:
-            logger.debug("Request headers: %s", req.headers)
+        logger.debug("Request headers: %s", req.headers)
         if data:
             logger.debug("Request data: %s", req.data)
 
