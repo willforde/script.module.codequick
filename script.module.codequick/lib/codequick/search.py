@@ -86,7 +86,8 @@ class SavedSearches(Route):
         :param dict extras: Extra parameters that will be farwarded on to the callback function.
         :return: List if valid search results
         """
-        self.category = search_term.title()
+        self.params[u"_title_"] = search_term.title()
+        self.category = self.params[u"_title_"]
         callback_params = extras.copy()
         callback_params["search_query"] = search_term
 
