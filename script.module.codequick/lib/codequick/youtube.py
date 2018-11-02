@@ -446,6 +446,7 @@ class APIControl(Route):
         """
         cached_videos = self.db.extract_videos(ids)
         uncached_ids = list(frozenset(key for key in ids if key not in cached_videos))  # pragma: no branch
+        print(uncached_ids)
         if uncached_ids:
             # Fetch video information
             feed = self.api.videos(uncached_ids)
