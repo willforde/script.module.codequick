@@ -445,7 +445,7 @@ class APIControl(Route):
         :type ids: list
         """
         cached_videos = self.db.extract_videos(ids)
-        uncached_ids = [key for key in ids if key not in cached_videos]  # pragma: no branch
+        uncached_ids = list(frozenset(key for key in ids if key not in cached_videos))  # pragma: no branch
         if uncached_ids:
             # Fetch video information
             feed = self.api.videos(uncached_ids)
