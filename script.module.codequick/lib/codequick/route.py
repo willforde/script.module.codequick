@@ -169,18 +169,24 @@ class Route(Script):
             # If no sortmethods are given then set sort mehtod to unsorted
             _addSortMethod(self.handle, xbmcplugin.SORT_METHOD_UNSORTED)
 
-    def add_sort_methods(self, *methods):
+    def add_sort_methods(self, *methods, **kwargs):
         """
         Add sorting method(s).
 
         Any number of sort method's can be given as multiple arguments.
         Normally this should not be needed, as sort method's are auto detected.
 
+        You can pass an optional keyword only argument, 'disable_autosort' to disable auto sorting.
+
         :param int methods: One or more Kodi sort method's.
 
         .. seealso:: The full list of sort methods can be found at.\n
                      https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#ga85b3bff796fd644fb28f87b136025f40
         """
+        # Disable autosort if requested
+        if "disable_autosort" in kwargs:
+            self.autosort = False
+
         # Can't use sets here as sets don't keep order
         for method in methods:
             self._manual_sort.append(method)
