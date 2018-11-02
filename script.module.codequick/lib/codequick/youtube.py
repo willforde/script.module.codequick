@@ -89,11 +89,12 @@ class Database(object):
         self.execute(self.cur.executemany, sqlquery, videos)
 
     def extract_videos(self, data):
-        return set(self.cur.execute("""
+        results = self.cur.execute("""
         SELECT video_id, title, thumb, description, genre, count, date, hd, duration, videos.channel_id,
         fanart, channel_title FROM videos INNER JOIN channels ON channels.channel_id = videos.channel_id
         INNER JOIN categories ON categories.id = videos.genre_id
-        WHERE video_id IN (%s)""" % ",".join("?" * len(data)), data))
+        WHERE video_id IN (%s)""" % ",".join("?" * len(data)), data)
+        return {row[0]: row for row in results}
 
     @property
     def channels(self):
@@ -446,7 +447,6 @@ class APIControl(Route):
         """
         cached_videos = self.db.extract_videos(ids)
         uncached_ids = list(frozenset(key for key in ids if key not in cached_videos))  # pragma: no branch
-        print(uncached_ids)
         if uncached_ids:
             # Fetch video information
             feed = self.api.videos(uncached_ids)
@@ -491,8 +491,8 @@ class APIControl(Route):
             cached = self.db.extract_videos(uncached_ids)
             cached_videos.update(cached)
 
-        # Return a list of Row objects of video data
-        return cached_videos
+        # Return each video in the order givin by the playlist
+        return (cached_videos[video_id] for video_id in ids if video_id in cached_videos)
 
     def videos(self, video_ids, multi_channel=False):
         """
