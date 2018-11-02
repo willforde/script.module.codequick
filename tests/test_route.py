@@ -161,6 +161,18 @@ class TestRoute(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE])
 
+    def test_custom_sort_only_method_2(self):
+        auto_sort.clear()
+        del plugin_data["sortmethods"][:]
+
+        def route_list(plugin):
+            plugin.add_sort_methods(3, disable_autosort=True)
+            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+
+        self.route._process_results(route_list(self.route))
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE])
+
     def test_custom_sort_with_autosort(self):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]

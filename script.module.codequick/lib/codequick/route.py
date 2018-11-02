@@ -184,7 +184,7 @@ class Route(Script):
                      https://codedocs.xyz/xbmc/xbmc/group__python__xbmcplugin.html#ga85b3bff796fd644fb28f87b136025f40
         """
         # Disable autosort if requested
-        if "disable_autosort" in kwargs:
+        if kwargs.get("disable_autosort", False):
             self.autosort = False
 
         # Can't use sets here as sets don't keep order
