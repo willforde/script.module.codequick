@@ -299,9 +299,7 @@ class Dispatcher(object):
             logger.critical(msg, exc_info=1)
 
         else:
-            from . import start_time
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            logger.debug("Total Execution Time: %ims", (time.time() - start_time) * 1000)
             self.run_delayed()
 
     def run_delayed(self):
