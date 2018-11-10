@@ -172,7 +172,7 @@ class TestDispatcher(unittest.TestCase):
             pass
 
         callback = self.dispatcher.register_callback(listing, route.Route)
-        self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
+        self.assertIn("/tests/test_support/listing/", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
 
@@ -182,7 +182,7 @@ class TestDispatcher(unittest.TestCase):
                 pass
 
         callback = self.dispatcher.register_callback(Videos, route.Route)
-        self.assertIn("/tests/test_support/videos", self.dispatcher.registered_routes)
+        self.assertIn("/tests/test_support/videos/", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
 

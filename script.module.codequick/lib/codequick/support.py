@@ -242,7 +242,7 @@ class Dispatcher(object):
         # Construct route path
         path = callback.__name__.lower()
         if path != "root":
-            path = "/{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
+            path = "/{}/{}/".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
         # Register callback
         if path in self.registered_routes:

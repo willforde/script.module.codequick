@@ -284,7 +284,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback)")
+                                  "tests/test_listing/test_callback/)")
 
     def test_container_with_params(self):
         self.base.container(self.test_callback, "test label", True, url="tester")
@@ -292,7 +292,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback?_pickle_="))
+                                           "tests/test_listing/test_callback/?_pickle_="))
 
     def test_script(self):
         self.base.script(self.test_callback, "test label")
@@ -300,7 +300,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertEqual(command, "XBMC.RunPlugin(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback)")
+                                  "tests/test_listing/test_callback/)")
 
     def test_script_with_params(self):
         self.base.script(self.test_callback, "test label", True, url="tester")
@@ -308,7 +308,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertTrue(command.startswith("XBMC.RunPlugin(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback?_pickle_="))
+                                           "tests/test_listing/test_callback/?_pickle_="))
 
     def test_related(self):
         self.base.related(self.test_callback)
@@ -316,7 +316,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback)")
+                                  "tests/test_listing/test_callback/)")
 
     def test_related_with_params(self):
         self.base.related(self.test_callback, test=True)
@@ -324,7 +324,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback?_pickle_="))
+                                           "tests/test_listing/test_callback/?_pickle_="))
 
     def test_close(self):
         self.base.related(self.test_callback)
@@ -383,7 +383,7 @@ class TestListitem(unittest.TestCase):
     def test_close_route(self):
         self.listitem.set_callback(self.route_callback)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/route_callback")
+        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/route_callback/")
         self.assertTrue(isfolder)
 
     def test_close_no_callback(self):
@@ -394,13 +394,13 @@ class TestListitem(unittest.TestCase):
     def test_close_route_params(self):
         self.listitem.set_callback(self.route_callback, "yes", full=True)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertTrue(path.startswith("plugin://script.module.codequick/tests/test_listing/route_callback?_pickle_="))
+        self.assertTrue(path.startswith("plugin://script.module.codequick/tests/test_listing/route_callback/?_pickle_="))
         self.assertTrue(isfolder)
 
     def test_close_resolver(self):
         self.listitem.set_callback(self.resolver_callback)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/resolver_callback")
+        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/resolver_callback/")
         self.assertFalse(isfolder)
 
     def test_close_url(self):
