@@ -16,7 +16,7 @@ from codequick.support import logger_id, auto_sort
 from codequick.utils import ensure_native_str
 
 __all__ = ["Route", "validate_listitems"]
-UNSET = object()
+_UNSET = object()
 
 # Logger specific to this module
 logger = logging.getLogger("%s.route" % logger_id)
@@ -86,7 +86,7 @@ class Route(Script):
         self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
         self.cache_to_disc = self.params.get(u"_cache_to_disc_", True)
         self._manual_sort = list()
-        self.content_type = None#UNSET
+        self.content_type = _UNSET
         self.autosort = True
 
     def _process_results(self, raw_listitems):
@@ -114,10 +114,12 @@ class Route(Script):
         # Guess if this directory listing is primarily a folder or video listing.
         # Listings will be considered to be a folder if more that half the listitems are folder items.
         isfolder = folder_counter > (len(listitems) / 2)
-        self.__content_type(isfolder, mediatypes)
 
         # Sets the category for skins to display modes.
         xbmcplugin.setPluginCategory(self.handle, ensure_native_str(self.category))
+
+        if self.content_type is not None:
+            self.__content_type("files" if isfolder else "videos", mediatypes)
 
         # Add sort methods only if not a folder(Video listing)
         if not isfolder:
@@ -127,11 +129,11 @@ class Route(Script):
         success = xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
         xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
 
-    def __content_type(self, isfolder, mediatypes):  # type: (bool, defaultdict) -> None
+    def __content_type(self, default_type, mediatypes):  # type: (str, defaultdict) -> None
         """Configure plugin properties, content, category and sort methods."""
 
         # See if we can guess the content_type based on the mediatypes from the listitem
-        if mediatypes and not self.content_type:
+        if mediatypes and self.content_type is _UNSET:
             if len(mediatypes) > 1:
                 from operator import itemgetter
                 # Sort mediatypes by there count, and return the highest count mediatype
@@ -144,8 +146,8 @@ class Route(Script):
                 self.content_type = mediatype + "s"
 
         # Set the add-on content type
-        content_type = self.content_type or ("files" if isfolder else "videos")
-        #xbmcplugin.setContent(self.handle, content_type)
+        content_type = self.content_type if self.content_type and self.content_type is not _UNSET else default_type
+        xbmcplugin.setContent(self.handle, content_type)
         logger.debug("Content-type: %s", content_type)
 
     def __add_sort_methods(self, sortmethods):  # type: (list) -> None
