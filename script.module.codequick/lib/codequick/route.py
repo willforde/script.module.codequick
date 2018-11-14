@@ -16,6 +16,7 @@ from codequick.support import logger_id, auto_sort
 from codequick.utils import ensure_native_str
 
 __all__ = ["Route", "validate_listitems"]
+UNSET = object()
 
 # Logger specific to this module
 logger = logging.getLogger("%s.route" % logger_id)
@@ -85,7 +86,7 @@ class Route(Script):
         self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
         self.cache_to_disc = self.params.get(u"_cache_to_disc_", True)
         self._manual_sort = list()
-        self.content_type = None
+        self.content_type = None#UNSET
         self.autosort = True
 
     def _process_results(self, raw_listitems):
@@ -115,6 +116,13 @@ class Route(Script):
         isfolder = folder_counter > (len(listitems) / 2)
         self.__content_type(isfolder, mediatypes)
 
+        # Sets the category for skins to display modes.
+        xbmcplugin.setPluginCategory(self.handle, ensure_native_str(self.category))
+
+        # Add sort methods only if not a folder(Video listing)
+        if not isfolder:
+            self.__add_sort_methods(self._manual_sort)
+
         # Pass the listitems and relevant data to kodi
         success = xbmcplugin.addDirectoryItems(self.handle, listitems, len(listitems))
         xbmcplugin.endOfDirectory(self.handle, success, self.update_listing, self.cache_to_disc)
@@ -137,15 +145,8 @@ class Route(Script):
 
         # Set the add-on content type
         content_type = self.content_type or ("files" if isfolder else "videos")
-        xbmcplugin.setContent(self.handle, content_type)
+        #xbmcplugin.setContent(self.handle, content_type)
         logger.debug("Content-type: %s", content_type)
-
-        # Sets the category for skins to display modes.
-        xbmcplugin.setPluginCategory(self.handle, ensure_native_str(self.category))
-
-        # Add sort methods only if not a folder(Video listing)
-        if not isfolder:
-            self.__add_sort_methods(self._manual_sort)
 
     def __add_sort_methods(self, sortmethods):  # type: (list) -> None
         """Add sort methods to kodi."""
