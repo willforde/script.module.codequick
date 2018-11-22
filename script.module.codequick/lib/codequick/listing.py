@@ -96,7 +96,7 @@ SEARCH = 137
 
 class Params(MutableMapping):
     def __init__(self):
-        self.raw_dict = {}
+        self.__dict__["raw_dict"] = {}
 
     def __getitem__(self, key):
         value = self.raw_dict[key]
@@ -126,6 +126,21 @@ class Params(MutableMapping):
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.raw_dict)
 
+    def __getattr__(self, name):
+        if name in self.raw_dict:
+            return self.raw_dict[name]
+        else:
+            raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__class__.__name__, name))
+
+    def __setattr__(self, name, value):
+        self.raw_dict[name] = value
+
+    def __delattr__(self, name):
+        if name in self.raw_dict:
+            del self.raw_dict[name]
+        else:
+            raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__class__.__name__, name))
+
 
 class Art(Params):
     """
@@ -152,7 +167,7 @@ class Art(Params):
 
     def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Art, self).__init__()
-        self._listitem = listitem
+        self.__dict__["_listitem"] = listitem
 
     def __setitem__(self, key, value):  # type: (str, str) -> None
         if value:
@@ -230,7 +245,7 @@ class Info(Params):
 
     def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Info, self).__init__()
-        self._listitem = listitem
+        self.__dict__["_listitem"] = listitem
 
     def __setitem__(self, key, value):
         if value is None or value == "":
@@ -326,7 +341,7 @@ class Info(Params):
 class Property(Params):
     def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Property, self).__init__()
-        self._listitem = listitem
+        self.__dict__["_listitem"] = listitem
 
     def __setitem__(self, key, value):  # type: (str, str) -> None
         if value:
@@ -365,7 +380,7 @@ class Stream(Params):
 
     def __init__(self, listitem):  # type: (xbmcgui.ListItem) -> None
         super(Stream, self).__init__()
-        self._listitem = listitem
+        self.__dict__["_listitem"] = listitem
 
     def __setitem__(self, key, value):
         if not value:
