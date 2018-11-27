@@ -453,8 +453,7 @@ class Stream(Params):
                 raise KeyError("unknown stream detail key: '{}'".format(key))
 
         # Now we are ready to send the stream info to kodi
-        if audio:  # pragma: no branch
-            self._listitem.addStreamInfo("audio", audio)
+        self._listitem.addStreamInfo("audio", audio)
         if video:
             self._listitem.addStreamInfo("video", video)
         if subtitle:
