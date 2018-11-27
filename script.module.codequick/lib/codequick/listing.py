@@ -540,6 +540,9 @@ class Listitem(object):
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
 
+        #: List of paths to subtitle files.
+        self.subtitles = []
+
         self.info = Info(listitem)
         """
         Dictionary like object for adding "infoLabels".
@@ -640,6 +643,10 @@ class Listitem(object):
             # Add mediatype if not already set
             if "mediatype" not in self.info.raw_dict and self._content_type in ("video", "music"):  # pragma: no branch
                 self.info.raw_dict["mediatype"] = self._content_type
+
+            # Set the listitem subtitles
+            if self.subtitles:
+                self.listitem.setSubtitles(self.subtitles)
 
             # Add Video Specific Context menu items
             self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
