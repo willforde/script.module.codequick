@@ -7,7 +7,7 @@ The "listitem" control is used for the creating  of item lists in Kodi.
     :exclude-members: info, art, stream, context, params, property, subtitles
 
     .. autoinstanceattribute:: subtitles
-        :annotation: = []
+        :annotation: = list()
 
     .. autoinstanceattribute:: art
         :annotation: = Art()
@@ -22,10 +22,10 @@ The "listitem" control is used for the creating  of item lists in Kodi.
         :annotation: = Context()
 
     .. autoinstanceattribute:: property
-        :annotation: = Dict()
+        :annotation: = dict()
 
     .. autoinstanceattribute:: params
-        :annotation: = Dict()
+        :annotation: = dict()
 
 .. autoclass:: codequick.listing.Art
     :members:
