@@ -4,7 +4,10 @@ The "listitem" control is used for the creating  of item lists in Kodi.
 
 .. autoclass:: codequick.listing.Listitem
     :members:
-    :exclude-members: info, art, stream, context, params, property
+    :exclude-members: info, art, stream, context, params, property, subtitles
+
+    .. autoinstanceattribute:: subtitles
+        :annotation: = []
 
     .. autoinstanceattribute:: art
         :annotation: = Art()
