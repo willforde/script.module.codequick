@@ -628,14 +628,15 @@ class Listitem(object):
     # noinspection PyProtectedMember
     def _close(self):
         callback = self.path
+        listitem = self.listitem
         if hasattr(callback, "route"):
-            self.listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
-            self.listitem.setProperty("folder", str(callback.route.is_folder).lower())
+            listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
+            listitem.setProperty("folder", str(callback.route.is_folder).lower())
             path = build_path(callback, self._args, self.params.raw_dict)
             isfolder = callback.route.is_folder
         else:
-            self.listitem.setProperty("isplayable", "true" if callback else "false")
-            self.listitem.setProperty("folder", "false")
+            listitem.setProperty("isplayable", "true" if callback else "false")
+            listitem.setProperty("folder", "false")
             path = callback
             isfolder = False
 
@@ -660,14 +661,14 @@ class Listitem(object):
             self.label = u"UNKNOWN"
 
         # Close common datasets
-        self.listitem.setPath(path)
+        listitem.setPath(path)
         self.property._close()
         self.context._close()
         self.info._close(self._content_type)
         self.art._close(isfolder)
 
         # Return a tuple compatible with 'xbmcplugin.addDirectoryItems'
-        return path, self.listitem, isfolder
+        return path, listitem, isfolder
 
     @classmethod
     def from_dict(cls, callback, label, art=None, info=None, stream=None, context=None, properties=None, params=None):
