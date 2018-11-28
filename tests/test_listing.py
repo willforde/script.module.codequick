@@ -310,7 +310,18 @@ class Context(unittest.TestCase):
         self.assertTrue(command.startswith("XBMC.RunPlugin(plugin://script.module.codequick/"
                                            "tests/test_listing/test_callback/?_pickle_="))
 
-    def test_related(self):
+    @unittest.skipIf(PY3, "only work under python 2")
+    def test_related_py2(self):
+        self.base.related(self.test_callback)
+        label, command = self.base[0]
+
+        self.assertEqual(label, "Related Videos")
+        self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
+                                  "test_callback/?_pickle_=80027d710055075f7469746c655f7101580e00000052656c61"
+                                  "74656420566964656f737102732e)")
+
+    @unittest.skipUnless(PY3, "only work under python 3")
+    def test_related_py3(self):
         self.base.related(self.test_callback)
         label, command = self.base[0]
 
