@@ -491,7 +491,9 @@ class Context(list):
         if callback.route == dispatcher.get_route():
             kwargs["_updatelisting_"] = True
 
-        self.container(callback, Script.localize(RELATED_VIDEOS), *args, **kwargs)
+        related_videos_text = Script.localize(RELATED_VIDEOS)
+        kwargs["_title_"] = related_videos_text
+        self.container(callback, related_videos_text, *args, **kwargs)
 
     def container(self, callback, label, *args, **kwargs):
         """
