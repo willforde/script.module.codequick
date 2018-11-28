@@ -315,8 +315,9 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "Related Videos")
-        self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback/)")
+        self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
+                                  "test_callback/?_pickle_=8004951f000000000000007d948c075f7469746c655f948c0e"
+                                  "52656c6174656420566964656f7394732e)")
 
     def test_related_with_params(self):
         self.base.related(self.test_callback, test=True)
