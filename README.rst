@@ -41,6 +41,7 @@ websites and passing it to Kodi.
     * Youtube.DL intergration (https://forum.kodi.tv/showthread.php?tid=200877)
     * URLQuick intergration (http://urlquick.readthedocs.io/en/stable/)
     * Youtube intergration
+    * Supports use of "reuselanguageinvoker"
 
 
 Documentation
