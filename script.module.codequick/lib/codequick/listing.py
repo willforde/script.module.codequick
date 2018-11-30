@@ -128,12 +128,12 @@ class Params(MutableMapping):
 
     def __getattr__(self, name):
         if name in self.raw_dict:
-            return self.raw_dict[name]
+            return self[name]
         else:
             raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__class__.__name__, name))
 
     def __setattr__(self, name, value):
-        self.raw_dict[name] = value
+        self[name] = value
 
     def __delattr__(self, name):
         if name in self.raw_dict:
