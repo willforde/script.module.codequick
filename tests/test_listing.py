@@ -38,19 +38,6 @@ class Params(unittest.TestCase):
         with self.assertRaises(KeyError):
             _ = self.base["test"]
 
-    def test_get_and_set_attr(self):
-        self.base.test = "data"
-        self.assertIn("test", self.base)
-        ret = self.base.test
-        print(ret)
-        print(type(ret))
-        self.assertIsInstance(ret, unicode_type)
-        self.assertEqual(ret, "data")
-
-    def test_get_attr_fail(self):
-        with self.assertRaises(AttributeError):
-            _ = self.base.test
-
     def test_deleter(self):
         self.base["test"] = "data"
         self.assertIn("test", self.base)
@@ -60,16 +47,6 @@ class Params(unittest.TestCase):
     def test_deleter_fail(self):
         with self.assertRaises(KeyError):
             del self.base["test"]
-
-    def test_deleter_attr(self):
-        self.base.test = "data"
-        self.assertIn("test", self.base)
-        del self.base.test
-        self.assertNotIn("test", self.base)
-
-    def test_deleter_attr_fail(self):
-        with self.assertRaises(AttributeError):
-            del self.base.test
 
     def test_len(self):
         self.base["test1"] = "one"
@@ -447,13 +424,6 @@ class TestListitem(unittest.TestCase):
         self.assertFalse(isfolder)
 
     def test_close_url(self):
-        self.listitem.set_callback("http://example.com/video.mkv")
-        path, raw_listitem, isfolder = self.listitem._close()
-        self.assertEqual(path, "http://example.com/video.mkv")
-        self.assertFalse(isfolder)
-
-    def test_close_subtitle(self):
-        self.listitem.subtitles.append("http://path.to/subtitle")
         self.listitem.set_callback("http://example.com/video.mkv")
         path, raw_listitem, isfolder = self.listitem._close()
         self.assertEqual(path, "http://example.com/video.mkv")
