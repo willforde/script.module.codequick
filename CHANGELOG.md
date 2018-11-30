@@ -23,6 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Youtube playlist would crash when a playlist contained duplicate videos.
 
 ### Removed
-- "__version__" from __init__.py.
+- "\_\_version__" from \_\_init__.py.
 - "Total Execution Time" check as it don't work right when using "reuselanguageinvoker".
 - "youtube.CustomRow" class as it was not used anymore.
