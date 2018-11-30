@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Ability to get and set listitem params as attributes, e.g. item.info.size = 132156
-- Subtitles can now be added to a listitem by using the "item.subtitles" list)
+- Subtitles can now be added to a listitem by using the "item.subtitles" list
 - "content_type" auto selection can now be disable by setting "plugin.content_type = None"
 - "plugin.add_sort_methods" now except a keyword only argument called "disable_autosort", to disable auto sorting.
 
