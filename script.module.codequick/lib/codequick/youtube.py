@@ -28,21 +28,13 @@ CACHEFILE = os.path.join(Route.get_info("profile"), u"_youtube-cache.sqlite")  #
 EXCEPTED_STATUS = [u"public", u"unlisted"]
 
 
-class CustomRow(sqlite3.Row):
-    def __eq__(self, y):
-        return y == self[0]
-
-    def __hash__(self):
-        return hash(self[0])
-
-
 class Database(object):
     def __init__(self):
         # Unfortunately with python 3, sqlite3.connect might fail if system local is 'c_type'(ascii)
         self.db = db = sqlite3.connect(CACHEFILE, timeout=1)
 
         db.isolation_level = None
-        db.row_factory = CustomRow
+        db.row_factory = sqlite3.Row
         self.cur = cur = db.cursor()
 
         # Performance tweaks
