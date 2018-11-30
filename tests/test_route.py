@@ -1,5 +1,5 @@
 import unittest
-from addondev.testing import plugin_data
+from addondev.testing import plugin_data, reset_plugin_data
 import xbmc
 
 from codequick.listing import Listitem
@@ -31,6 +31,7 @@ class TestGlobalLocalization(unittest.TestCase):
 
 class TestRoute(unittest.TestCase):
     def setUp(self):
+        reset_plugin_data()
         self.route = route.Route()
 
     def test_gen(self):
@@ -199,3 +200,12 @@ class TestRoute(unittest.TestCase):
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE, SORT_TITLE, SORT_GENRE, SORT_YEAR])
+
+    def test_no_content(self):
+        def route_list():
+            yield Listitem.from_dict(callback_test, "test item")
+
+        self.route.content_type = None
+        self.route._process_results(route_list())
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertIsNone(plugin_data["contenttype"])
