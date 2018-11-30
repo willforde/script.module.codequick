@@ -34,10 +34,25 @@ class Params(unittest.TestCase):
         self.assertIsInstance(ret, unicode_type)
         self.assertEqual(ret, "data")
 
+    def test_get_and_set_attr(self):
+        self.base.test = "data"
+        self.assertIn("test", self.base)
+        ret = self.base.test
+        print(ret)
+        print(type(ret))
+        self.assertIsInstance(ret, unicode_type)
+        self.assertEqual(ret, "data")
+
     def test_deleter(self):
         self.base["test"] = "data"
         self.assertIn("test", self.base)
         del self.base["test"]
+        self.assertNotIn("test", self.base)
+
+    def test_deleter_attr(self):
+        self.base.test = "data"
+        self.assertIn("test", self.base)
+        del self.base.test
         self.assertNotIn("test", self.base)
 
     def test_len(self):
