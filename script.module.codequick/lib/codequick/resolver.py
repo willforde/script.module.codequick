@@ -370,6 +370,7 @@ class Resolver(Script):
             raise RuntimeError(self.localize(NO_VIDEO))
 
         # Send playable listitem to kodi
+	listitem.setContentLookup(False)
         xbmcplugin.setResolvedUrl(self.handle, bool(resolved), listitem)
 
 
