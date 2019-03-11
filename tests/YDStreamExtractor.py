@@ -5,11 +5,23 @@ mode 2 = no video
 mode 3 = raises error
 mode 4 = warning message
 """
+import time
 mode = 0
 callback_errors = object
 
 
 class VideoInfo(object):
+    def __int__(self):
+        self.title = ''
+        self.description = ''
+        self.thumbnail = ''
+        self.webpage = ''
+        self._streams = None
+        self.sourceName = ''
+        self.info = None
+        self._selection = None
+        self.downloadID = str(time.time())
+
     def hasMultipleStreams(self):
         return mode == 1
 
