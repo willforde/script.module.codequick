@@ -11,7 +11,7 @@ callback_errors = object
 
 
 class VideoInfo(object):
-    def __int__(self):
+    def __init__(self):
         self.title = ''
         self.description = ''
         self.thumbnail = ''
