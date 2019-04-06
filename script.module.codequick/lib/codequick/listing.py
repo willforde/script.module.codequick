@@ -520,6 +520,8 @@ class Listitem(object):
 
     def __init__(self, content_type="video"):
         self._content_type = content_type
+        self.is_playable = True
+        self.is_folder = False
         self._args = None
         self.path = ""
 
@@ -598,14 +600,24 @@ class Listitem(object):
         """
         Set the "callback" object.
 
-        The "callback" object can be any registered :class:`codequick.Script<codequick.script.Script>`,
-        :class:`codequick.Route<codequick.route.Route>` or :class:`codequick.Resolver<codequick.resolver.Resolver>`
-        callback, or playable URL.
+        The "callback" object can be any of the following:
+            * :class:`codequick.Script<codequick.script.Script>` callback.
+            * :class:`codequick.Route<codequick.route.Route>` callback.
+            * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
+            * Any kodi path, e.g. "plugin://" or "script://"
+            * Directly playable URL.
+
+        .. note::
+
+            By default kodi plugin / script paths are treated as playable items.
+            To override this behavior, you can pass in the is_playable and is_folder parameters.
 
         :param callback: The "callback" or playable URL.
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         """
+        self.is_playable = kwargs.pop("is_playable", self.is_playable)
+        self.is_folder = kwargs.pop("is_folder", self.is_folder)
         self.path = callback
         self._args = args
         if kwargs:
@@ -613,18 +625,21 @@ class Listitem(object):
 
     # noinspection PyProtectedMember
     def _close(self):
-        callback = self.path
+        path = self.path
         listitem = self.listitem
-        if hasattr(callback, "route"):
-            listitem.setProperty("isplayable", str(callback.route.is_playable).lower())
-            listitem.setProperty("folder", str(callback.route.is_folder).lower())
-            path = build_path(callback, self._args, self.params.raw_dict)
-            isfolder = callback.route.is_folder
-        else:
-            listitem.setProperty("isplayable", "true" if callback else "false")
+        if hasattr(path, "route"):
+            isfolder = path.route.is_folder
+            listitem.setProperty("isplayable", str(path.route.is_playable).lower())
+            listitem.setProperty("folder", str(path.route.is_folder).lower())
+            path = build_path(path, self._args, self.params.raw_dict)
+        elif not path:
+            listitem.setProperty("isplayable", "false")
             listitem.setProperty("folder", "false")
-            path = callback
             isfolder = False
+        else:
+            listitem.setProperty("isplayable", str(self.is_playable).lower())
+            listitem.setProperty("folder", str(self.is_folder).lower())
+            isfolder = self.is_folder
 
         if not isfolder:
             # Add mediatype if not already set
