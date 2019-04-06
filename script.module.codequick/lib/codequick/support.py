@@ -269,8 +269,8 @@ class Dispatcher(object):
         """
         self.reset()
         self.parse_args()
-        logger.debug("Dispatching to route: '%s'", self.selector)
-        logger.debug("Callback parameters: '%s'", self.callback_params)
+        logger.info("Dispatching to route: '%s'", self.selector)
+        logger.info("Callback parameters: '%s'", self.callback_params)
 
         try:
             # Fetch the controling class and callback function/method

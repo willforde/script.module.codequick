@@ -612,10 +612,11 @@ class Listitem(object):
         """
         Set the "callback" object.
 
-        The "callback" object can be any of the following:
+        The "callback" parameter can be any of the following:
             * :class:`codequick.Script<codequick.script.Script>` callback.
             * :class:`codequick.Route<codequick.route.Route>` callback.
             * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
+            * The path to a callback function. i.e. "/main/menu/"
             * Any kodi path, e.g. "plugin://" or "script://"
             * Directly playable URL.
 
@@ -631,6 +632,9 @@ class Listitem(object):
         """
         self.is_folder = is_folder = kwargs.pop("is_folder", self.is_folder)
         self.is_playable = kwargs.pop("is_playable", not is_folder)
+        if callback in dispatcher.registered_routes:
+            callback = dispatcher.registered_routes[callback].callback
+
         self.path = callback
         self._args = args
         if kwargs:
