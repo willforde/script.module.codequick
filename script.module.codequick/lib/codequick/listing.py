@@ -81,7 +81,7 @@ auto_sort_add = auto_sort.add
 quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p, 1080p, 4K
 
 # Re.sub to remove formatting from label strings
-strip_formatting = re.compile("\[[^\]]+?\]").sub
+strip_formatting = re.compile(r"\[[^\]]+?\]").sub
 
 # Localized string Constants
 RELATED_VIDEOS = 32201
@@ -136,12 +136,12 @@ class Art(Params):
     """
     Dictionary like object, that allows you to add various images. e.g. "thumb", "fanart".
 
-    if "thumbnail", "fanart" or "icon"  is not set, then they will be set automaticly based on the add-on's
+    if "thumb", "fanart" or "icon"  is not set, then they will be set automaticly based on the add-on's
     fanart and icon images.
 
     .. note::
 
-        The automatic image values can be disabled by setting an empty string. e.g. item.art["thumbnail"] = "".
+        The automatic image values can be disabled by setting an empty string. e.g. item.art["thumb"] = "".
 
     .. note::
 
