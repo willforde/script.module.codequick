@@ -128,7 +128,7 @@ class Params(MutableMapping):
 
     def clean(self):
         """Remove any and all None values from the dictionary."""
-        for key in [key for key, val in self.raw_dict.items() if val is None]:
+        for key in [key for key, val in self.raw_dict.items() if not val]:
             del self.raw_dict[key]
 
 
@@ -141,7 +141,7 @@ class Art(Params):
 
     .. note::
 
-        The automatic image values can be disabled by setting them to None. e.g. item.art["thumbnail"] = None.
+        The automatic image values can be disabled by setting an empty string. e.g. item.art["thumbnail"] = "".
 
     .. note::
 
