@@ -126,12 +126,26 @@ class Params(MutableMapping):
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.raw_dict)
 
+    def clean(self):
+        """Remove any and all None values from the dictionary."""
+        for key in [key for key, val in self.raw_dict.items() if val is None]:
+            del self.raw_dict[key]
+
 
 class Art(Params):
     """
     Dictionary like object, that allows you to add various images. e.g. "thumb", "fanart".
 
-    This class inherits all methods and attributes from :class:`collections.MutableMapping`.
+    if "thumbnail", "fanart" or "icon"  is not set, then they will be set automaticly based on the add-on's
+    fanart and icon images.
+
+    .. note::
+
+        The automatic image values can be disabled by setting them to None. e.g. item.art["thumbnail"] = None.
+
+    .. note::
+
+        This class inherits all methods and attributes from :class:`collections.MutableMapping`.
 
     Expected art values are.
         * thumb
@@ -155,10 +169,7 @@ class Art(Params):
         self._listitem = listitem
 
     def __setitem__(self, key, value):  # type: (str, str) -> None
-        if value:
-            self.raw_dict[key] = ensure_native_str(value)
-        else:
-            logger.debug("Ignoring empty art value: '%s'", key)
+        self.raw_dict[key] = ensure_native_str(value)
 
     def local_thumb(self, image):
         """
@@ -195,6 +206,7 @@ class Art(Params):
         if "icon" not in self.raw_dict:  # pragma: no branch
             self.raw_dict["icon"] = "DefaultFolder.png" if isfolder else "DefaultVideo.png"
 
+        self.clean()  # Remove all None values
         self._listitem.setArt(self.raw_dict)
 
 
