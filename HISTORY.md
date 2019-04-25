@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2019-04-25
+### Added
+- Allow to disable automatic setting of fanart, thumbnail or icon images.
+- Allow for plugin paths as folders in set_callback.
+- Allow for a callback path to be passed instead of a function
+
 ## [0.9.8] - 2019-03-11
 ### Fixed
 - Dailymotion videos not working when using extract_source.
