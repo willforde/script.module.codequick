@@ -154,7 +154,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             raise RuntimeError("should not be raised")
 
-        self.dispatcher.register_delayed(root, [], {})
+        self.dispatcher.register_delayed(root, [], {}, 0)
         self.dispatcher.run_delayed()
         self.assertTrue(Executed.yes)
 
