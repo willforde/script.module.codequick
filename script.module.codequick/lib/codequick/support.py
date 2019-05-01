@@ -252,12 +252,11 @@ class Dispatcher(object):
         callback.route = route
         return callback
 
-    def register_delayed(self, func, args, kwargs):
+    def register_delayed(self, *callback):
         """Register a function that will be called later, after content has been listed."""
-        callback = (func, args, kwargs)
         self.registered_delayed.append(callback)
 
-    def run_callback(self):
+    def run_callback(self, process_errors=True):
         """
         The starting point of the add-on.
 
@@ -266,6 +265,13 @@ class Dispatcher(object):
 
         The "root" callback, is the callback that will be the initial
         starting point for the add-on.
+
+        :param bool process_errors: Enable/Disable internal error handler. (default => True)
+        :returns: Returns None if no errors were raised, or if errors were raised and process_errors is
+                  True (default) then the error Exception that was raised will be returned.
+
+        returns the error Exception if an error ocurred.
+        :rtype: Exception or None
         """
         self.reset()
         self.parse_args()
@@ -285,6 +291,12 @@ class Dispatcher(object):
                 parent_ins._process_results(results)
 
         except Exception as e:
+            self.run_delayed(True)
+            # Don't do anything with the error
+            # if process_errors is disabled
+            if not process_errors:
+                raise
+
             try:
                 msg = str(e)
             except UnicodeEncodeError:
@@ -294,15 +306,16 @@ class Dispatcher(object):
                 msg = unicode_type(e).encode("utf8")
 
             # Log the error in both the gui and the kodi log file
+            logger.critical(msg, exc_info=1)
             dialog = xbmcgui.Dialog()
             dialog.notification(e.__class__.__name__, msg, addon_data.getAddonInfo("icon"))
-            logger.critical(msg, exc_info=1)
+            return e
 
         else:
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            self.run_delayed()
+            self.run_delayed(False)
 
-    def run_delayed(self):
+    def run_delayed(self, error=False):
         """Execute all delayed callbacks, if any."""
         if self.registered_delayed:
             # Time before executing callbacks
@@ -310,12 +323,13 @@ class Dispatcher(object):
 
             # Execute in order of last in first out (LIFO).
             while self.registered_delayed:
-                func, args, kwargs = self.registered_delayed.pop()
+                func, args, kwargs, function_type = self.registered_delayed.pop()
 
-                try:
-                    func(*args, **kwargs)
-                except Exception as e:
-                    logger.exception(str(e))
+                if function_type == 2 or error == function_type:
+                    try:
+                        func(*args, **kwargs)
+                    except Exception as e:
+                        logger.exception(str(e))
 
             # Log execution time of callbacks
             logger.debug("Callbacks Execution Time: %ims", (time.time() - start_time) * 1000)

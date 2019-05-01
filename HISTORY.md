@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## unfinished
+## changed
+- Improved error handling
+- Delayed callbacks can now be set to run only when there are no errors, or only when there are errors, or run regardless of errors or not.
+
 ## [0.9.9] - 2019-04-25
 ### Added
 - Allow to disable automatic setting of fanart, thumbnail or icon images.
