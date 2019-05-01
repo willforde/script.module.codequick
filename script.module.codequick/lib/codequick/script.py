@@ -190,6 +190,12 @@ class Script(object):
             * ``0`` Only run if no errors are raised. (Default)
             * ``1`` Only run if an error has occurred.
             * ``2`` Run regardless if an error was raised or not.
+
+        .. note::
+
+            If there is an argument called exception in the delayed function callback and an error was raised,
+            then that exception argument will be set to the raised exception object.
+            Otherwise it will be set to None.
         """
         function_type = kwargs.get("function_type", 0)
         dispatcher.register_delayed(func, args, kwargs, function_type)

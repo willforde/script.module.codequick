@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## changed
 - Improved error handling
 - Delayed callbacks can now be set to run only when there are no errors, or only when there are errors, or run regardless of errors or not.
+- Delayed callbacks can now access the exception that was raised by setting an argument name to exception.
 
 ## [0.9.9] - 2019-04-25
 ### Added

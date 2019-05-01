@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 import binascii
-import logging
 import inspect
+import logging
 import pickle
 import time
 import sys
@@ -17,6 +17,12 @@ import xbmc
 
 # Package imports
 from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3, unicode_type
+
+if PY3:
+    from inspect import getfullargspec
+else:
+    # noinspection PyDeprecation
+    from inspect import getargspec as getfullargspec
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -130,11 +136,7 @@ class Route(object):
 
     def arg_names(self):  # type: () -> list
         """Return a list of argument names, positional and keyword arguments."""
-        if PY3:
-            return inspect.getfullargspec(self.function).args
-        else:
-            # noinspection PyDeprecation
-            return inspect.getargspec(self.function).args
+        return getfullargspec(self.function).args
 
     def unittest_caller(self, *args, **kwargs):
         """
@@ -291,7 +293,7 @@ class Dispatcher(object):
                 parent_ins._process_results(results)
 
         except Exception as e:
-            self.run_delayed(True)
+            self.run_delayed(e)
             # Don't do anything with the error
             # if process_errors is disabled
             if not process_errors:
@@ -313,9 +315,9 @@ class Dispatcher(object):
 
         else:
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
-            self.run_delayed(False)
+            self.run_delayed()
 
-    def run_delayed(self, error=False):
+    def run_delayed(self, exception=None):
         """Execute all delayed callbacks, if any."""
         if self.registered_delayed:
             # Time before executing callbacks
@@ -324,8 +326,11 @@ class Dispatcher(object):
             # Execute in order of last in first out (LIFO).
             while self.registered_delayed:
                 func, args, kwargs, function_type = self.registered_delayed.pop()
+                if function_type == 2 or bool(exception) == function_type:
+                    # Add raised exception to callback if requested
+                    if "exception" in getfullargspec(func).args:
+                        kwargs["exception"] = exception
 
-                if function_type == 2 or error == function_type:
                     try:
                         func(*args, **kwargs)
                     except Exception as e:
