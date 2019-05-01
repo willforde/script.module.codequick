@@ -210,9 +210,9 @@ class Dispatcher(object):
         self.params.clear()
         auto_sort.clear()
 
-    def parse_args(self):
+    def parse_args(self, redirect=None):
         """Extract arguments given by Kodi"""
-        _, _, route, raw_params, _ = urlparse.urlsplit(sys.argv[0] + sys.argv[2])
+        _, _, route, raw_params, _ = urlparse.urlsplit(redirect if redirect else sys.argv[0] + sys.argv[2])
         self.selector = route if len(route) > 1 else "root"
         self.handle = int(sys.argv[1])
 
@@ -258,7 +258,8 @@ class Dispatcher(object):
         """Register a function that will be called later, after content has been listed."""
         self.registered_delayed.append(callback)
 
-    def run_callback(self, process_errors=True):
+    # noinspection PyIncorrectDocstring
+    def run_callback(self, process_errors=True, redirect=None):
         """
         The starting point of the add-on.
 
@@ -276,7 +277,7 @@ class Dispatcher(object):
         :rtype: Exception or None
         """
         self.reset()
-        self.parse_args()
+        self.parse_args(redirect)
         logger.debug("Dispatching to route: '%s'", self.selector)
         logger.debug("Callback parameters: '%s'", self.callback_params)
 
@@ -284,13 +285,14 @@ class Dispatcher(object):
             # Fetch the controling class and callback function/method
             route = self.get_route()
             execute_time = time.time()
+            redirect = None
 
             # Initialize controller and execute callback
             parent_ins = route.parent()
             results = route.function(parent_ins, **self.callback_params)
             if hasattr(parent_ins, "_process_results"):
                 # noinspection PyProtectedMember
-                parent_ins._process_results(results)
+                redirect = parent_ins._process_results(results)
 
         except Exception as e:
             self.run_delayed(e)
@@ -316,6 +318,8 @@ class Dispatcher(object):
         else:
             logger.debug("Route Execution Time: %ims", (time.time() - execute_time) * 1000)
             self.run_delayed()
+            if redirect:
+                self.run_callback(process_errors, redirect)
 
     def run_delayed(self, exception=None):
         """Execute all delayed callbacks, if any."""

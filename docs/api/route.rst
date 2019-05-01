@@ -12,6 +12,17 @@ This module is used for the creation of “Route callbacks”.
 
         .. note::  If autosort is disabled and no sortmethods are given, then SORT_METHOD_UNSORTED will be set.
 
+    .. attribute:: category
+
+        Manualy specifiy the category for the current folder view.
+        Equivalent to setting ``xbmcplugin.setPluginCategory()``
+
+    .. attribute:: redirect_single_item
+        :annotation: = False
+
+        When this attribute is set to ``True`` and there is only one folder listitem available in the folder view,
+        then that listitem will be automaticly called for you.
+
     .. attribute:: update_listing
         :annotation: = False
 
