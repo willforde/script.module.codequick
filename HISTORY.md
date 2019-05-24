@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## unfinished
+## [0.9.10] - 2019-05-24
 ## changed
 - Improved error handling
 - Delayed callbacks can now be set to run only when there are no errors, or only when there are errors, or run regardless of errors or not.
 - Delayed callbacks can now access the exception that was raised by setting an argument name to exception.
+
+### Added
+- Added support to auto redirect to the first listitem if there is only one single listitem
 
 ## [0.9.9] - 2019-04-25
 ### Added
