@@ -689,7 +689,18 @@ class Listitem(object):
         return path, listitem, isfolder
 
     @classmethod
-    def from_dict(cls, callback, label, art=None, info=None, stream=None, context=None, properties=None, params=None):
+    def from_dict(
+            cls,
+            callback,
+            label,
+            art=None,
+            info=None,
+            stream=None,
+            context=None,
+            properties=None,
+            params=None,
+            subtitles=None
+    ):
         """
         Constructor to create a "listitem".
 
@@ -704,6 +715,7 @@ class Listitem(object):
         :param list context: List of "context menu" item(s) containing "tuples" of ("label", "command") pairs.
         :param dict properties: Dictionary of listitem properties.
         :param dict params: Dictionary of parameters that will be passed to the "callback" function.
+        :param list subtitles: List of paths to subtitle files.
 
         :return: A listitem object.
         :rtype: Listitem
@@ -729,6 +741,8 @@ class Listitem(object):
             item.property.update(properties)
         if context:  # pragma: no branch
             item.context.extend(context)
+        if subtitles:  # pragma: no branch
+            item.subtitles.extend(subtitles)
 
         return item
 
