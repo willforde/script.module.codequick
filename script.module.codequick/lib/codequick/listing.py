@@ -7,6 +7,9 @@ import logging
 import os
 import re
 
+# Fix attemp for 
+import _strptime
+
 # Kodi imports
 import xbmcplugin
 import xbmcgui
