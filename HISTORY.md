@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.9.11] - 2020-02-21
+## Fixed
+- Attempt fix for 'import _strptime' failure.
+
 ## [0.9.10] - 2019-05-24
-## changed
+## Changed
 - Improved error handling
 - Delayed callbacks can now be set to run only when there are no errors, or only when there are errors, or run regardless of errors or not.
 - Delayed callbacks can now access the exception that was raised by setting an argument name to exception.
