@@ -244,7 +244,7 @@ class Dispatcher(object):
         # Attempt to import the module where the route
         # is located if it's not already registered
         if path not in self.registered_routes:
-            module_path = ".".join(path.strip("/").split("/")[:-1])
+            module_path = "resources.lib.main" if path == "root" else ".".join(path.strip("/").split("/")[:-1])
             logger.debug("Attempting to import route: %s", module_path)
             try:
                 importlib.import_module(module_path)
