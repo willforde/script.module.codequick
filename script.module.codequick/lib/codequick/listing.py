@@ -7,7 +7,7 @@ import logging
 import os
 import re
 
-# Fix attemp for 
+# Fix attemp for
 import _strptime
 
 # Kodi imports
@@ -816,6 +816,8 @@ class Listitem(object):
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         :raises ValueError: If the given "callback" function does not have a ``search_query`` parameter.
         """
+        from codequick.search import SavedSearches
+
         # Check that callback function has required parameter(search_query)
         if "search_query" not in callback.route.arg_names():
             raise ValueError("callback function is missing required argument: 'search_query'")
@@ -849,20 +851,17 @@ class Listitem(object):
             >>> item = Listitem()
             >>> item.youtube("UC4QZ_LsYcvcq7qOsOhpAX4A")
         """
+        from codequick.youtube import Playlist
+
         # Youtube exists, Creating listitem link
         item = cls()
         item.label = label if label else bold(Script.localize(ALLVIDEOS))
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
-        item.set_callback(YTPlaylist)
+        item.set_callback(Playlist)
         return item
 
     def __repr__(self):
         """Returns representation of the object."""
         return "{}('{}')".format(self.__class__.__name__, ensure_native_str(self.label))
-
-
-# Import callback functions required for listitem constructs
-from codequick.youtube import Playlist as YTPlaylist
-from codequick.search import SavedSearches

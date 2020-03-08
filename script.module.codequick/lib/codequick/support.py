@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 # Standard Library Imports
+import importlib
 import binascii
 import inspect
 import logging
@@ -35,6 +36,13 @@ logger = logging.getLogger("%s.support" % logger_id)
 
 # Listitem auto sort methods
 auto_sort = set()
+
+
+class RouteMissing(KeyError):
+    """
+    Exception class that is raisd when no
+    route is found in the registered routes.
+    """
 
 
 class LoggingMap(dict):
@@ -231,7 +239,21 @@ class Dispatcher(object):
 
     def get_route(self, path=None):  # type: (str) -> Route
         """Return the given route object."""
-        return self.registered_routes[path if path else self.selector]
+        path = path if path else self.selector
+
+        # Attempt to import the module where the route
+        # is located if it's not already registered
+        if path not in self.registered_routes:
+            module_path = ".".join(path.strip("/").split("/")[:-1])
+            logger.debug("Attempting to import route: %s", module_path)
+            try:
+                importlib.import_module(module_path)
+            except ModuleNotFoundError:
+                raise RouteMissing("unable to import route module")
+        try:
+            return self.registered_routes[path]
+        except KeyError:
+            raise RouteMissing(path)
 
     def register_callback(self, callback, parent):
         """
