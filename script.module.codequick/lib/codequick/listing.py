@@ -6,6 +6,7 @@ from time import strptime, strftime
 import logging
 import os
 import re
+import types
 
 # Fix attemp for
 import _strptime
@@ -636,6 +637,12 @@ class Listitem(object):
         self.is_folder = is_folder = kwargs.pop("is_folder", self.is_folder)
         self.is_playable = kwargs.pop("is_playable", not is_folder)
         if callback in dispatcher.registered_routes:
+            callback = dispatcher.registered_routes[callback].callback
+
+        # Handle case where callback is a full path to a callback function (i.e. "/resources/lib/foo/boo/")
+        # but not registered yet because in another python file that the current one
+        elif not isinstance(callback, types.FunctionType) and self.is_folder:
+            dispatcher.get_route(callback)
             callback = dispatcher.registered_routes[callback].callback
 
         self.path = callback
