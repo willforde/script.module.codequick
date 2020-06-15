@@ -6,7 +6,6 @@ from time import strptime, strftime
 import logging
 import os
 import re
-import types
 
 # Fix attemp for
 import _strptime
@@ -17,7 +16,7 @@ import xbmcgui
 
 # Package imports
 from codequick.script import Script
-from codequick.support import auto_sort, build_path, logger_id, dispatcher
+from codequick.support import auto_sort, build_path, logger_id, dispatcher, Route
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
 
 if PY3:
@@ -620,13 +619,13 @@ class Listitem(object):
             * :class:`codequick.Script<codequick.script.Script>` callback.
             * :class:`codequick.Route<codequick.route.Route>` callback.
             * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
-            * The path to a callback function. i.e. "/main/menu/"
+            * The path to a callback function. i.e. "/resources/lib/main/video_list/"
             * Any kodi path, e.g. "plugin://" or "script://"
             * Directly playable URL.
 
         .. note::
 
-            By default kodi plugin / script paths are treated as playable items.
+            When specifying a external plugin / script path as a callback, Kodi treats it as a playable item by default.
             To override this behavior, you can pass in the ``is_playable`` and ``is_folder`` parameters.
             If only ``is_folder`` is given, then ``is_playable`` will default to ``not is_folder``.
 
@@ -634,16 +633,15 @@ class Listitem(object):
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         """
-        self.is_folder = is_folder = kwargs.pop("is_folder", self.is_folder)
-        self.is_playable = kwargs.pop("is_playable", not is_folder)
-        if callback in dispatcher.registered_routes:
-            callback = dispatcher.registered_routes[callback].callback
+        if not hasattr(callback, "route"):
+            # Only used for external plugin / script paths, ignored otherwise
+            self.is_folder = is_folder = kwargs.pop("is_folder", self.is_folder)
+            self.is_playable = kwargs.pop("is_playable", not is_folder)
 
-        # Handle case where callback is a full path to a callback function (i.e. "/resources/lib/foo/boo/")
-        # but not registered yet because in another python file that the current one
-        elif not isinstance(callback, types.FunctionType) and self.is_folder:
-            dispatcher.get_route(callback)
-            callback = dispatcher.registered_routes[callback].callback
+            # We don't have a plugin / http path,
+            # So we should then have a callback path
+            if "://" not in callback:
+                callback = dispatcher.get_route(callback).callback
 
         self.path = callback
         self._args = args
@@ -654,16 +652,19 @@ class Listitem(object):
     def _close(self):
         path = self.path
         listitem = self.listitem
+        # When we have a callback function
         if hasattr(path, "route"):
             isfolder = path.route.is_folder
             listitem.setProperty("isplayable", str(path.route.is_playable).lower())
             listitem.setProperty("folder", str(path.route.is_folder).lower())
             path = build_path(path, self._args, self.params.raw_dict)
+        # When we have a blank listitem that does nothing
         elif not path:
             listitem.setProperty("isplayable", "false")
             listitem.setProperty("folder", "false")
             isfolder = False
         else:
+            # Directly playable item or plugin path that calls another addon.
             listitem.setProperty("isplayable", str(self.is_playable).lower())
             listitem.setProperty("folder", str(self.is_folder).lower())
             isfolder = self.is_folder
@@ -823,21 +824,24 @@ class Listitem(object):
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         :raises ValueError: If the given "callback" function does not have a ``search_query`` parameter.
         """
-        from codequick.search import SavedSearches
+        if hasattr(callback, "route"):
+            route = callback
+        else:
+            route = dispatcher.get_route(callback)
 
         # Check that callback function has required parameter(search_query)
-        if "search_query" not in callback.route.arg_names():
+        if "search_query" not in route.arg_names():
             raise ValueError("callback function is missing required argument: 'search_query'")
 
         if args:
             # Convert positional arguments to keyword arguments
-            callback.route.args_to_kwargs(args, kwargs)
+            route.args_to_kwargs(args, kwargs)
 
         item = cls()
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback(SavedSearches, _route=callback.route.path, first_load=True, **kwargs)
+        item.set_callback("/codequick/search/savedsearches/", _route=route.path, first_load=True, **kwargs)
         return item
 
     @classmethod

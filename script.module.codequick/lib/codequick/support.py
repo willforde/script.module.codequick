@@ -248,8 +248,8 @@ class Dispatcher(object):
             logger.debug("Attempting to import route: %s", module_path)
             try:
                 importlib.import_module(module_path)
-            except ModuleNotFoundError:
-                raise RouteMissing("unable to import route module")
+            except ImportError:
+                raise RouteMissing("unable to import route module: %s" % module_path)
         try:
             return self.registered_routes[path]
         except KeyError:
@@ -380,7 +380,10 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     """
 
     # Set callback to current callback if not given
-    route = callback.route if callback else dispatcher.get_route()
+    if callback and hasattr(callback, "route"):
+        route = callback.route
+    else:
+        route = dispatcher.get_route(callback)
 
     # Convert args to keyword args if required
     if args:
