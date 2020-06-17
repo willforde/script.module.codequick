@@ -825,7 +825,7 @@ class Listitem(object):
         :raises ValueError: If the given "callback" function does not have a ``search_query`` parameter.
         """
         if hasattr(callback, "route"):
-            route = callback
+            route = callback.route
         else:
             route = dispatcher.get_route(callback)
 
