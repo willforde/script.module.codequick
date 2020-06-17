@@ -53,8 +53,8 @@ class Testcallbacks(unittest.TestCase):
         self.assertGreaterEqual(len(ret), 10)
 
     def test_playlist_unlisted(self):
-        ret = route_caller(youtube.Playlist, "PLCnUnV3yCIYt_cgn_1UIU1w2YQ_TfFa6L")
-        self.assertGreaterEqual(len(ret), 15)
+        ret = route_caller(youtube.Playlist, "PLh6dr2Pr1VQnPdF29tkfQPgCBJPFnKYEV")
+        self.assertGreaterEqual(len(ret), 17)
 
     def test_playlist_playlist_muilti_page(self):
         ret = route_caller(youtube.Playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=False)
@@ -79,11 +79,6 @@ class Testcallbacks(unittest.TestCase):
     def test_playlists_disable_all_link(self):
         ret = route_caller(youtube.Playlists, "UCaWd5_7JhbQBe4dknZhsHJg", show_all=False)
         self.assertGreaterEqual(len(ret), 50)
-
-    @unittest.skip
-    def test_playvideo(self):
-        ret = youtube.play_video.test("-QEXPO9zgX8")
-        self.assertEqual(ret, "plugin://plugin.video.youtube/play/?video_id=-QEXPO9zgX8")
 
     def test_bad_channel_id(self):
         with self.assertRaises(KeyError):

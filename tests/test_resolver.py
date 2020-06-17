@@ -77,11 +77,11 @@ class TestResolver(unittest.TestCase):
     def test_custom_listitem(self):
         item = custom_listitem()
         item.label = "test"
-        item.set_callback(u"test.mkv")
+        item.set_callback(u"http://test.mkv")
 
         self.resolver._process_results(item)
         self.assertTrue(plugin_data["succeeded"])
-        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(plugin_data["resolved"]["path"], u"http://test.mkv")
 
     def test_list_single(self):
         del plugin_data["playlist"][:]
@@ -192,11 +192,11 @@ class TestResolver(unittest.TestCase):
 
         item = custom_listitem()
         item.label = "test"
-        item.set_callback(u"test.mkv")
+        item.set_callback(u"http://test.mkv")
 
         self.resolver._process_results([item])
         self.assertTrue(plugin_data["succeeded"])
-        self.assertEqual(plugin_data["resolved"]["path"], u"test.mkv")
+        self.assertEqual(plugin_data["resolved"]["path"], u"http://test.mkv")
 
     @temp_callback
     def test_create_loopback(self):

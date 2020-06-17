@@ -95,7 +95,7 @@ class TestRoute(unittest.TestCase):
         del plugin_data["sortmethods"][:]
 
         def route_list():
-            yield Listitem.from_dict("season one", "test.mkv")
+            yield Listitem.from_dict("http://season one", "test.mkv")
 
         self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
@@ -106,7 +106,7 @@ class TestRoute(unittest.TestCase):
         del plugin_data["sortmethods"][:]
 
         def route_list():
-            item = Listitem.from_dict("season one", "test.mkv")
+            item = Listitem.from_dict("http://season one", "test.mkv")
             item.info.date("june 27, 2017", "%B %d, %Y")
             yield item
 
@@ -119,7 +119,7 @@ class TestRoute(unittest.TestCase):
         del plugin_data["sortmethods"][:]
 
         def route_list():
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
         self.route._process_results(route_list())
         self.assertTrue(plugin_data["succeeded"])
@@ -131,7 +131,7 @@ class TestRoute(unittest.TestCase):
 
         def route_list(plugin):
             plugin.autosort = False
-            yield Listitem.from_dict("season one", "test.mkv")
+            yield Listitem.from_dict("http://season one", "test.mkv")
 
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
@@ -143,7 +143,7 @@ class TestRoute(unittest.TestCase):
 
         def route_list(plugin):
             plugin.autosort = False
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
@@ -156,7 +156,7 @@ class TestRoute(unittest.TestCase):
         def route_list(plugin):
             plugin.autosort = False
             plugin.add_sort_methods(3)
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
@@ -168,7 +168,7 @@ class TestRoute(unittest.TestCase):
 
         def route_list(plugin):
             plugin.add_sort_methods(3, disable_autosort=True)
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
@@ -180,7 +180,7 @@ class TestRoute(unittest.TestCase):
 
         def route_list(plugin):
             plugin.add_sort_methods(SORT_DATE)
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
         self.route._process_results(route_list(self.route))
         self.assertTrue(plugin_data["succeeded"])
@@ -192,8 +192,8 @@ class TestRoute(unittest.TestCase):
 
         def route_list(plugin):
             plugin.add_sort_methods(SORT_DATE)
-            yield Listitem.from_dict("season one", "test.mkv", info={"genre": "test"})
-            item = Listitem.from_dict("season one", "test.mkv")
+            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
+            item = Listitem.from_dict("http://season one", "test.mkv")
             item.info.date("june 27, 2017", "%B %d, %Y")
             yield item
 
