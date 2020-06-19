@@ -629,6 +629,10 @@ class Listitem(object):
             To override this behavior, you can pass in the ``is_playable`` and ``is_folder`` parameters.
             If only ``is_folder`` is given, then ``is_playable`` will default to ``not is_folder``.
 
+        .. note::
+
+            If callback is a file path, use listitem.path instead of set_callback()
+
         :param callback: The "callback" or playable URL.
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
