@@ -5,12 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.9.11] - 2020-02-21
-## Fixed
+## [0.9.12] - 2020-06-19
+### Fixed
 - Attempt fix for 'import _strptime' failure.
 
+### Changed
+- Run method now returns the exception that was raise when error occurs
+- 'set_callback' now excepts a path to a callback.
+- No need to always import callback modules. Modules are auto loaded based on the specified path.
+
+
 ## [0.9.10] - 2019-05-24
-## Changed
+### Changed
 - Improved error handling
 - Delayed callbacks can now be set to run only when there are no errors, or only when there are errors, or run regardless of errors or not.
 - Delayed callbacks can now access the exception that was raised by setting an argument name to exception.
