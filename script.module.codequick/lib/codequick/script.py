@@ -12,7 +12,7 @@ import xbmc
 
 # Package imports
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, string_map
-from codequick.support import dispatcher, script_data, addon_data, logger_id
+from codequick.support import dispatcher, script_data, addon_data, logger_id, CallbackRef
 
 __all__ = ["Script", "Settings"]
 
@@ -158,6 +158,10 @@ class Script(object):
     def __init__(self):
         self._title = self.params.get(u"_title_", u"")
         self.handle = dispatcher.handle
+
+    @classmethod
+    def ref(cls, path):
+        return CallbackRef(path, cls.is_folder, cls.is_playable)
 
     @classmethod
     def register(cls, callback):

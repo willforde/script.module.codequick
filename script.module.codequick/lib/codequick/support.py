@@ -96,7 +96,16 @@ class KodiLogHandler(logging.Handler):
             xbmc.log("###### debug ######", xbmc.LOGWARNING)
 
 
-class Route(object):
+class CallbackRef(object):
+    __slots__ = ("path", "is_playable", "is_folder")
+
+    def __init__(self, path, is_folder, is_playable=None):
+        self.path = path.replace(":", "/")
+        self.is_folder = is_folder
+        self.is_playable = not is_folder if is_playable is None else is_playable
+
+
+class Route(CallbackRef):
     """
     Handle callback route data.
 
@@ -111,7 +120,7 @@ class Route(object):
     :ivar parent: The parent class that will handle the response from callback.
     :ivar str path: The route path to func/class.
     """
-    __slots__ = ("parent", "function", "callback", "path", "is_playable", "is_folder")
+    __slots__ = ("parent", "function", "callback")
 
     def __eq__(self, other):
         return self.path == other.path
@@ -131,20 +140,8 @@ class Route(object):
             self.function = callback
             callback.test = self.unittest_caller
 
-        self.is_playable = parent.is_playable
-        self.is_folder = parent.is_folder
+        super(Route, self).__init__(path, parent.is_folder, parent.is_playable)
         self.callback = callback
-        self.path = path
-
-    def args_to_kwargs(self, args, kwargs):  # type: (tuple, dict) -> None
-        """Convert positional arguments to keyword arguments and merge into callback parameters."""
-        callback_args = self.arg_names()[1:]
-        arg_map = zip(callback_args, args)
-        kwargs.update(arg_map)
-
-    def arg_names(self):  # type: () -> list
-        """Return a list of argument names, positional and keyword arguments."""
-        return getfullargspec(self.function).args
 
     def unittest_caller(self, *args, **kwargs):
         """
@@ -168,7 +165,7 @@ class Route(object):
         # Update support params with the params
         # that are to be passed to callback
         if args:
-            self.args_to_kwargs(args, dispatcher.params)
+            kwargs["_args_"] = args
 
         if kwargs:
             dispatcher.params.update(kwargs)
@@ -311,7 +308,8 @@ class Dispatcher(object):
 
             # Initialize controller and execute callback
             parent_ins = route.parent()
-            results = route.function(parent_ins, **self.callback_params)
+            arg_params = self.params.get("_args_", [])
+            results = route.function(parent_ins, *arg_params, **self.callback_params)
             if hasattr(parent_ins, "_process_results"):
                 # noinspection PyProtectedMember
                 redirect = parent_ins._process_results(results)
@@ -380,14 +378,16 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     """
 
     # Set callback to current callback if not given
-    if callback and hasattr(callback, "route"):
+    if isinstance(callback, CallbackRef):
+        route = callback
+    elif callback and hasattr(callback, "route"):
         route = callback.route
     else:
         route = dispatcher.get_route(callback)
 
     # Convert args to keyword args if required
     if args:
-        route.args_to_kwargs(args, query)
+        query["_args_"] = args
 
     # If extra querys are given then append the
     # extra querys to the current set of querys

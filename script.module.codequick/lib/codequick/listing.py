@@ -16,7 +16,7 @@ import xbmcgui
 
 # Package imports
 from codequick.script import Script
-from codequick.support import auto_sort, build_path, logger_id, dispatcher, Route
+from codequick.support import auto_sort, build_path, logger_id, dispatcher, CallbackRef
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
 
 if PY3:
@@ -535,10 +535,10 @@ class Listitem(object):
 
     def __init__(self, content_type="video"):
         self._content_type = content_type
-        self.is_playable = True
-        self.is_folder = False
+        self._is_playable = False
+        self._is_folder = False
         self._args = None
-        self.path = ""
+        self._path = ""
 
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
@@ -611,67 +611,67 @@ class Listitem(object):
         self.params["_title_"] = unformatted_label
         self.info["title"] = unformatted_label
 
+    def set_path(self, path, is_folder=False, is_playable=True):
+        """
+        Set the listitem's path.
+
+        The path can be any of the following:
+            * Any kodi path, e.g. "plugin://" or "script://"
+            * Directly playable URL or filepath.
+
+        .. note::
+
+            When specifying a external 'plugin' or 'script' as the path, Kodi will treat it as a playable item.
+            To override this behavior, you can set the ``is_playable`` and ``is_folder`` parameters.
+
+        :param path: A playable URL or plugin/script path.
+        :param is_folder: Tells kodi if path is a folder (default -> ``False``).
+        :param is_playable: Tells kodi if path is a playable item (default -> ``True``).
+        """
+        self._path = path
+        self._is_folder = is_folder
+        self._is_playable = False if path.startswith("script://") else is_playable
+
     def set_callback(self, callback, *args, **kwargs):
         """
-        Set the "callback" object.
+        Set the "callback" function for this listitem.
 
         The "callback" parameter can be any of the following:
             * :class:`codequick.Script<codequick.script.Script>` callback.
             * :class:`codequick.Route<codequick.route.Route>` callback.
             * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
             * The path to a callback function. i.e. "/resources/lib/main/video_list/"
-            * Any kodi path, e.g. "plugin://" or "script://"
-            * Directly playable URL.
-
-        .. note::
-
-            When specifying a external plugin / script path as a callback, Kodi treats it as a playable item by default.
-            To override this behavior, you can pass in the ``is_playable`` and ``is_folder`` parameters.
-            If only ``is_folder`` is given, then ``is_playable`` will default to ``not is_folder``.
-
-        .. note::
-
-            If callback is a file path, use listitem.path instead of set_callback()
 
         :param callback: The "callback" or playable URL.
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         """
-        if not hasattr(callback, "route"):
-            # Only used for external plugin / script paths, ignored otherwise
-            self.is_folder = is_folder = kwargs.pop("is_folder", self.is_folder)
-            self.is_playable = kwargs.pop("is_playable", not is_folder)
-
+        if hasattr(callback, "route"):
+            callback = callback.route
+        elif not isinstance(callback, CallbackRef):
             # We don't have a plugin / http path,
             # So we should then have a callback path
             if "://" not in callback:
-                callback = dispatcher.get_route(callback).callback
+                callback = dispatcher.get_route(callback)
+            else:
+                is_folder = kwargs.pop("is_folder", False)
+                is_playable = kwargs.pop("is_playable", not is_folder)
+                self.set_path(callback, is_folder, is_playable)
+                return
 
-        self.path = callback
+        self.params.update(kwargs)
+        self._is_playable = callback.is_playable
+        self._is_folder = callback.is_folder
+        self._path = callback
         self._args = args
-        if kwargs:
-            self.params.update(kwargs)
 
     # noinspection PyProtectedMember
     def _close(self):
-        path = self.path
         listitem = self.listitem
-        # When we have a callback function
-        if hasattr(path, "route"):
-            isfolder = path.route.is_folder
-            listitem.setProperty("isplayable", str(path.route.is_playable).lower())
-            listitem.setProperty("folder", str(path.route.is_folder).lower())
-            path = build_path(path, self._args, self.params.raw_dict)
-        # When we have a blank listitem that does nothing
-        elif not path:
-            listitem.setProperty("isplayable", "false")
-            listitem.setProperty("folder", "false")
-            isfolder = False
-        else:
-            # Directly playable item or plugin path that calls another addon.
-            listitem.setProperty("isplayable", str(self.is_playable).lower())
-            listitem.setProperty("folder", str(self.is_folder).lower())
-            isfolder = self.is_folder
+        isfolder = self._is_folder
+        listitem.setProperty("folder", str(isfolder).lower())
+        listitem.setProperty("isplayable", str(self._is_playable).lower())
+        path = build_path(self._path, self._args, self.params.raw_dict) if isinstance(self._path, CallbackRef) else self._path
 
         if not isfolder:
             # Add mediatype if not already set
@@ -826,26 +826,22 @@ class Listitem(object):
         :param callback: Function that will be called when the "listitem" is activated.
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
-        :raises ValueError: If the given "callback" function does not have a ``search_query`` parameter.
         """
         if hasattr(callback, "route"):
             route = callback.route
+        elif isinstance(callback, CallbackRef):
+            route = callback
         else:
             route = dispatcher.get_route(callback)
 
-        # Check that callback function has required parameter(search_query)
-        if "search_query" not in route.arg_names():
-            raise ValueError("callback function is missing required argument: 'search_query'")
-
-        if args:
-            # Convert positional arguments to keyword arguments
-            route.args_to_kwargs(args, kwargs)
+        kwargs["first_load"] = True
+        kwargs["_route"] = route.path
 
         item = cls()
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback("/codequick/search/savedsearches/", _route=route.path, first_load=True, **kwargs)
+        item.set_callback(CallbackRef("/codequick/search/savedsearches/", is_folder=True), *args, **kwargs)
         return item
 
     @classmethod
@@ -866,15 +862,13 @@ class Listitem(object):
             >>> item = Listitem()
             >>> item.youtube("UC4QZ_LsYcvcq7qOsOhpAX4A")
         """
-        from codequick.youtube import Playlist
-
         # Youtube exists, Creating listitem link
         item = cls()
         item.label = label if label else bold(Script.localize(ALLVIDEOS))
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
-        item.set_callback(Playlist)
+        item.set_callback(CallbackRef("/codequick/youtube/playlist/", is_folder=True))
         return item
 
     def __repr__(self):
