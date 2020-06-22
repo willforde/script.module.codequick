@@ -100,9 +100,12 @@ class CallbackRef(object):
     __slots__ = ("path", "is_playable", "is_folder")
 
     def __init__(self, path, is_folder, is_playable=None):
-        self.path = path.replace(":", "/")
+        self.path = path.rstrip("/").replace(":", "/")
         self.is_folder = is_folder
         self.is_playable = not is_folder if is_playable is None else is_playable
+
+    def __eq__(self, other):
+        return self.path == other.path
 
 
 class Route(CallbackRef):
@@ -121,9 +124,6 @@ class Route(CallbackRef):
     :ivar str path: The route path to func/class.
     """
     __slots__ = ("parent", "function", "callback")
-
-    def __eq__(self, other):
-        return self.path == other.path
 
     def __init__(self, callback, parent, path):
         # Register a class callback
@@ -236,7 +236,7 @@ class Dispatcher(object):
 
     def get_route(self, path=None):  # type: (str) -> Route
         """Return the given route object."""
-        path = path if path else self.selector
+        path = path.rstrip("/") if path else self.selector
 
         # Attempt to import the module where the route
         # is located if it's not already registered
@@ -263,7 +263,7 @@ class Dispatcher(object):
         # Construct route path
         path = callback.__name__.lower()
         if path != "root":
-            path = "/{}/{}/".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
+            path = "/{}/{}".format(callback.__module__.strip("_").replace(".", "/"), callback.__name__).lower()
 
         # Register callback
         if path in self.registered_routes:

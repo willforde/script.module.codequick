@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 from time import strptime, strftime
+import warnings
 import logging
 import os
 import re
@@ -488,7 +489,8 @@ class Context(list):
         :param kwargs: [opt] "Keyword" arguments that will be passed to the callback.
         """
         # Add '_updatelisting_ = True' to callback params if called from the same callback as is given here
-        if callback.route == dispatcher.get_route():
+        path = callback.path if isinstance(callback, CallbackRef) else callback.route.path
+        if path == dispatcher.get_route().path:
             kwargs["_updatelisting_"] = True
 
         related_videos_text = Script.localize(RELATED_VIDEOS)
@@ -640,9 +642,9 @@ class Listitem(object):
             * :class:`codequick.Script<codequick.script.Script>` callback.
             * :class:`codequick.Route<codequick.route.Route>` callback.
             * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
-            * The path to a callback function. i.e. "/resources/lib/main/video_list/"
+            * A callback reference object.
 
-        :param callback: The "callback" or playable URL.
+        :param callback: The "callback" function or reference object.
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
         """
@@ -652,8 +654,12 @@ class Listitem(object):
             # We don't have a plugin / http path,
             # So we should then have a callback path
             if "://" not in callback:
+                msg = "passing callback path to 'set_callback' is deprecated, use Route.ref instead"
+                warnings.warn(msg, DeprecationWarning)
                 callback = dispatcher.get_route(callback)
             else:
+                msg = "passing a playable / plugin path to 'set_callback' is deprecated, use 'set_path' instead"
+                warnings.warn(msg, DeprecationWarning)
                 is_folder = kwargs.pop("is_folder", False)
                 is_playable = kwargs.pop("is_playable", not is_folder)
                 self.set_path(callback, is_folder, is_playable)
@@ -741,8 +747,12 @@ class Listitem(object):
             >>> listitem = Listitem.from_dict(**item)
         """
         item = cls()
-        item.set_callback(callback)
         item.label = label
+
+        if hasattr(callback, "route") or isinstance(callback, CallbackRef):
+            item.set_callback(callback)
+        else:
+            item.set_path(callback)
 
         if params:  # pragma: no branch
             item.params.update(params)
@@ -766,8 +776,8 @@ class Listitem(object):
         """
         Constructor for adding link to "Next Page" of content.
 
-        The current running "callback" will be called with all of the parameters that are given here.
-        You can also specify which "callback" will be called by setting a keywork only argument called 'callback'.
+        By default the current running "callback" will be called with all of the parameters that are given here.
+        You can specify which "callback" will be called by setting a keyword only argument called 'callback'.
 
         :param args: "Positional" arguments that will be passed to the callback.
         :param kwargs: "Keyword" arguments that will be passed to the callback.
@@ -777,8 +787,7 @@ class Listitem(object):
             >>> item.next_page(url="http://example.com/videos?page2")
         """
         # Current running callback
-        callback = dispatcher.get_route().callback
-        callback = kwargs.pop("callback", callback)
+        callback = kwargs.pop("callback") if "callback" in kwargs else dispatcher.get_route().callback
 
         # Add support params to callback params
         kwargs["_updatelisting_"] = True if u"_nextpagecount_" in dispatcher.params else False
@@ -841,7 +850,7 @@ class Listitem(object):
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback(CallbackRef("/codequick/search/savedsearches/", is_folder=True), *args, **kwargs)
+        item.set_callback(CallbackRef("/codequick/search:savedsearches", is_folder=True), *args, **kwargs)
         return item
 
     @classmethod
@@ -868,7 +877,7 @@ class Listitem(object):
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
-        item.set_callback(CallbackRef("/codequick/youtube/playlist/", is_folder=True))
+        item.set_callback(CallbackRef("/codequick/youtube:playlist", is_folder=True))
         return item
 
     def __repr__(self):
