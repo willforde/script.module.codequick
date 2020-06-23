@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 import importlib
+import warnings
 import binascii
 import inspect
 import logging
@@ -378,11 +379,13 @@ def build_path(callback=None, args=None, query=None, **extra_query):
     """
 
     # Set callback to current callback if not given
-    if isinstance(callback, CallbackRef):
-        route = callback
-    elif callback and hasattr(callback, "route"):
+    if callback and hasattr(callback, "route"):
         route = callback.route
+    elif isinstance(callback, CallbackRef):
+        route = callback
     else:
+        msg = "passing in callback path is deprecated, use callback reference 'Route.ref' instead"
+        warnings.warn(msg, DeprecationWarning)
         route = dispatcher.get_route(callback)
 
     # Convert args to keyword args if required

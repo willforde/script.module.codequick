@@ -654,7 +654,8 @@ class Listitem(object):
             # We don't have a plugin / http path,
             # So we should then have a callback path
             if "://" not in callback:
-                msg = "passing callback path to 'set_callback' is deprecated, use Route.ref instead"
+                msg = "passing callback path to 'set_callback' is deprecated, " \
+                      "use callback reference 'Route.ref' instead"
                 warnings.warn(msg, DeprecationWarning)
                 callback = dispatcher.get_route(callback)
             else:
