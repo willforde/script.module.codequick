@@ -426,14 +426,14 @@ class TestListitem(unittest.TestCase):
         self.assertFalse(isfolder)
 
     def test_close_url(self):
-        self.listitem.set_callback("http://example.com/video.mkv")
+        self.listitem.set_path("http://example.com/video.mkv")
         path, raw_listitem, isfolder = self.listitem._close()
         self.assertEqual(path, "http://example.com/video.mkv")
         self.assertFalse(isfolder)
 
     def test_close_subtitle(self):
         self.listitem.subtitles.append("http://path.to/subtitle")
-        self.listitem.set_callback("http://example.com/video.mkv")
+        self.listitem.set_path("http://example.com/video.mkv")
         path, raw_listitem, isfolder = self.listitem._close()
         self.assertEqual(path, "http://example.com/video.mkv")
         self.assertFalse(isfolder)
