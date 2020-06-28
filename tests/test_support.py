@@ -280,7 +280,7 @@ class BuildPath(unittest.TestCase):
     def test_build_path_new_args_py3(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
         self.assertEqual("plugin://script.module.codequick/root?_pickle_="
-                         "80059516000000000000007d948c08746573746461746194"
+                         "80049516000000000000007d948c08746573746461746194"
                          "8c046461746194732e", ret)
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
@@ -300,7 +300,7 @@ class BuildPath(unittest.TestCase):
         try:
             ret = support.build_path(self.callback, testdata="data")
             self.assertEqual("plugin://script.module.codequick/root?_pickle_="
-                             "80059529000000000000007d94288c075f7469746c655f94"
+                             "80049529000000000000007d94288c075f7469746c655f94"
                              "8c05766964656f948c087465737464617461948c046461746194752e", ret)
         finally:
             del support.dispatcher.params["_title_"]

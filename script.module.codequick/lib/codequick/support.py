@@ -22,9 +22,11 @@ from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3, unicode_
 
 if PY3:
     from inspect import getfullargspec
+    PICKLE_PROTOCOL = 4
 else:
     # noinspection PyDeprecation
     from inspect import getargspec as getfullargspec
+    PICKLE_PROTOCOL = 2
 
 script_data = xbmcaddon.Addon("script.module.codequick")
 addon_data = xbmcaddon.Addon()
@@ -402,7 +404,7 @@ def build_path(callback=None, args=None, query=None, **extra_query):
 
     # Encode the query parameters using json
     if query:
-        pickled = binascii.hexlify(pickle.dumps(query, protocol=pickle.HIGHEST_PROTOCOL))
+        pickled = binascii.hexlify(pickle.dumps(query, protocol=PICKLE_PROTOCOL))
         query = "_pickle_={}".format(pickled.decode("ascii") if PY3 else pickled)
 
     # Build kodi url with new path and query parameters
