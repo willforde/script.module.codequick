@@ -16,22 +16,14 @@ def clean_cache():
 
 def route_caller(callback, *args, **kwargs):
     dispatcher.selector = callback.route.path
-    obj = callback()
     try:
-        results = obj.run(*args, **kwargs)
+        results = callback.test(*args, **kwargs)
         if inspect.isgenerator(results):
             return list(results)
         else:
             return results
     finally:
-        obj.db.close()
         dispatcher.reset()
-
-
-class TestGlobalLocalization(unittest.TestCase):
-    def test_playlists(self):
-        ret = xbmc.getLocalizedString(youtube.PLAYLISTS)
-        self.assertEqual(ret, "Playlists")
 
 
 # noinspection PyTypeChecker
@@ -41,48 +33,48 @@ class Testcallbacks(unittest.TestCase):
         clean_cache()
 
     def test_playlist_uploads_no_cache(self):
-        ret = route_caller(youtube.Playlist, "UCaWd5_7JhbQBe4dknZhsHJg")
+        ret = route_caller(youtube.playlist, "UCaWd5_7JhbQBe4dknZhsHJg")
         self.assertGreaterEqual(len(ret), 50)
 
     def test_playlist_uploads_with_cache(self):
-        ret = route_caller(youtube.Playlist, "UCaWd5_7JhbQBe4dknZhsHJg")
+        ret = route_caller(youtube.playlist, "UCaWd5_7JhbQBe4dknZhsHJg")
         self.assertGreaterEqual(len(ret), 50)
 
     def test_playlist_playlist_single_page(self):
-        ret = route_caller(youtube.Playlist, "PLmZTDWJGfRq3dT8teArT8RGg-SPpXErHK")
+        ret = route_caller(youtube.playlist, "PLmZTDWJGfRq3dT8teArT8RGg-SPpXErHK")
         self.assertGreaterEqual(len(ret), 10)
 
     def test_playlist_unlisted(self):
-        ret = route_caller(youtube.Playlist, "PLh6dr2Pr1VQnPdF29tkfQPgCBJPFnKYEV")
+        ret = route_caller(youtube.playlist, "PLh6dr2Pr1VQnPdF29tkfQPgCBJPFnKYEV")
         self.assertGreaterEqual(len(ret), 17)
 
     def test_playlist_playlist_muilti_page(self):
-        ret = route_caller(youtube.Playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=False)
+        ret = route_caller(youtube.playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=False)
         self.assertGreaterEqual(len(ret), 49)
 
     def test_playlist_playlist_loop(self):
-        ret = route_caller(youtube.Playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=True)
+        ret = route_caller(youtube.playlist, "PL8mG-RkN2uTx1lbFS8z8wRYS3RrHCp8TG", loop=True)
         self.assertGreaterEqual(len(ret), 66)
 
     def test_related(self):
-        ret = route_caller(youtube.Related, "-QEXPO9zgX8")
+        ret = route_caller(youtube.related, "-QEXPO9zgX8")
         self.assertGreaterEqual(len(ret), 50)
 
     def test_playlists(self):
-        ret = route_caller(youtube.Playlists, "UCaWd5_7JhbQBe4dknZhsHJg")
+        ret = route_caller(youtube.playlists, "UCaWd5_7JhbQBe4dknZhsHJg")
         self.assertGreaterEqual(len(ret), 50)
 
     def test_playlists_with_uploade_id(self):
         with self.assertRaises(ValueError):
-            route_caller(youtube.Playlists, "UUewxof_QqDdqVdXY1BaDtqQ")
+            route_caller(youtube.playlists, "UUewxof_QqDdqVdXY1BaDtqQ")
 
     def test_playlists_disable_all_link(self):
-        ret = route_caller(youtube.Playlists, "UCaWd5_7JhbQBe4dknZhsHJg", show_all=False)
+        ret = route_caller(youtube.playlists, "UCaWd5_7JhbQBe4dknZhsHJg", show_all=False)
         self.assertGreaterEqual(len(ret), 50)
 
     def test_bad_channel_id(self):
         with self.assertRaises(KeyError):
-            route_caller(youtube.Playlist, "UCad5_7JhQBe4dknZhsJg")
+            route_caller(youtube.playlist, "UCad5_7JhQBe4dknZhsJg")
 
 
 class TestAPIControl(unittest.TestCase):
