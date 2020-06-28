@@ -87,7 +87,7 @@ class TestAPIControl(unittest.TestCase):
 
     def tearDown(self):
         try:
-            self.api.db.close()
+            self.api.close()
         except sqlite3.ProgrammingError:
             pass
         self.api = None

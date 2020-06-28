@@ -104,8 +104,11 @@ class TestDispatcher(unittest.TestCase):
             dispatcher.parse_args()
 
         self.assertEqual(dispatcher.selector, "/test/tester")
-        self.assertDictContainsSubset({"testdata": "true", "worker": "false", "_title_": "test"}, dispatcher.params)
-        self.assertDictContainsSubset({"testdata": "true", "worker": "false"}, dispatcher.callback_params)
+        self.assertTrue(dispatcher.params.get("testdata") == "true")
+        self.assertTrue(dispatcher.params.get("worker") == "false")
+        self.assertTrue(dispatcher.params.get("_title_") == "test")
+        self.assertTrue(dispatcher.callback_params.get("testdata") == "true")
+        self.assertTrue(dispatcher.callback_params.get("worker") == "false")
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_parse_params_pickle_py2(self):
@@ -115,8 +118,12 @@ class TestDispatcher(unittest.TestCase):
                         "04746573747104752e"]):
             dispatcher.parse_args()
 
-        self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, dispatcher.params)
-        self.assertDictContainsSubset({"testdata": True, "worker": False}, dispatcher.callback_params)
+        self.assertEqual(dispatcher.selector, "/test/tester")
+        self.assertTrue(dispatcher.params.get("testdata") is True)
+        self.assertTrue(dispatcher.params.get("worker") is False)
+        self.assertTrue(dispatcher.params.get("_title_") == "test")
+        self.assertTrue(dispatcher.callback_params.get("testdata") is True)
+        self.assertTrue(dispatcher.callback_params.get("worker") is False)
 
     @unittest.skipUnless(PY3, "The pickled string is specific to python 3")
     def test_parse_params_pickle_py3(self):
@@ -126,8 +133,12 @@ class TestDispatcher(unittest.TestCase):
                         "46c655f948c047465737494752e"]):
             dispatcher.parse_args()
 
-        self.assertDictContainsSubset({"testdata": True, "worker": False, "_title_": "test"}, dispatcher.params)
-        self.assertDictContainsSubset({"testdata": True, "worker": False}, dispatcher.callback_params)
+        self.assertEqual(dispatcher.selector, "/test/tester")
+        self.assertTrue(dispatcher.params.get("testdata") is True)
+        self.assertTrue(dispatcher.params.get("worker") is False)
+        self.assertTrue(dispatcher.params.get("_title_") == "test")
+        self.assertTrue(dispatcher.callback_params.get("testdata") is True)
+        self.assertTrue(dispatcher.callback_params.get("worker") is False)
 
     def test_register_metacall(self):
         def root():
@@ -165,23 +176,6 @@ class TestDispatcher(unittest.TestCase):
         self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
-
-    def test_register_class(self):
-        class Videos(route.Route):
-            def run(self):
-                pass
-
-        callback = self.dispatcher.register_callback(Videos, route.Route)
-        self.assertIn("/tests/test_support/videos", self.dispatcher.registered_routes)
-        self.assertIsInstance(callback.route, support.Route)
-        self.assertTrue(inspect.ismethod(callback.test))
-
-    def test_register_class_missing_run(self):
-        class Videos(route.Route):
-            pass
-
-        with self.assertRaises(NameError):
-            self.dispatcher.register_callback(Videos, route.Route)
 
     def test_register_duplicate(self):
         def root():

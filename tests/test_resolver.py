@@ -77,7 +77,7 @@ class TestResolver(unittest.TestCase):
     def test_custom_listitem(self):
         item = custom_listitem()
         item.label = "test"
-        item.set_callback(u"http://test.mkv")
+        item.set_path(u"http://test.mkv")
 
         self.resolver._process_results(item)
         self.assertTrue(plugin_data["succeeded"])
@@ -192,7 +192,7 @@ class TestResolver(unittest.TestCase):
 
         item = custom_listitem()
         item.label = "test"
-        item.set_callback(u"http://test.mkv")
+        item.set_path(u"http://test.mkv")
 
         self.resolver._process_results([item])
         self.assertTrue(plugin_data["succeeded"])
