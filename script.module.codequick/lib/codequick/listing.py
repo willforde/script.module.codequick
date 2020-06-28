@@ -540,7 +540,7 @@ class Listitem(object):
         self._is_playable = False
         self._is_folder = False
         self._args = None
-        self._path = ""
+        self.path = ""
 
         #: The underlining kodi listitem object, for advanced use.
         self.listitem = listitem = xbmcgui.ListItem()
@@ -630,7 +630,7 @@ class Listitem(object):
         :param is_folder: Tells kodi if path is a folder (default -> ``False``).
         :param is_playable: Tells kodi if path is a playable item (default -> ``True``).
         """
-        self._path = path
+        self.path = path
         self._is_folder = is_folder
         self._is_playable = False if path.startswith("script://") else is_playable
 
@@ -669,7 +669,7 @@ class Listitem(object):
         self.params.update(kwargs)
         self._is_playable = callback.is_playable
         self._is_folder = callback.is_folder
-        self._path = callback
+        self.path = callback
         self._args = args
 
     # noinspection PyProtectedMember
@@ -679,10 +679,10 @@ class Listitem(object):
         listitem.setProperty("folder", str(isfolder).lower())
         listitem.setProperty("isplayable", str(self._is_playable).lower())
 
-        if isinstance(self._path, CallbackRef):
-            path = build_path(self._path, self._args, self.params.raw_dict)
+        if isinstance(self.path, CallbackRef):
+            path = build_path(self.path, self._args, self.params.raw_dict)
         else:
-            path = self._path
+            path = self.path
 
         if not isfolder:
             # Add mediatype if not already set

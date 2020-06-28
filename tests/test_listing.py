@@ -394,11 +394,11 @@ class TestListitem(unittest.TestCase):
 
     def test_callback(self):
         self.listitem.set_callback(self.route_callback)
-        self.assertEqual(self.listitem._path, self.route_callback.route)
+        self.assertEqual(self.listitem.path, self.route_callback.route)
 
     def test_callback_args(self):
         self.listitem.set_callback(self.route_callback_args, "yes", full=True)
-        self.assertEqual(self.listitem._path, self.route_callback_args.route)
+        self.assertEqual(self.listitem.path, self.route_callback_args.route)
         self.assertTupleEqual(self.listitem._args, ("yes",))
         self.assertIn("full", self.listitem.params)
 
