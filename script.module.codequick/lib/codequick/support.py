@@ -129,6 +129,8 @@ class Route(CallbackRef):
     def __init__(self, callback, parent, path):
         # Register a class callback
         if inspect.isclass(callback):
+            msg = "Use of class based callbacks are Deprecated, please use function callbacks"
+            warnings.warn(msg, DeprecationWarning)
             if hasattr(callback, "run"):
                 self.parent = parent = callback
                 self.function = callback.run
@@ -166,7 +168,7 @@ class Route(CallbackRef):
         # Update support params with the params
         # that are to be passed to callback
         if args:
-            kwargs["_args_"] = args
+            dispatcher.params["_args_"] = args
 
         if kwargs:
             dispatcher.params.update(kwargs)
@@ -331,7 +333,7 @@ class Dispatcher(object):
                 msg = unicode_type(e).encode("utf8")
 
             # Log the error in both the gui and the kodi log file
-            logger.critical(msg, exc_info=1)
+            logger.exception(msg)
             dialog = xbmcgui.Dialog()
             dialog.notification(e.__class__.__name__, msg, addon_data.getAddonInfo("icon"))
             return e

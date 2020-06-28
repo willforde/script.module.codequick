@@ -294,7 +294,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback/)")
+                                  "tests/test_listing/test_callback)")
 
     def test_container_with_params(self):
         self.base.container(self.test_callback, "test label", True, url="tester")
@@ -302,7 +302,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback/?_pickle_="))
+                                           "tests/test_listing/test_callback?_pickle_="))
 
     def test_script(self):
         self.base.script(self.test_callback, "test label")
@@ -310,7 +310,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertEqual(command, "XBMC.RunPlugin(plugin://script.module.codequick/"
-                                  "tests/test_listing/test_callback/)")
+                                  "tests/test_listing/test_callback)")
 
     def test_script_with_params(self):
         self.base.script(self.test_callback, "test label", True, url="tester")
@@ -318,7 +318,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "test label")
         self.assertTrue(command.startswith("XBMC.RunPlugin(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback/?_pickle_="))
+                                           "tests/test_listing/test_callback?_pickle_="))
 
     @unittest.skipIf(PY3, "only work under python 2")
     def test_related_py2(self):
@@ -327,7 +327,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
-                                  "test_callback/?_pickle_=80027d710055075f7469746c655f7101580e00000052656c61"
+                                  "test_callback?_pickle_=80027d710055075f7469746c655f7101580e00000052656c61"
                                   "74656420566964656f737102732e)")
 
     @unittest.skipUnless(PY3, "only work under python 3")
@@ -337,8 +337,8 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
-                                  "test_callback/?_pickle_=8004951f000000000000007d948c075f7469746c655f948c0e"
-                                  "52656c6174656420566964656f7394732e)")
+                                  "test_callback?_pickle_=8005951f000000000000007d948c075f746974"
+                                  "6c655f948c0e52656c6174656420566964656f7394732e)")
 
     def test_related_with_params(self):
         self.base.related(self.test_callback, test=True)
@@ -346,7 +346,7 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
-                                           "tests/test_listing/test_callback/?_pickle_="))
+                                           "tests/test_listing/test_callback?_pickle_="))
 
     def test_close(self):
         self.base.related(self.test_callback)
@@ -394,18 +394,18 @@ class TestListitem(unittest.TestCase):
 
     def test_callback(self):
         self.listitem.set_callback(self.route_callback)
-        self.assertEqual(self.listitem.path, self.route_callback)
+        self.assertEqual(self.listitem._path, self.route_callback.route)
 
     def test_callback_args(self):
         self.listitem.set_callback(self.route_callback_args, "yes", full=True)
-        self.assertEqual(self.listitem.path, self.route_callback_args)
+        self.assertEqual(self.listitem._path, self.route_callback_args.route)
         self.assertTupleEqual(self.listitem._args, ("yes",))
         self.assertIn("full", self.listitem.params)
 
     def test_close_route(self):
         self.listitem.set_callback(self.route_callback)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/route_callback/")
+        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/route_callback")
         self.assertTrue(isfolder)
 
     def test_close_no_callback(self):
@@ -416,13 +416,13 @@ class TestListitem(unittest.TestCase):
     def test_close_route_params(self):
         self.listitem.set_callback(self.route_callback, "yes", full=True)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertTrue(path.startswith("plugin://script.module.codequick/tests/test_listing/route_callback/?_pickle_="))
+        self.assertTrue(path.startswith("plugin://script.module.codequick/tests/test_listing/route_callback?_pickle_="))
         self.assertTrue(isfolder)
 
     def test_close_resolver(self):
         self.listitem.set_callback(self.resolver_callback)
         path, raw_listitem, isfolder = self.listitem._close()
-        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/resolver_callback/")
+        self.assertEqual(path, "plugin://script.module.codequick/tests/test_listing/resolver_callback")
         self.assertFalse(isfolder)
 
     def test_close_url(self):
@@ -514,12 +514,3 @@ class TestListitem(unittest.TestCase):
         self.assertTrue(listitem.art["thumb"].endswith("search.png"))
         self.assertIsInstance(listitem._args, tuple)
         self.assertTrue(len(listitem._args) == 0)
-
-    def test_search_missing_param(self):
-        # noinspection PyUnusedLocal
-        @route.Route.register
-        def search_results(_):
-            pass
-
-        with self.assertRaises(ValueError):
-            listing.Listitem.search(search_results)

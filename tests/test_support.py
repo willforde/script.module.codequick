@@ -53,16 +53,6 @@ class TestRoute(unittest.TestCase):
         path = test_callback.__name__.lower()
         self.route = support.Route(test_callback, route.Route, path)
 
-    def test_arg_names(self):
-        args = self.route.arg_names()
-        self.assertListEqual(args, ['_', 'one', 'two', 'return_data'])
-
-    def test_args_to_kwargs(self):
-        kwargs = {}
-        self.route.args_to_kwargs(("True", False), kwargs)
-        self.assertEqual(len(kwargs), 2)
-        self.assertDictEqual(kwargs, {"one": "True", "two": False})
-
     def test_unittest_caller(self):
         ret = self.route.unittest_caller("one", two="two", return_data=True)
         self.assertTrue(ret)
@@ -172,7 +162,7 @@ class TestDispatcher(unittest.TestCase):
             pass
 
         callback = self.dispatcher.register_callback(listing, route.Route)
-        self.assertIn("/tests/test_support/listing/", self.dispatcher.registered_routes)
+        self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
 
@@ -182,7 +172,7 @@ class TestDispatcher(unittest.TestCase):
                 pass
 
         callback = self.dispatcher.register_callback(Videos, route.Route)
-        self.assertIn("/tests/test_support/videos/", self.dispatcher.registered_routes)
+        self.assertIn("/tests/test_support/videos", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
 
@@ -290,7 +280,8 @@ class BuildPath(unittest.TestCase):
     def test_build_path_new_args_py3(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
         self.assertEqual("plugin://script.module.codequick/root?_pickle_="
-                         "80049516000000000000007d948c087465737464617461948c046461746194732e", ret)
+                         "80059516000000000000007d948c08746573746461746194"
+                         "8c046461746194732e", ret)
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_build_path_extra_args_py2(self):
@@ -309,7 +300,7 @@ class BuildPath(unittest.TestCase):
         try:
             ret = support.build_path(self.callback, testdata="data")
             self.assertEqual("plugin://script.module.codequick/root?_pickle_="
-                             "80049529000000000000007d94288c075f7469746c655f948c"
-                             "05766964656f948c087465737464617461948c046461746194752e", ret)
+                             "80059529000000000000007d94288c075f7469746c655f94"
+                             "8c05766964656f948c087465737464617461948c046461746194752e", ret)
         finally:
             del support.dispatcher.params["_title_"]
