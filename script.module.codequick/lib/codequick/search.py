@@ -21,7 +21,7 @@ SEARCH = 137
 SEARCH_DB = u"_new_searches.pickle"
 
 
-class SearchOld(object):
+class Search(object):
     def __init__(self, plugin, extra_params):
         # The saved search persistent storage
         self.db = search_db = PersistentDict(SEARCH_DB)
@@ -42,38 +42,6 @@ class SearchOld(object):
 
     def __nonzero__(self):
         return bool(self.data)
-
-    def remove(self, item):  # type: (str) -> None
-        self.data.remove(item)
-        self.db.flush()
-
-    def append(self, item):  # type: (str) -> None
-        self.data.append(item)
-        self.db.flush()
-
-    @staticmethod
-    def hash_params(data):
-        # Convert dict of params into a sorted list of key, value pairs
-        sorted_dict = sorted(data.items())
-
-        # Pickle the sorted dict so we can hash the contents
-        content = pickle.dumps(sorted_dict, protocol=2)
-        return ensure_unicode(sha1(content).hexdigest())
-
-
-class Search(PersistentDict):
-    def __init__(self, plugin, extra_params):
-        super(Search, self).__init__(SEARCH_DB)
-
-
-
-        # The saved search persistent storage
-        self.db = search_db = PersistentDict(SEARCH_DB)
-        plugin.register_delayed(search_db.close)
-
-        # Fetch saved data specific to this session
-        session_hash = self.hash_params(extra_params)
-        self.data = search_db.setdefault(session_hash, [])
 
     def remove(self, item):  # type: (str) -> None
         self.data.remove(item)
