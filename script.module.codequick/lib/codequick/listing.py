@@ -851,7 +851,7 @@ class Listitem(object):
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback(CallbackRef("/codequick/search:savedsearches", is_folder=True), *args, **kwargs)
+        item.set_callback(CallbackRef("/codequick/search:saved_searches", is_folder=True), *args, **kwargs)
         return item
 
     @classmethod
