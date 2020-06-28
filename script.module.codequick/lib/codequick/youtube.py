@@ -151,7 +151,7 @@ class API(object):
         :raises RuntimeError: If youtube returns a error response.
         """
         source = self.req_session.get(url, params=query)
-        response = json.loads(source.content, encoding=source.encoding)
+        response = json.loads(source.content)
         if u"error" not in response:  # pragma: no branch
             return response
         else:  # pragma: no cover
@@ -347,6 +347,9 @@ class API(object):
 
         # Connect to server and return json response
         return self._connect_v3("search", query)
+
+    def close(self):
+        self.req_session.close()
 
 
 class APIControl(Route):
@@ -573,6 +576,7 @@ class APIControl(Route):
         return duration
 
     def close(self):
+        self.api.close()
         self.db.close()
 
 
