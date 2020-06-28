@@ -678,7 +678,11 @@ class Listitem(object):
         isfolder = self._is_folder
         listitem.setProperty("folder", str(isfolder).lower())
         listitem.setProperty("isplayable", str(self._is_playable).lower())
-        path = build_path(self._path, self._args, self.params.raw_dict) if isinstance(self._path, CallbackRef) else self._path
+
+        if isinstance(self._path, CallbackRef):
+            path = build_path(self._path, self._args, self.params.raw_dict)
+        else:
+            path = self._path
 
         if not isfolder:
             # Add mediatype if not already set
@@ -750,10 +754,14 @@ class Listitem(object):
         item = cls()
         item.label = label
 
-        if hasattr(callback, "route") or isinstance(callback, CallbackRef):
-            item.set_callback(callback)
+        if isinstance(callback, str):
+            if "://" in callback:
+                item.set_path(callback)
+            else:
+                # noinspection PyTypeChecker
+                item.set_callback(callback)
         else:
-            item.set_path(callback)
+            item.set_callback(callback)
 
         if params:  # pragma: no branch
             item.params.update(params)
