@@ -173,7 +173,7 @@ class Script(object):
             This method needs to be called from the same callback object type of
             the referenced callback. e.g. Script/Route/Resolver.
 
-        The path structure is '/<package>/<module>:function' where package is the full package path.
+        The path structure is '/<package>/<module>:function' where 'package' is the full package path.
         'module' is the name of the modules containing the callback.
         And 'function' is the name of the callback function.
 
