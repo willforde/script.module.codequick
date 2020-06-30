@@ -184,7 +184,7 @@ class Script(object):
             >>> # Example of referencing a Route callback
             >>> item.set_callback(Route.ref("/resources/lib/videos:video_list"))
             >>>
-            >>> # Example of referencing a Reslover callback
+            >>> # Example of referencing a Resolver callback
             >>> item.set_callback(Resolver.ref("/resources/lib/resolvers:play_video"))
 
         :param str path: The path to a callback function.
