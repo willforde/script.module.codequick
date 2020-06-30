@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 from hashlib import sha1
-import pickle
 
 # Package imports
 from codequick.storage import PersistentDict
@@ -11,6 +10,12 @@ from codequick.support import dispatcher
 from codequick.listing import Listitem
 from codequick.utils import keyboard, ensure_unicode
 from codequick.route import Route, validate_listitems
+
+try:
+    # noinspection PyPep8Naming
+    import cPickle as pickle
+except ImportError:  # pragma: no cover
+    import pickle
 
 # Localized string Constants
 ENTER_SEARCH_STRING = 16017

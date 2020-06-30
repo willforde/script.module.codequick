@@ -7,7 +7,6 @@ import warnings
 import binascii
 import inspect
 import logging
-import pickle
 import time
 import sys
 import re
@@ -19,6 +18,12 @@ import xbmc
 
 # Package imports
 from codequick.utils import parse_qs, ensure_native_str, urlparse, PY3, unicode_type
+
+try:
+    # noinspection PyPep8Naming
+    import cPickle as pickle
+except ImportError:  # pragma: no cover
+    import pickle
 
 if PY3:
     from inspect import getfullargspec
