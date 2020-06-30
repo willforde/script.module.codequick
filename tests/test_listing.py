@@ -328,8 +328,8 @@ class Context(unittest.TestCase):
 
         self.assertEqual(label, "Related Videos")
         self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
-                                  "test_callback?_pickle_=80027d710055075f7469746c655f7101580e00000052656c61"
-                                  "74656420566964656f737102732e)")
+                                  "test_callback?_pickle_=80027d710155075f7469746c655f7102580e00000052656c617"
+                                  "4656420566964656f737103732e)")
 
     @unittest.skipUnless(PY3, "only work under python 3")
     def test_related_py3(self):
