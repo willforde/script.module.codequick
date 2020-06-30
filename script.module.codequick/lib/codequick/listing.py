@@ -648,7 +648,7 @@ class Listitem(object):
             * :class:`codequick.Script<codequick.script.Script>` callback.
             * :class:`codequick.Route<codequick.route.Route>` callback.
             * :class:`codequick.Resolver<codequick.resolver.Resolver>` callback.
-            * A callback reference object.
+            * A callback reference object :func:`Script.ref<codequick.script.Script.ref>`.
 
         :param callback: The "callback" function or reference object.
         :param args: "Positional" arguments that will be passed to the callback.
