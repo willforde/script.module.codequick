@@ -387,10 +387,12 @@ def build_path(callback=None, args=None, query=None, **extra_query):
         route = callback.route
     elif isinstance(callback, CallbackRef):
         route = callback
-    else:
+    elif callback:
         msg = "passing in callback path is deprecated, use callback reference 'Route.ref' instead"
         warnings.warn(msg, DeprecationWarning)
         route = dispatcher.get_route(callback)
+    else:
+        route = dispatcher.get_route()
 
     # Convert args to keyword args if required
     if args:

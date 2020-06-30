@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.9.13] - 2020-*-*
+### Changed
+- Deprecate the use of class based callbacks.
+- Deprecate ability to pass playable url to listitem.set_callback(), use listitem.set_path() instead.
+- Deprecate ability to pass a path to a callback when calling listitem.set_callback(), use a callback reference instead.
+- Functions that except callbacks can now except a callback reference object. Better for performance.
+
+### Added
+- Ability to get and set listitem params as attributes, e.g. item.info.genre = "Science Fiction".
+- Listitem objects are now fully pickable.
+
+
 ## [0.9.12] - 2020-06-19
 ### Fixed
 - Attempt fix for 'import _strptime' failure.
