@@ -33,7 +33,7 @@ Codacy: https://app.codacy.com/app/willforde/script.module.codequick/dashboard
 from __future__ import absolute_import
 
 # Package imports
-from codequick.support import run, CallbackRef
+from codequick.support import run
 from codequick.resolver import Resolver
 from codequick.listing import Listitem
 from codequick.script import Script
@@ -48,5 +48,4 @@ __all__ = [
     "Listitem",
     "utils",
     "storage",
-    "CallbackRef",
 ]
