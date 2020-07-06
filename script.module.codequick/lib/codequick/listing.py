@@ -16,6 +16,7 @@ import xbmcplugin
 import xbmcgui
 
 # Package imports
+from codequick.route import Route
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher, CallbackRef
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
@@ -874,7 +875,7 @@ class Listitem(object):
         item.label = bold(Script.localize(SEARCH))
         item.art.global_thumb("search.png")
         item.info["plot"] = Script.localize(SEARCH_PLOT)
-        item.set_callback(CallbackRef("/codequick/search:saved_searches", is_folder=True), *args, **kwargs)
+        item.set_callback(Route.ref("/codequick/search:saved_searches"), *args, **kwargs)
         return item
 
     @classmethod
@@ -901,7 +902,7 @@ class Listitem(object):
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists
-        item.set_callback(CallbackRef("/codequick/youtube:playlist", is_folder=True))
+        item.set_callback(Route.ref("/codequick/youtube:playlist"))
         return item
 
     def __repr__(self):

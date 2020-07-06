@@ -105,12 +105,13 @@ class KodiLogHandler(logging.Handler):
 
 
 class CallbackRef(object):
-    __slots__ = ("path", "is_playable", "is_folder")
+    __slots__ = ("path", "parent", "is_playable", "is_folder")
 
-    def __init__(self, path, is_folder, is_playable=None):
+    def __init__(self, path, parent):
         self.path = path.rstrip("/").replace(":", "/")
-        self.is_folder = is_folder
-        self.is_playable = not is_folder if is_playable is None else is_playable
+        self.is_playable = parent.is_playable
+        self.is_folder = parent.is_folder
+        self.parent = parent
 
     def __eq__(self, other):
         return self.path == other.path
@@ -131,7 +132,7 @@ class Route(CallbackRef):
     :ivar parent: The parent class that will handle the response from callback.
     :ivar str path: The route path to func/class.
     """
-    __slots__ = ("parent", "function", "callback")
+    __slots__ = ("function", "callback")
 
     def __init__(self, callback, parent, path):
         # Register a class callback
@@ -139,18 +140,17 @@ class Route(CallbackRef):
             msg = "Use of class based callbacks are Deprecated, please use function callbacks"
             warnings.warn(msg, DeprecationWarning)
             if hasattr(callback, "run"):
-                self.parent = parent = callback
+                parent = callback
                 self.function = callback.run
                 callback.test = staticmethod(self.unittest_caller)
             else:
                 raise NameError("missing required 'run' method for class: '{}'".format(callback.__name__))
         else:
             # Register a function callback
-            self.parent = parent
             self.function = callback
             callback.test = self.unittest_caller
 
-        super(Route, self).__init__(path, parent.is_folder, parent.is_playable)
+        super(Route, self).__init__(path, parent)
         self.callback = callback
 
     def unittest_caller(self, *args, **kwargs):

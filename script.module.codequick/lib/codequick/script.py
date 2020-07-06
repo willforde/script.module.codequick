@@ -190,7 +190,7 @@ class Script(object):
         :param str path: The path to a callback function.
         :return: A callback reference object.
         """
-        return CallbackRef(path, cls.is_folder, cls.is_playable)
+        return CallbackRef(path, cls)
 
     @classmethod
     def register(cls, callback):
