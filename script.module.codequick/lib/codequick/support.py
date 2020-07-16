@@ -245,8 +245,12 @@ class Dispatcher(object):
                                     if not (key.startswith(u"_") and key.endswith(u"_"))}
 
     def get_route(self, path=None):  # type: (str) -> Route
-        """Return the given route object."""
-        path = path.rstrip("/") if path else self.selector
+        """
+        Return the given route callback.
+
+        :param str path: The route path, if not given defaults to current callback
+        """
+        path = path.rstrip("/") if path else self.selector.rstrip("/")
 
         # Attempt to import the module where the route
         # is located if it's not already registered
@@ -312,7 +316,7 @@ class Dispatcher(object):
 
         try:
             # Fetch the controling class and callback function/method
-            route = self.get_route()
+            route = self.get_route(self.selector)
             execute_time = time.time()
             redirect = None
 
@@ -428,3 +432,4 @@ base_logger.propagate = False
 # Dispatcher to manage route callbacks
 dispatcher = Dispatcher()
 run = dispatcher.run_callback
+get_route = dispatcher.get_route
