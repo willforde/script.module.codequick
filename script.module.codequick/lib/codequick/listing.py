@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 from time import strptime, strftime
-import warnings
 import logging
 import os
 import re
@@ -673,11 +672,11 @@ class Listitem(object):
             if "://" not in callback:
                 msg = "passing callback path to 'set_callback' is deprecated, " \
                       "use callback reference 'Route.ref' instead"
-                warnings.warn(msg, DeprecationWarning)
+                logger.warning("DeprecationWarning: " + msg)
                 callback = dispatcher.get_route(callback)
             else:
                 msg = "passing a playable / plugin path to 'set_callback' is deprecated, use 'set_path' instead"
-                warnings.warn(msg, DeprecationWarning)
+                logger.warning("DeprecationWarning: " + msg)
                 is_folder = kwargs.pop("is_folder", False)
                 is_playable = kwargs.pop("is_playable", not is_folder)
                 self.set_path(callback, is_folder, is_playable)

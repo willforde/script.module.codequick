@@ -3,7 +3,6 @@ from __future__ import absolute_import
 
 # Standard Library Imports
 import importlib
-import warnings
 import binascii
 import inspect
 import logging
@@ -138,7 +137,7 @@ class Route(CallbackRef):
         # Register a class callback
         if inspect.isclass(callback):
             msg = "Use of class based callbacks are Deprecated, please use function callbacks"
-            warnings.warn(msg, DeprecationWarning)
+            logger.warning("DeprecationWarning: " + msg)
             if hasattr(callback, "run"):
                 parent = callback
                 self.function = callback.run
@@ -398,7 +397,7 @@ def build_path(callback=None, args=None, query=None, **extra_query):
         route = callback
     elif callback:
         msg = "passing in callback path is deprecated, use callback reference 'Route.ref' instead"
-        warnings.warn(msg, DeprecationWarning)
+        logger.warning("DeprecationWarning: " + msg)
         route = dispatcher.get_route(callback)
     else:
         route = dispatcher.get_route()
