@@ -96,3 +96,5 @@ ENV/
 .idea/
 docs/_static/
 .pytest_cache/
+
+*.zip
