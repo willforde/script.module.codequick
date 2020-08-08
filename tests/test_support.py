@@ -258,22 +258,22 @@ class BuildPath(unittest.TestCase):
 
     def test_build_path_no_args(self):
         ret = support.build_path()
-        self.assertEqual(ret, "plugin://script.module.codequick/root")
+        self.assertEqual(ret, "plugin://script.module.codequick/root/")
 
     def test_build_new_path(self):
         ret = support.build_path(self.callback)
-        self.assertEqual(ret, "plugin://script.module.codequick/root")
+        self.assertEqual(ret, "plugin://script.module.codequick/root/")
 
     @unittest.skipIf(PY3, "The pickled string is specific to python 2")
     def test_build_path_new_args_py2(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
-        self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+        self.assertEqual("plugin://script.module.codequick/root/?_pickle_="
                          "80027d71015508746573746461746171025504646174617103732e", ret)
 
     @unittest.skipUnless(PY3, "The pickled string is specific to python 2")
     def test_build_path_new_args_py3(self):
         ret = support.build_path(self.callback, query={"testdata": "data"})
-        self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+        self.assertEqual("plugin://script.module.codequick/root/?_pickle_="
                          "80049516000000000000007d948c08746573746461746194"
                          "8c046461746194732e", ret)
 
@@ -282,7 +282,7 @@ class BuildPath(unittest.TestCase):
         support.dispatcher.params["_title_"] = "video"
         try:
             ret = support.build_path(self.callback, testdata="data")
-            self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+            self.assertEqual("plugin://script.module.codequick/root/?_pickle_="
                              "80027d71012855075f7469746c655f71025505766964656"
                              "f71035508746573746461746171045504646174617105752e", ret)
         finally:
@@ -293,7 +293,7 @@ class BuildPath(unittest.TestCase):
         support.dispatcher.params["_title_"] = "video"
         try:
             ret = support.build_path(self.callback, testdata="data")
-            self.assertEqual("plugin://script.module.codequick/root?_pickle_="
+            self.assertEqual("plugin://script.module.codequick/root/?_pickle_="
                              "80049529000000000000007d94288c075f7469746c655f94"
                              "8c05766964656f948c087465737464617461948c046461746194752e", ret)
         finally:
