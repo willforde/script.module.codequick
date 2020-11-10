@@ -25,7 +25,7 @@ class TestLogging(unittest.TestCase):
     def test_logger_map(self):
         logmap = support.LoggingMap()
         ret = logmap[55]
-        self.assertEqual(ret, xbmc.LOGNOTICE)
+        self.assertEqual(ret, xbmc.LOGINFO)
 
     def test_logger(self):
         support.base_logger.debug("test debug")
