@@ -1562,7 +1562,8 @@ def auto_cache_cleanup(max_age=60 * 60 * 24 * 14):
 
 # Set the location of the cache file to the addon data directory
 _addon_data = __import__("xbmcaddon").Addon()
-_CACHE_LOCATION = __import__("xbmc").translatePath(_addon_data.getAddonInfo("profile"))
+translatePath = (__import__("xbmcvfs") if py3 else __import__("xbmc")).translatePath
+_CACHE_LOCATION = translatePath(_addon_data.getAddonInfo("profile"))
 CACHE_LOCATION = _CACHE_LOCATION.decode("utf8") if isinstance(_CACHE_LOCATION, bytes) else _CACHE_LOCATION
 logger.debug("Cache location: %s", CACHE_LOCATION)
 Session.default_raise_for_status = True

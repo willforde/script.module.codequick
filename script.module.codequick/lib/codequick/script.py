@@ -7,12 +7,16 @@ import os
 
 # Kodi imports
 import xbmcaddon
+import xbmcvfs
 import xbmcgui
 import xbmc
 
 # Package imports
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, string_map
-from codequick.support import dispatcher, script_data, addon_data, logger_id, CallbackRef
+from codequick.support import dispatcher, script_data, addon_data, logger_id, CallbackRef, PY3
+
+# Matrix changes
+translatePath = xbmcvfs.translatePath if PY3 else xbmc.translatePath
 
 __all__ = ["Script", "Settings"]
 
@@ -366,7 +370,7 @@ class Script(object):
 
         # Check if path needs to be translated first
         if resp[:10] == "special://":  # pragma: no cover
-            resp = xbmc.translatePath(resp)
+            resp = translatePath(resp)
 
         # Convert response to unicode
         path = resp.decode("utf8") if isinstance(resp, bytes) else resp
