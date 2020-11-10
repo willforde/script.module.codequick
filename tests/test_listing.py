@@ -294,7 +294,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
-        self.assertEqual("XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/test_callback/)",
+        self.assertEqual("Container.Update(plugin://script.module.codequick/tests/test_listing/test_callback/)",
                          command)
 
     def test_container_with_params(self):
@@ -302,7 +302,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
-        self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
+        self.assertTrue(command.startswith("Container.Update(plugin://script.module.codequick/"
                                            "tests/test_listing/test_callback/?_pickle_="))
 
     def test_script(self):
@@ -310,7 +310,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
-        self.assertEqual("XBMC.RunPlugin(plugin://script.module.codequick/tests/test_listing/test_callback/)",
+        self.assertEqual("RunPlugin(plugin://script.module.codequick/tests/test_listing/test_callback/)",
                          command)
 
     def test_script_with_params(self):
@@ -318,7 +318,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "test label")
-        self.assertTrue(command.startswith("XBMC.RunPlugin(plugin://script.module.codequick/"
+        self.assertTrue(command.startswith("RunPlugin(plugin://script.module.codequick/"
                                            "tests/test_listing/test_callback/?_pickle_="))
 
     @unittest.skipIf(PY3, "only work under python 2")
@@ -327,7 +327,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "Related Videos")
-        self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
+        self.assertEqual(command, "Container.Update(plugin://script.module.codequick/tests/test_listing/"
                                   "test_callback/?_pickle_=80027d710155075f7469746c655f7102580e00000052656c617"
                                   "4656420566964656f737103732e)")
 
@@ -337,7 +337,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "Related Videos")
-        self.assertEqual(command, "XBMC.Container.Update(plugin://script.module.codequick/tests/test_listing/"
+        self.assertEqual(command, "Container.Update(plugin://script.module.codequick/tests/test_listing/"
                                   "test_callback/?_pickle_=8004951f000000000000007d948c075f746974"
                                   "6c655f948c0e52656c6174656420566964656f7394732e)")
 
@@ -346,7 +346,7 @@ class Context(unittest.TestCase):
         label, command = self.base[0]
 
         self.assertEqual(label, "Related Videos")
-        self.assertTrue(command.startswith("XBMC.Container.Update(plugin://script.module.codequick/"
+        self.assertTrue(command.startswith("Container.Update(plugin://script.module.codequick/"
                                            "tests/test_listing/test_callback/?_pickle_="))
 
     def test_close(self):
