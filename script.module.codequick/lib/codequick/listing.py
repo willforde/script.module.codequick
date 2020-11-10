@@ -502,7 +502,7 @@ class Context(list):
         :param args: [opt] "Positional" arguments that will be passed to the callback.
         :param kwargs: [opt] "Keyword" arguments that will be passed to the callback.
         """
-        command = "XBMC.Container.Update(%s)" % build_path(callback, args, kwargs)
+        command = "Container.Update(%s)" % build_path(callback, args, kwargs)
         self.append((label, command))
 
     def script(self, callback, label, *args, **kwargs):
@@ -515,7 +515,7 @@ class Context(list):
         :param args: [opt] "Positional" arguments that will be passed to the callback.
         :param kwargs: [opt] "Keyword" arguments that will be passed to the callback.
         """
-        command = "XBMC.RunPlugin(%s)" % build_path(callback, args, kwargs)
+        command = "RunPlugin(%s)" % build_path(callback, args, kwargs)
         self.append((label, command))
 
     def _close(self, listitem):  # type: (xbmcgui.ListItem) -> None
@@ -710,8 +710,8 @@ class Listitem(object):
                 self.listitem.setSubtitles(self.subtitles)
 
             # Add Video Specific Context menu items
-            self.context.append(("$LOCALIZE[13347]", "XBMC.Action(Queue)"))
-            self.context.append(("$LOCALIZE[13350]", "XBMC.ActivateWindow(videoplaylist)"))
+            self.context.append(("$LOCALIZE[13347]", "Action(Queue)"))
+            self.context.append(("$LOCALIZE[13350]", "ActivateWindow(videoplaylist)"))
 
             # Close video related datasets
             self.stream._close(listitem)
