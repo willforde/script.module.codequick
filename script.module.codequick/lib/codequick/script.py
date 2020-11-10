@@ -133,7 +133,7 @@ class Script(object):
     ERROR = 40
     #: Critical logging level, maps to "xbmc.LOGDEBUG".
     DEBUG = 10
-    #: Critical logging level, maps to "xbmc.LOGNOTICE".
+    #: Critical logging level, maps to "xbmc.LOGINFO".
     INFO = 20
 
     #: Kodi notification warning image.
