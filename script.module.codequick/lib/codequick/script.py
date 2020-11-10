@@ -8,6 +8,7 @@ import os
 # Kodi imports
 import xbmcaddon
 import xbmcgui
+import xbmcvfs
 import xbmc
 
 # Package imports
@@ -366,7 +367,7 @@ class Script(object):
 
         # Check if path needs to be translated first
         if resp[:10] == "special://":  # pragma: no cover
-            resp = xbmc.translatePath(resp)
+            resp = xbmcvfs.translatePath(resp)
 
         # Convert response to unicode
         path = resp.decode("utf8") if isinstance(resp, bytes) else resp
