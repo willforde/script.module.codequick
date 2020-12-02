@@ -44,26 +44,20 @@ logger = logging.getLogger("%s.support" % logger_id)
 # Listitem auto sort methods
 auto_sort = set()
 
+logging_map = {
+    10: xbmc.LOGDEBUG,
+    20: xbmc.LOGINFO if PY3 else xbmc.LOGNOTICE,
+    30: xbmc.LOGWARNING,
+    40: xbmc.LOGERROR,
+    50: xbmc.LOGFATAL,
+}
+
 
 class RouteMissing(KeyError):
     """
     Exception class that is raisd when no
     route is found in the registered routes.
     """
-
-
-class LoggingMap(dict):
-    def __init__(self):
-        super(LoggingMap, self).__init__()
-        self[10] = xbmc.LOGDEBUG                            # logger.debug
-        self[20] = xbmc.LOGINFO if PY3 else xbmc.LOGNOTICE  # logger.info
-        self[30] = xbmc.LOGWARNING                          # logger.warning
-        self[40] = xbmc.LOGERROR                            # logger.error
-        self[50] = xbmc.LOGFATAL                            # logger.critical
-
-    def __missing__(self, key):
-        """Return log debug for any unexpected log level."""
-        return self[10]
 
 
 class KodiLogHandler(logging.Handler):
@@ -79,7 +73,6 @@ class KodiLogHandler(logging.Handler):
     def __init__(self):
         super(KodiLogHandler, self).__init__()
         self.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
-        self.log_level_map = LoggingMap()
         self.debug_msgs = []
 
     def emit(self, record):  # type: (logging.LogRecord) -> None
@@ -88,7 +81,7 @@ class KodiLogHandler(logging.Handler):
         log_level = record.levelno
 
         # Forward the log record to kodi with translated log level
-        xbmc.log(formatted_msg, self.log_level_map[log_level])
+        xbmc.log(formatted_msg, logging_map.get(log_level, 10))
 
         # Keep a history of all debug records so they can be logged later if a critical error occurred
         # Kodi by default, won't show debug messages unless debug logging is enabled
