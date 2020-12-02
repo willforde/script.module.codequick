@@ -55,15 +55,15 @@ class RouteMissing(KeyError):
 class LoggingMap(dict):
     def __init__(self):
         super(LoggingMap, self).__init__()
-        self[10] = xbmc.LOGDEBUG    # logger.debug
-        self[20] = xbmc.LOGINFO     # logger.info
-        self[30] = xbmc.LOGWARNING  # logger.warning
-        self[40] = xbmc.LOGERROR    # logger.error
-        self[50] = xbmc.LOGFATAL    # logger.critical
+        self[10] = xbmc.LOGDEBUG                            # logger.debug
+        self[20] = xbmc.LOGINFO if PY3 else xbmc.LOGNOTICE  # logger.info
+        self[30] = xbmc.LOGWARNING                          # logger.warning
+        self[40] = xbmc.LOGERROR                            # logger.error
+        self[50] = xbmc.LOGFATAL                            # logger.critical
 
     def __missing__(self, key):
-        """Return log notice for any unexpected log level."""
-        return xbmc.LOGINFO
+        """Return log debug for any unexpected log level."""
+        return self[10]
 
 
 class KodiLogHandler(logging.Handler):
