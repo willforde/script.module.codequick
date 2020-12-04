@@ -119,13 +119,10 @@ class Params(MutableMapping):
         del self.raw_dict[key]
 
     def __delattr__(self, name):
-        if name in self.raw_dict:
+        try:
             del self.raw_dict[name]
-        else:
+        except KeyError:
             raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__class__.__name__, name))
-
-    def __contains__(self, key):  # type: (str) -> bool
-        return key in self.raw_dict
 
     def __len__(self):
         return len(self.raw_dict)
@@ -141,8 +138,9 @@ class Params(MutableMapping):
 
     def clean(self):
         """Remove any and all None values from the dictionary."""
-        for key in [key for key, val in self.raw_dict.items() if not val]:
-            del self.raw_dict[key]
+        for key, val in self.raw_dict.items():
+            if not val:
+                del self.raw_dict[key]
 
 
 class Art(Params):
@@ -150,15 +148,11 @@ class Art(Params):
     Dictionary like object, that allows you to add various images. e.g. "thumb", "fanart".
 
     if "thumb", "fanart" or "icon"  is not set, then they will be set automaticly based on the add-on's
-    fanart and icon images.
+    fanart and icon images if available.
 
     .. note::
 
-        The automatic image values can be disabled by setting an empty string. e.g. item.art["thumb"] = "".
-
-    .. note::
-
-        This class inherits all methods and attributes from :class:`collections.MutableMapping`.
+        The automatic image values can be disabled by setting them to an empty string. e.g. item.art.thumb = "".
 
     Expected art values are.
         * thumb
@@ -239,8 +233,6 @@ class Info(Params):
         https://codedocs.xyz/xbmc/xbmc/group__python__xbmcgui__listitem.html#ga0b71166869bda87ad744942888fb5f14
 
     .. note:: Duration infolabel value can be either in "seconds" or as a "hh:mm:ss" string.
-
-    This class inherits all methods and attributes from :class:`collections.MutableMapping`.
 
     :examples:
         >>> item = Listitem()
@@ -366,12 +358,10 @@ class Stream(Params):
 
     Type convertion will be done automatically, so manual convertion is not required.
 
-    This class inherits all methods and attributes from :class:`collections.MutableMapping`.
-
     :example:
         >>> item = Listitem()
         >>> item.stream.video_codec = "h264"
-        >>> item.stream["audio_codec"] = "aac"
+        >>> item.stream.audio_codec = "aac"
     """
     def __setitem__(self, key, value):
         if not value:
@@ -431,12 +421,13 @@ class Stream(Params):
         video = {}
         subtitle = {}
         audio = {"channels": 2}
+
         # Populate the above dictionary with the appropriate key/value pairs
         for key, value in self.raw_dict.items():
             rkey = key.split("_")[-1]
-            if key in ("video_codec", "aspect", "width", "height", "duration"):
+            if key in {"video_codec", "aspect", "width", "height", "duration"}:
                 video[rkey] = value
-            elif key in ("audio_codec", "audio_language", "channels"):
+            elif key in {"audio_codec", "audio_language", "channels"}:
                 audio[rkey] = value
             elif key == "subtitle_language":
                 subtitle[rkey] = value
@@ -760,12 +751,8 @@ class Listitem(object):
         item = cls()
         item.label = label
 
-        if isinstance(callback, str):
-            if "://" in callback:
-                item.set_path(callback)
-            else:
-                # noinspection PyTypeChecker
-                item.set_callback(callback)
+        if isinstance(callback, str) and "://" in callback:
+            item.set_path(callback)
         else:
             item.set_callback(callback)
 

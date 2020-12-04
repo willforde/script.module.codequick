@@ -29,19 +29,19 @@ NO_DATA = 33077
 def validate_listitems(raw_listitems):
     """Check if listitems are valid"""
 
-    # Convert a generator of listitem into a list of listitems
+    # Convert a generator of listitems into a list of listitems
     if inspect.isgenerator(raw_listitems):
         raw_listitems = list(raw_listitems)
+
     # Silently ignore False values
     elif raw_listitems is False:
         return False
 
     if raw_listitems:
+        # Check that we have valid listitems
         if isinstance(raw_listitems, (list, tuple)):
-            if len(raw_listitems) == 1 and raw_listitems[0] is False:
-                return False
-            else:
-                return raw_listitems
+            # Check for an explicite False return value
+            return False if len(raw_listitems) == 1 and raw_listitems[0] is False else raw_listitems
         else:
             raise ValueError("Unexpected return object: {}".format(type(raw_listitems)))
     else:
@@ -83,7 +83,7 @@ class Route(Script):
     def __init__(self):
         super(Route, self).__init__()
         self.update_listing = self.params.get(u"_updatelisting_", False)
-        self.category = re.sub(u"\(\d+\)$", u"", self._title).strip()
+        self.category = re.sub(r"\(\d+\)$", u"", self._title).strip()
         self.cache_to_disc = self.params.get(u"_cache_to_disc_", True)
         self.redirect_single_item = False
         self._manual_sort = list()

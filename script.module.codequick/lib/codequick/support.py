@@ -372,7 +372,7 @@ class Dispatcher(object):
 
 def build_path(callback=None, args=None, query=None, **extra_query):
     """
-    Build addon url that can be passeed to kodi for kodi to use when calling listitems.
+    Build addon url that can be passed to kodi for kodi to use when calling listitems.
 
     :param callback: [opt] The route selector path referencing the callback object. (default => current route selector)
     :param tuple args: [opt] Positional arguments that will be add to plugin path.
