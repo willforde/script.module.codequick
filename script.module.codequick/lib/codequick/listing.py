@@ -19,6 +19,7 @@ from codequick.route import Route
 from codequick.script import Script
 from codequick.support import auto_sort, build_path, logger_id, dispatcher, CallbackRef
 from codequick.utils import ensure_unicode, ensure_native_str, unicode_type, PY3, bold
+from codequick import localized
 
 if PY3:
     # noinspection PyUnresolvedReferences, PyCompatibility
@@ -86,16 +87,6 @@ quality_map = ((768, 576), (1280, 720), (1920, 1080), (3840, 2160))  # SD, 720p,
 
 # Re.sub to remove formatting from label strings
 strip_formatting = re.compile(r"\[[^\]]+?\]").sub
-
-# Localized string Constants
-RELATED_VIDEOS = 32201
-RECENT_VIDEOS = 32002
-RECENT_VIDEOS_PLOT = 32004
-ALLVIDEOS = 32003
-NEXT_PAGE = 33078
-NEXT_PAGE_PLOT = 32005
-SEARCH_PLOT = 32006
-SEARCH = 137
 
 
 class Params(MutableMapping):
@@ -487,7 +478,7 @@ class Context(list):
         if path == dispatcher.get_route().path:
             kwargs["_updatelisting_"] = True
 
-        related_videos_text = Script.localize(RELATED_VIDEOS)
+        related_videos_text = Script.localize(localized.RELATED_VIDEOS)
         kwargs["_title_"] = related_videos_text
         self.container(callback, related_videos_text, *args, **kwargs)
 
@@ -820,8 +811,8 @@ class Listitem(object):
 
         # Create listitem instance
         item = cls()
-        label = u"%s %i" % (Script.localize(NEXT_PAGE), kwargs["_nextpagecount_"])
-        item.info["plot"] = Script.localize(NEXT_PAGE_PLOT)
+        label = u"%s %i" % (Script.localize(localized.NEXT_PAGE), kwargs["_nextpagecount_"])
+        item.info["plot"] = Script.localize(localized.NEXT_PAGE_PLOT)
         item.label = bold(label)
         item.art.global_thumb("next.png")
         item.set_callback(callback, *args, **kwargs)
@@ -840,8 +831,8 @@ class Listitem(object):
         """
         # Create listitem instance
         item = cls()
-        item.label = bold(Script.localize(RECENT_VIDEOS))
-        item.info["plot"] = Script.localize(RECENT_VIDEOS_PLOT)
+        item.label = bold(Script.localize(localized.RECENT_VIDEOS))
+        item.info["plot"] = Script.localize(localized.RECENT_VIDEOS_PLOT)
         item.art.global_thumb("recent.png")
         item.set_callback(callback, *args, **kwargs)
         return item
@@ -871,9 +862,9 @@ class Listitem(object):
         kwargs["_route"] = route.path
 
         item = cls()
-        item.label = bold(Script.localize(SEARCH))
+        item.label = bold(Script.localize(localized.SEARCH))
         item.art.global_thumb("search.png")
-        item.info["plot"] = Script.localize(SEARCH_PLOT)
+        item.info["plot"] = Script.localize(localized.SEARCH_PLOT)
         item.set_callback(Route.ref("/codequick/search:saved_searches"), *args, **kwargs)
         return item
 
@@ -897,7 +888,7 @@ class Listitem(object):
         """
         # Youtube exists, Creating listitem link
         item = cls()
-        item.label = label if label else bold(Script.localize(ALLVIDEOS))
+        item.label = label if label else bold(Script.localize(localized.ALLVIDEOS))
         item.art.global_thumb("videos.png")
         item.params["contentid"] = content_id
         item.params["enable_playlists"] = False if content_id.startswith("PL") else enable_playlists

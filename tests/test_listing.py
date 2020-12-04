@@ -1,6 +1,6 @@
 import unittest
 
-from codequick import listing, route, resolver
+from codequick import listing, route, resolver, localized
 from codequick.support import dispatcher
 from codequick.utils import unicode_type
 import xbmcgui
@@ -13,11 +13,11 @@ PY3 = sys.version_info >= (3, 0)
 
 class TestGlobalLocalization(unittest.TestCase):
     def test_next_page(self):
-        ret = xbmc.getLocalizedString(listing.NEXT_PAGE)
+        ret = xbmc.getLocalizedString(localized.NEXT_PAGE)
         self.assertEqual(ret, "Next page")
 
     def test_search(self):
-        ret = xbmc.getLocalizedString(listing.SEARCH)
+        ret = xbmc.getLocalizedString(localized.SEARCH)
         self.assertEqual(ret, "Search")
 
 
