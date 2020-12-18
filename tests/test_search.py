@@ -4,7 +4,7 @@ import xbmc
 import os
 
 # Testing specific imports
-from codequick import search, route, storage
+from codequick import search, route, storage, localized
 from codequick.support import dispatcher
 from codequick.listing import Listitem
 
@@ -14,15 +14,15 @@ hash_params = search.Search.hash_params
 
 class TestGlobalLocalization(unittest.TestCase):
     def test_enter_search_string(self):
-        ret = xbmc.getLocalizedString(search.ENTER_SEARCH_STRING)
+        ret = xbmc.getLocalizedString(localized.ENTER_SEARCH_STRING)
         self.assertEqual(ret, "Enter search string")
 
     def test_remove(self):
-        ret = xbmc.getLocalizedString(search.REMOVE)
+        ret = xbmc.getLocalizedString(localized.REMOVE)
         self.assertEqual(ret, "Remove")
 
     def test_search(self):
-        ret = xbmc.getLocalizedString(search.SEARCH)
+        ret = xbmc.getLocalizedString(localized.SEARCH)
         self.assertEqual(ret, "Search")
 
 

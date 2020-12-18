@@ -671,7 +671,7 @@ class Listitem(object):
         self._args = args
 
     # noinspection PyProtectedMember
-    def _close(self):
+    def build(self):
         listitem = self.listitem
         isfolder = self._is_folder
         listitem.setProperty("folder", str(isfolder).lower())

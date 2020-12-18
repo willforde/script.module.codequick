@@ -4,7 +4,7 @@ import xbmc
 
 from codequick.listing import Listitem
 from codequick.support import auto_sort
-from codequick import route
+from codequick import route, localized
 
 import xbmcplugin
 SORT_DATE = xbmcplugin.SORT_METHOD_DATE
@@ -21,11 +21,11 @@ def callback_test(_):
 
 class TestGlobalLocalization(unittest.TestCase):
     def test_select_playback_item(self):
-        ret = xbmc.getLocalizedString(route.SELECT_PLAYBACK_ITEM)
+        ret = xbmc.getLocalizedString(localized.SELECT_PLAYBACK_ITEM)
         self.assertEqual(ret, "Select playback item")
 
     def test_nodata(self):
-        ret = xbmc.getLocalizedString(route.NO_DATA)
+        ret = xbmc.getLocalizedString(localized.NO_DATA)
         self.assertEqual(ret, "No data found!")
 
 

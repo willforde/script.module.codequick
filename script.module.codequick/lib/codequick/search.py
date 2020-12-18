@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from hashlib import sha1
 
 # Package imports
+from codequick import localized
 from codequick.storage import PersistentDict
 from codequick.support import dispatcher
 from codequick.listing import Listitem
@@ -17,19 +18,11 @@ try:
 except ImportError:  # pragma: no cover
     import pickle
 
-# Localized string Constants
-ENTER_SEARCH_STRING = 16017
-REMOVE = 1210
-SEARCH = 137
-
-# Name of the database file
-SEARCH_DB = u"_new_searches.pickle"
-
 
 class Search(object):
     def __init__(self, plugin, extra_params):
         # The saved search persistent storage
-        self.db = search_db = PersistentDict(SEARCH_DB)
+        self.db = search_db = PersistentDict(u"_new_searches.pickle")
         plugin.register_delayed(search_db.close)
 
         # Fetch saved data specific to this session
@@ -92,7 +85,7 @@ def saved_searches(plugin, remove_entry=None, search=False, first_load=False, **
     # First load is used to only allow auto search to work when first loading the saved search container.
     # Fixes an issue when there is no saved searches left after removing them.
     elif search or (first_load and not searchdb):
-        search_term = keyboard(plugin.localize(ENTER_SEARCH_STRING))
+        search_term = keyboard(plugin.localize(localized.ENTER_SEARCH_STRING))
         if search_term:
             return redirect_search(plugin, searchdb, search_term, extras)
         elif not searchdb:
@@ -155,7 +148,7 @@ def list_terms(plugin, searchdb, extras):
     """
     # Add listitem for adding new search terms
     search_item = Listitem()
-    search_item.label = u"[B]%s[/B]" % plugin.localize(SEARCH)
+    search_item.label = u"[B]%s[/B]" % plugin.localize(localized.SEARCH)
     search_item.set_callback(saved_searches, search=True, **extras)
     search_item.art.global_thumb("search_new.png")
     yield search_item
@@ -166,7 +159,7 @@ def list_terms(plugin, searchdb, extras):
     callback = dispatcher.get_route(route).callback
 
     # Prefetch the localized string for the context menu lable
-    str_remove = plugin.localize(REMOVE)
+    str_remove = plugin.localize(localized.REMOVE)
 
     # List all saved searches
     for search_term in searchdb:

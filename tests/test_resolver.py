@@ -1,12 +1,11 @@
 import unittest
-import urlquick
 import sys
 
 from addondev.testing import plugin_data, mock_select_dialog
 from xbmcgui import ListItem as kodi_listitem
 import xbmc
 
-from codequick import resolver
+from codequick import resolver, localized
 from codequick.listing import Listitem as custom_listitem
 from codequick.support import dispatcher
 
@@ -31,11 +30,11 @@ def temp_callback(func):
 
 class TestGlobalLocalization(unittest.TestCase):
     def test_select_playback_item(self):
-        ret = xbmc.getLocalizedString(resolver.SELECT_PLAYBACK_ITEM)
+        ret = xbmc.getLocalizedString(localized.SELECT_PLAYBACK_ITEM)
         self.assertEqual(ret, "Select playback item")
 
     def test_nodata(self):
-        ret = xbmc.getLocalizedString(resolver.NO_DATA)
+        ret = xbmc.getLocalizedString(localized.NO_DATA)
         self.assertEqual(ret, "No data found!")
 
 
