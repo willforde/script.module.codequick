@@ -36,7 +36,6 @@ class Database(object):
         # Performance tweaks
         cur.execute('PRAGMA locking_mode=EXCLUSIVE')
         cur.execute('PRAGMA journal_mode=MEMORY')
-        cur.execute('PRAGMA temp_store=MEMORY')
 
         # Create missing channel table
         cur.execute("""CREATE TABLE IF NOT EXISTS channels
