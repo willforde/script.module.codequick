@@ -11,6 +11,8 @@
     :target: https://www.codacy.com/app/willforde/script.module.codequick?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=willforde/script.module.codequick&amp;utm_campaign=Badge_Grade
 
 
+NOTE: Now that Kodi Matrix has been released I will get this package ready for release and submit it very soon.
+
 =========
 Codequick
 =========
