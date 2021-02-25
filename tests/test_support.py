@@ -22,11 +22,6 @@ def mock_argv(argv):
 
 
 class TestLogging(unittest.TestCase):
-    def test_logger_map(self):
-        logmap = support.LoggingMap()
-        ret = logmap[55]
-        self.assertEqual(ret, xbmc.LOGINFO)
-
     def test_logger(self):
         support.base_logger.debug("test debug")
         self.assertIn("[root] test debug", support.kodi_logger.debug_msgs)
@@ -163,7 +158,7 @@ class TestDispatcher(unittest.TestCase):
         def root():
             pass
 
-        callback = self.dispatcher.register_callback(root, route.Route)
+        callback = self.dispatcher.register_callback(root, route.Route, {})
         self.assertIn("root", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
@@ -172,7 +167,7 @@ class TestDispatcher(unittest.TestCase):
         def listing():
             pass
 
-        callback = self.dispatcher.register_callback(listing, route.Route)
+        callback = self.dispatcher.register_callback(listing, route.Route, {})
         self.assertIn("/tests/test_support/listing", self.dispatcher.registered_routes)
         self.assertIsInstance(callback.route, support.Route)
         self.assertTrue(inspect.ismethod(callback.test))
@@ -181,8 +176,8 @@ class TestDispatcher(unittest.TestCase):
         def root():
             pass
 
-        self.dispatcher.register_callback(root, route.Route)
-        self.dispatcher.register_callback(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route, {})
+        self.dispatcher.register_callback(root, route.Route, {})
 
     def test_dispatch(self):
         class Executed(object):
@@ -192,7 +187,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             return False
 
-        self.dispatcher.register_callback(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route, {})
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
             self.dispatcher.run_callback()
@@ -207,7 +202,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             return False
 
-        self.dispatcher.register_callback(root, script.Script)
+        self.dispatcher.register_callback(root, script.Script, {})
         self.dispatcher.run_callback()
         self.assertTrue(Executed.yes)
 
@@ -220,7 +215,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             raise RuntimeError("testing error")
 
-        self.dispatcher.register_callback(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route, {})
 
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
             self.dispatcher.run_callback()
@@ -236,7 +231,7 @@ class TestDispatcher(unittest.TestCase):
             Executed.yes = True
             raise RuntimeError(u"testing \xe9")
 
-        self.dispatcher.register_callback(root, route.Route)
+        self.dispatcher.register_callback(root, route.Route, {})
         with mock_argv(["plugin://script.module.codequick", 96, ""]):
             self.dispatcher.run_callback()
 
