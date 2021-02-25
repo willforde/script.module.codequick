@@ -7,8 +7,9 @@
 .. image:: https://coveralls.io/repos/github/willforde/script.module.codequick/badge.svg?branch=master
     :target: https://coveralls.io/github/willforde/script.module.codequick?branch=master
 
-.. image:: https://api.codacy.com/project/badge/Grade/169396ed505642e9a21e9a4926d31277
-    :target: https://www.codacy.com/app/willforde/script.module.codequick?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=willforde/script.module.codequick&amp;utm_campaign=Badge_Grade
+.. image:: https://api.codeclimate.com/v1/badges/dd5a5656d0136127d74b/maintainability
+   :target: https://codeclimate.com/github/willforde/script.module.codequick/maintainability
+   :alt: Maintainability
 
 
 =========
