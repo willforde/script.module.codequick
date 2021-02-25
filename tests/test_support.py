@@ -6,7 +6,6 @@ import sys
 
 # Testing specific imports
 from codequick import support, route, script
-import xbmc
 
 PY3 = sys.version_info >= (3, 0)
 
