@@ -303,7 +303,7 @@ class Dispatcher(object):
             # Initialize controller and execute callback
             parent_ins = route.parent()
             arg_params = self.params.get("_args_", [])
-            redirect = parent_ins(route.function, *arg_params, **self.callback_params)
+            redirect = parent_ins(route, arg_params, self.callback_params)
 
         except Exception as e:
             self.run_delayed(e)
