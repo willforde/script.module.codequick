@@ -1,0 +1,27 @@
+name: Kodi Addon-Submitter
+
+on:
+  push:
+    branches: [ dev ]
+#    tags:
+#      - v*
+
+jobs:
+  kodi-addon-submitter:
+    runs-on: ubuntu-latest
+    name: Kodi addon submitter
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Generate distribution zip and submit to official kodi repository
+      id: kodi-addon-submitter
+      uses: willforde/action-kodi-addon-submitter@v1.1
+      with: # Replace all the below variables
+        kodi-repository: repo-scripts
+        kodi-version: krypton
+        addon-id: script.module.codequick
+        kodi-matrix: true # Submit a Python 2/3 compatible addon to matrix branch in addition to the target branch
+      env: # Make sure you create the below secrets (GH_TOKEN and EMAIL)
+        GH_USERNAME: ${{ github.actor }}
+        GH_TOKEN: ${{secrets.GH_TOKEN}}  # bb8790a9ba3ead286bb452895fe09d13adf891e5
+        EMAIL: ${{secrets.EMAIL}}
