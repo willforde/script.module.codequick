@@ -59,10 +59,10 @@ except ImportError:
     import pickle  # Works for both python 2 & 3
 
 # Third Party
+from htmlement import HTMLement
 from requests.structures import CaseInsensitiveDict
 from requests.adapters import HTTPResponse
 from requests import adapters
-from requests import sessions
 from requests import *
 import requests
 
@@ -147,10 +147,6 @@ class CacheError(RequestException):
     pass
 
 
-class MissingDependency(ImportError):
-    """Missing optional Dependency"""
-
-
 class Response(requests.Response):
     def xml(self):
         """
@@ -177,19 +173,11 @@ class Response(requests.Response):
 
         :return: The root element of the element tree.
         :rtype: xml.etree.ElementTree.Element
-
-        :raise MissingDependency: If the optional 'HTMLement' dependency is missing.
         """
-        try:
-            # noinspection PyUnresolvedReferences
-            from htmlement import HTMLement
-        except ImportError:
-            raise MissingDependency("Missing optional dependency: 'HTMLement'")
-        else:
-            tag = tag.decode() if isinstance(tag, bytes) else tag
-            parser = HTMLement(tag, attrs)
-            parser.feed(self.text)
-            return parser.close()
+        tag = tag.decode() if isinstance(tag, bytes) else tag
+        parser = HTMLement(tag, attrs)
+        parser.feed(self.text)
+        return parser.close()
 
     @classmethod
     def extend_response(cls, response):
@@ -199,7 +187,7 @@ class Response(requests.Response):
 
     def __conform__(self, protocol):
         """Convert Response to a sql blob."""
-        if protocol is sqlite3.PrepareProtocol:
+        if protocol is sqlite3.PrepareProtocol:  # pragma: no branch
             data = pickle.dumps(self, protocol=pickle.HIGHEST_PROTOCOL)
             return sqlite3.Binary(data)
 
@@ -380,7 +368,6 @@ class CacheHTTPAdapter(adapters.HTTPAdapter):
     def build_response(self, req, resp):  # type: (PreparedRequest, HTTPResponse) -> Response
         """Replace response object with our customized version."""
         resp = super(CacheHTTPAdapter, self).build_response(req, resp)
-        print(type(resp.content))
         return Response.extend_response(resp)
 
     def process_response(self, response, cache, urlhash):  # type: (Response, CacheRecord, str) -> Response
@@ -413,7 +400,7 @@ class Session(sessions.Session):
         #: Defaults to :data:`MAX_AGE <urlquick.MAX_AGE>`
         self.max_age = kwargs.get("max_age", MAX_AGE)
 
-        adapter = CacheHTTPAdapter(cache_location)
+        self.cache_adapter = adapter = CacheHTTPAdapter(cache_location)
         self.mount("https://", adapter)
         self.mount("http://", adapter)
 
@@ -431,6 +418,7 @@ class Session(sessions.Session):
         # So we need to keep this in mind
         if len(args) >= 5:
             headers = args[4] or {}
+            args = list(args)
             args[4] = headers
         else:
             headers = kwargs.get("headers") or {}
