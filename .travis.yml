@@ -1,4 +1,12 @@
 language: python
+arch: amd64
+os: linux
+dist: bionic
+
+git:
+  depth: 3
+  quiet: true
+  autocrlf: input
 
 python:
   - "2.7"
@@ -17,6 +25,5 @@ install:
   - pip install https://github.com/willforde/kodi-addondev/archive/master.zip
   - pip install https://github.com/willforde/kodi-mock/archive/master.zip
 
-script: py.test --cov
-
+script: pytest --cov
 after_success: coveralls

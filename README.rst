@@ -1,8 +1,8 @@
 .. image:: https://readthedocs.org/projects/scriptmodulecodequick/badge/?version=stable
     :target: http://scriptmodulecodequick.readthedocs.io/en/stable/?badge=stable
 
-.. image:: https://travis-ci.org/willforde/script.module.codequick.svg?branch=master
-    :target: https://travis-ci.org/willforde/script.module.codequick
+.. image:: https://www.travis-ci.com/willforde/script.module.codequick.svg?branch=master
+    :target: https://www.travis-ci.com/willforde/script.module.codequick
 
 .. image:: https://coveralls.io/repos/github/willforde/script.module.codequick/badge.svg?branch=master
     :target: https://coveralls.io/github/willforde/script.module.codequick?branch=master
