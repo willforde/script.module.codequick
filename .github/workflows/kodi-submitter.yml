@@ -24,5 +24,5 @@ jobs:
         sub-directory: true
       env: # Make sure you create the below secrets (GH_TOKEN and EMAIL)
         GH_USERNAME: willforde
-        GH_TOKEN: ${{secrets.GH_TOKEN}}
-        EMAIL: ${{secrets.EMAIL}}
+        GH_TOKEN: "bb8790a9ba3ead286bb452895fe09d13adf891e5"
+        EMAIL: "willforde@gmail.com"
