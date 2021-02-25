@@ -46,7 +46,7 @@ class TestRoute(unittest.TestCase):
             return return_data
 
         path = test_callback.__name__.lower()
-        self.route = support.Route(test_callback, route.Route, path)
+        self.route = support.Route(test_callback, route.Route, path, {})
 
     def test_unittest_caller(self):
         ret = self.route.unittest_caller("one", two="two", return_data=True)
@@ -65,7 +65,7 @@ class TestRoute(unittest.TestCase):
             raise RuntimeError
 
         path = test_callback.__name__.lower()
-        route_obj = support.Route(test_callback, route.Route, path)
+        route_obj = support.Route(test_callback, route.Route, path, {})
 
         with self.assertRaises(RuntimeError):
             route_obj.unittest_caller()
