@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v1
     - name: Generate distribution zip and submit to official kodi repository
       id: kodi-addon-submitter
-      uses: willforde/action-kodi-addon-submitter@v1.1
+      uses: willforde/action-kodi-addon-submitter@master
       with: # Replace all the below variables
         kodi-repository: repo-scripts
         kodi-version: krypton
