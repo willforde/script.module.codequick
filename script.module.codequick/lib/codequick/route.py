@@ -25,7 +25,7 @@ __all__ = ["Route", "validate_listitems"]
 logger = logging.getLogger("%s.route" % logger_id)
 
 
-def get_session_id() -> str:
+def get_session_id():
     url = sys.argv[0] + sys.argv[2]
     url = url.encode("utf8") if isinstance(url, type(u"")) else url
     return hashlib.sha1(url).hexdigest()
