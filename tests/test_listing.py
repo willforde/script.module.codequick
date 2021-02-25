@@ -405,37 +405,37 @@ class TestListitem(unittest.TestCase):
 
     def test_close_route(self):
         self.listitem.set_callback(self.route_callback)
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertEqual("plugin://script.module.codequick/tests/test_listing/route_callback/", path)
         self.assertTrue(isfolder)
 
     def test_close_no_callback(self):
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertEqual(path, "")
         self.assertFalse(isfolder)
 
     def test_close_route_params(self):
         self.listitem.set_callback(self.route_callback, "yes", full=True)
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertTrue(path.startswith("plugin://script.module.codequick/tests/test_listing/route_callback/?_pickle_="))
         self.assertTrue(isfolder)
 
     def test_close_resolver(self):
         self.listitem.set_callback(self.resolver_callback)
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertEqual("plugin://script.module.codequick/tests/test_listing/resolver_callback/", path)
         self.assertFalse(isfolder)
 
     def test_close_url(self):
         self.listitem.set_path("http://example.com/video.mkv")
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertEqual(path, "http://example.com/video.mkv")
         self.assertFalse(isfolder)
 
     def test_close_subtitle(self):
         self.listitem.subtitles.append("http://path.to/subtitle")
         self.listitem.set_path("http://example.com/video.mkv")
-        path, raw_listitem, isfolder = self.listitem._close()
+        path, raw_listitem, isfolder = self.listitem.build()
         self.assertEqual(path, "http://example.com/video.mkv")
         self.assertFalse(isfolder)
 
