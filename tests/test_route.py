@@ -3,7 +3,7 @@ from addondev.testing import plugin_data, reset_plugin_data
 import xbmc
 
 from codequick.listing import Listitem
-from codequick.support import auto_sort
+from codequick.support import auto_sort, Route
 from codequick import route, localized
 
 import xbmcplugin
@@ -35,14 +35,19 @@ class TestRoute(unittest.TestCase):
         self.route = route.Route()
 
     def test_gen(self):
-        def route_gen():
+        def route_gen(_):
             yield Listitem.from_dict(callback_test, "test item")
 
-        self.route._process_results(route_gen())
+        callback_route = Route(route_gen, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
 
     def test_list(self):
-        self.route._process_results([Listitem.from_dict(callback_test, "test item")])
+        def route_list(_):
+            return [Listitem.from_dict(callback_test, "test item")]
+
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
 
     def test_return_false(self):
@@ -50,10 +55,11 @@ class TestRoute(unittest.TestCase):
         self.assertFalse(plugin_data["succeeded"])
 
     def test_yield_false(self):
-        def route_list():
+        def route_list(_):
             yield False
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertFalse(plugin_data["succeeded"])
 
     def test_no_items(self):
@@ -65,28 +71,31 @@ class TestRoute(unittest.TestCase):
             self.route._process_results(1)
 
     def test_one_mediatype(self):
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict(callback_test, "test item", info={"mediatype": "video"})
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "videos")
 
     def test_two_mediatype(self):
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict(callback_test, "test item one", info={"mediatype": "video"})
             yield Listitem.from_dict(callback_test, "test item two", info={"mediatype": "movie"})
             yield Listitem.from_dict(callback_test, "test item three", info={"mediatype": "video"})
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "videos")
 
     def test_unsupported_mediatype(self):
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict(callback_test, "season one", info={"mediatype": "season"})
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "files")
 
@@ -94,10 +103,11 @@ class TestRoute(unittest.TestCase):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
 
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict("http://season one", "test.mkv")
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_UNSORT, SORT_TITLE])
 
@@ -105,12 +115,13 @@ class TestRoute(unittest.TestCase):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
 
-        def route_list():
+        def route_list(_):
             item = Listitem.from_dict("http://season one", "test.mkv")
             item.info.date("june 27, 2017", "%B %d, %Y")
             yield item
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE, SORT_TITLE, SORT_YEAR])
 
@@ -118,10 +129,11 @@ class TestRoute(unittest.TestCase):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
 
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_UNSORT, SORT_TITLE, SORT_GENRE])
 
@@ -133,7 +145,8 @@ class TestRoute(unittest.TestCase):
             plugin.autosort = False
             yield Listitem.from_dict("http://season one", "test.mkv")
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_UNSORT])
 
@@ -145,7 +158,8 @@ class TestRoute(unittest.TestCase):
             plugin.autosort = False
             yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_UNSORT])
 
@@ -154,11 +168,11 @@ class TestRoute(unittest.TestCase):
         del plugin_data["sortmethods"][:]
 
         def route_list(plugin):
-            plugin.autosort = False
-            plugin.add_sort_methods(3)
-            yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
+            plugin.add_sort_methods(3, disable_autosort=True)
+            yield Listitem.from_dict("http://seasonone.com/works", "test.mkv", info={"genre": "test"})
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE])
 
@@ -170,7 +184,8 @@ class TestRoute(unittest.TestCase):
             plugin.add_sort_methods(3, disable_autosort=True)
             yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE])
 
@@ -182,7 +197,8 @@ class TestRoute(unittest.TestCase):
             plugin.add_sort_methods(SORT_DATE)
             yield Listitem.from_dict("http://season one", "test.mkv", info={"genre": "test"})
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE, SORT_TITLE, SORT_GENRE])
 
@@ -197,15 +213,17 @@ class TestRoute(unittest.TestCase):
             item.info.date("june 27, 2017", "%B %d, %Y")
             yield item
 
-        self.route._process_results(route_list(self.route))
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertListEqual(plugin_data["sortmethods"], [SORT_DATE, SORT_TITLE, SORT_GENRE, SORT_YEAR])
 
     def test_no_content(self):
-        def route_list():
+        def route_list(_):
             yield Listitem.from_dict(callback_test, "test item")
 
         self.route.content_type = None
-        self.route._process_results(route_list())
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
         self.assertTrue(plugin_data["succeeded"])
         self.assertIsNone(plugin_data["contenttype"])

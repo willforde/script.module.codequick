@@ -198,7 +198,8 @@ class Route(Script):
                 elif not session_data:
                     return None
             finally:
-                cache.close()
+                if cache:
+                    cache.close()
 
         # Send session data to kodi
         return send_to_kodi(self.handle, session_data)
