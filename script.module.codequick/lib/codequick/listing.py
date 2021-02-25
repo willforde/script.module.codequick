@@ -138,7 +138,7 @@ class Params(MutableMapping):
 
     def clean(self):
         """Remove any and all None values from the dictionary."""
-        for key, val in self.raw_dict.items():
+        for key, val in list(self.raw_dict.items()):
             if not val:
                 del self.raw_dict[key]
 
