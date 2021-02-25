@@ -18,11 +18,14 @@ try:
 except ImportError:  # pragma: no cover
     import pickle
 
+# Name of the database file
+SEARCH_DB = u"_new_searches.pickle"
+
 
 class Search(object):
     def __init__(self, plugin, extra_params):
         # The saved search persistent storage
-        self.db = search_db = PersistentDict(u"_new_searches.pickle")
+        self.db = search_db = PersistentDict(SEARCH_DB)
         plugin.register_delayed(search_db.close)
 
         # Fetch saved data specific to this session
