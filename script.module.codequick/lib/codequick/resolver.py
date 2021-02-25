@@ -231,7 +231,7 @@ class Resolver(Script):
         # Custom listitem object
         elif isinstance(url, Listitem):
             # noinspection PyProtectedMember
-            return url._close()[1]
+            return url.build()[1]
         else:
             # Not already a listitem object
             listitem = xbmcgui.ListItem()
@@ -276,7 +276,7 @@ class Resolver(Script):
             # Extract original kodi listitem from custom listitem
             elif isinstance(resolved, Listitem):
                 # noinspection PyProtectedMember
-                listitem = resolved._close()[1]
+                listitem = resolved.build()[1]
 
             # Create playlist if resolved object is a list of urls
             elif isinstance(resolved, (list, tuple)):
