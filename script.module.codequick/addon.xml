@@ -14,7 +14,6 @@
         <source>https://github.com/willforde/script.module.codequick</source>
         <email>willforde+codequick@gmail.com</email>
         <platform>all</platform>
-        <language>en</language>
         <assets>
             <icon>resources/icon.png</icon>
         </assets>
