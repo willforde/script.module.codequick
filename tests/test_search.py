@@ -49,7 +49,7 @@ class Search(unittest.TestCase):
         session_id = hash_params(params)
 
         with testing.mock_keyboard("Rock"):
-            listitems = list(search.saved_searches.test(first_load=True, execute_delayed=True, **params))
+            listitems = search.saved_searches.test(first_load=True, execute_delayed=True, **params)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
@@ -70,8 +70,6 @@ class Search(unittest.TestCase):
 
         with testing.mock_keyboard("Rock"):
             listitems = search.saved_searches.test(first_load=True, execute_delayed=True, **params)
-            if not isinstance(listitems, bool):
-                listitems = list(listitems)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
@@ -90,8 +88,6 @@ class Search(unittest.TestCase):
 
         with testing.mock_keyboard(""):
             listitems = search.saved_searches.test(first_load=True, execute_delayed=True, **params)
-            if not isinstance(listitems, bool):
-                listitems = list(listitems)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
@@ -111,8 +107,6 @@ class Search(unittest.TestCase):
 
         with testing.mock_keyboard("Rock"):
             listitems = search.saved_searches.test(search=True, execute_delayed=True, **params)
-            if not isinstance(listitems, bool):
-                listitems = list(listitems)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
@@ -138,7 +132,7 @@ class Search(unittest.TestCase):
             db.flush()
 
         with testing.mock_keyboard("Rock"):
-            listitems = list(search.saved_searches.test(search=True, execute_delayed=True, **params))
+            listitems = search.saved_searches.test(search=True, execute_delayed=True, **params)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
@@ -164,7 +158,7 @@ class Search(unittest.TestCase):
             db.flush()
 
         with testing.mock_keyboard(""):
-            listitems = list(search.saved_searches.test(search=True, execute_delayed=True, **params))
+            listitems = search.saved_searches.test(search=True, execute_delayed=True, **params)
 
         with storage.PersistentDict(search.SEARCH_DB) as db:
             self.assertIn(session_id, db)
