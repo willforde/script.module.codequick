@@ -10,7 +10,7 @@
     <extension point="xbmc.addon.metadata">
         <summary lang="en_GB">Framework for creating kodi add-on's.</summary>
         <description lang="en_GB">Codequick is a framework for kodi add-on's. The goal of this framework is to simplify add-on development. This is achieved by reducing the amount of boilerplate code to a minimum, automating tasks like route dispatching and sort method selection. Ultimately allowing the developer to focus primarily on scraping content from websites and passing it to kodi.</description>
-        <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
+        <license>GPL-2.0-only</license>
         <source>https://github.com/willforde/script.module.codequick</source>
         <email>willforde+codequick@gmail.com</email>
         <platform>all</platform>
