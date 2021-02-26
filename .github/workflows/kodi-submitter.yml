@@ -14,13 +14,14 @@ jobs:
       uses: actions/checkout@v1
     - name: Generate distribution zip and submit to official kodi repository
       id: kodi-addon-submitter
-      uses: willforde/action-kodi-addon-submitter@custom
+      uses: willforde/action-kodi-addon-submitter@master
       with:
         kodi-repository: repo-scripts
         kodi-version: krypton
         addon-id: script.module.codequick
         kodi-matrix: true
         sub-directory: true
+        push-only: true
       env:
         GH_USERNAME: ${{ github.actor }}
         GH_TOKEN: ${{secrets.GH_TOKEN}}
