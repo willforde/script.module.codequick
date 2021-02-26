@@ -12,8 +12,6 @@
    :alt: Maintainability
 
 
-NOTE: Now that Kodi Matrix has been released I will get this package ready for release and submit it very soon.
-
 =========
 Codequick
 =========
