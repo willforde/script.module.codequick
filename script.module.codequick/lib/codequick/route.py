@@ -46,7 +46,7 @@ def validate_listitems(raw_listitems):
         # Check that we have valid list of listitems
         if isinstance(raw_listitems, (list, tuple)):
             # Check for an explicite False return value
-            return False if len(raw_listitems) == 1 and raw_listitems[0] is False else filter(None, raw_listitems)
+            return False if len(raw_listitems) == 1 and raw_listitems[0] is False else list(filter(None, raw_listitems))
         else:
             raise ValueError("Unexpected return object: {}".format(type(raw_listitems)))
     else:
