@@ -147,6 +147,10 @@ class CacheError(RequestException):
 
 
 class Response(requests.Response):
+    def __init__(self):
+        super(Response, self).__init__()
+        self.from_cache = False
+
     def xml(self):
         """
         Parse's "XML" document into a element tree.
@@ -209,6 +213,7 @@ class CacheRecord(object):
     def __init__(self, record):  # type: (sqlite3.Row) -> None
         self._response = response = pickle.loads(bytes(record["response"]))
         self._fresh = record["fresh"] or response.status_code in REDIRECT_CODES
+        self._response.from_cache = True
 
     @property
     def response(self):  # type: () -> Response
@@ -347,11 +352,11 @@ class CacheHTTPAdapter(adapters.HTTPAdapter):
     # noinspection PyShadowingNames
     def send(self, request, **kwargs):  # type: (PreparedRequest, ...) -> Response
         max_age = int(request.headers.pop("x-cache-max-age"))
-        urlhash = hash_url(request)
+        urlhash = hash_url(request) if max_age >= 0 else None
         cache = None
 
         # Check if request is already cached and valid
-        if max_age >= 0 and request.method in CACHEABLE_METHODS:
+        if urlhash and request.method in CACHEABLE_METHODS:
             cache = self.get_cache(urlhash, max_age)
             if cache and cache.isfresh:
                 logger.debug("Cache is fresh")
@@ -363,15 +368,14 @@ class CacheHTTPAdapter(adapters.HTTPAdapter):
 
         # Send request for remote resource
         response = super(CacheHTTPAdapter, self).send(request, **kwargs)
-        return self.process_response(response, cache, urlhash, max_age)
+        return self.process_response(response, cache, urlhash) if urlhash else response
 
     def build_response(self, req, resp):  # type: (PreparedRequest, HTTPResponse) -> Response
         """Replace response object with our customized version."""
         resp = super(CacheHTTPAdapter, self).build_response(req, resp)
         return Response.extend_response(resp)
 
-    def process_response(self, response, cache, urlhash, max_age):
-        # type: (Response, CacheRecord, str, int) -> Response
+    def process_response(self, response, cache, urlhash):  # type: (Response, CacheRecord, str) -> Response
         """Save response to cache if possible."""
         # Check for Not Modified response
         if cache and response.status_code == codes.not_modified:
@@ -381,7 +385,7 @@ class CacheHTTPAdapter(adapters.HTTPAdapter):
             response = cache.response
 
         # Cache any cacheable responses
-        elif max_age >= 0 and response.request.method in CACHEABLE_METHODS and response.status_code in CACHEABLE_CODES:
+        elif response.request.method in CACHEABLE_METHODS and response.status_code in CACHEABLE_CODES:
             logger.debug("Caching %s %s response", response.status_code, response.reason)
             response = self.set_cache(urlhash, response)
 
