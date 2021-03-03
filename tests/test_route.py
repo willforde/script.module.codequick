@@ -99,6 +99,15 @@ class TestRoute(unittest.TestCase):
         self.assertTrue(plugin_data["succeeded"])
         self.assertEqual(plugin_data["contenttype"], "files")
 
+    def test_unset_contenttype(self):
+        def route_list(_):
+            yield Listitem.from_dict(callback_test, "season one")
+
+        callback_route = Route(route_list, route.Route, "", {})
+        self.route(callback_route, [], {})
+        self.assertTrue(plugin_data["succeeded"])
+        self.assertEqual(plugin_data["contenttype"], "files")
+
     def test_sortmethod(self):
         auto_sort.clear()
         del plugin_data["sortmethods"][:]
