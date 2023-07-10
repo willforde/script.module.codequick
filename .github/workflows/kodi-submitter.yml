@@ -18,9 +18,8 @@ jobs:
       uses: xbmc/action-kodi-addon-submitter@v1.3
       with:
         kodi-repository: repo-scripts
-        kodi-version: krypton
+        kodi-version: matrix
         addon-id: script.module.codequick
-        kodi-matrix: true
         sub-directory: true
       env:
         GH_USERNAME: ${{ github.actor }}
