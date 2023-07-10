@@ -22,7 +22,6 @@ jobs:
         addon-id: script.module.codequick
         kodi-matrix: true
         sub-directory: true
-        push-only: true
       env:
         GH_USERNAME: ${{ github.actor }}
         GH_TOKEN: ${{secrets.GH_TOKEN}}
