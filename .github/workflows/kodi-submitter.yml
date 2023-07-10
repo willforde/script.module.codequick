@@ -13,14 +13,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Generate distribution zip and submit to official kodi repository
+    - name: Generate  distribution zip and submit to official kodi repository
       id: kodi-addon-submitter
-      uses: xbmc/action-kodi-addon-submitter@v1.3
+      uses: willforde/action-kodi-addon-submitter@master
       with:
         kodi-repository: repo-scripts
         kodi-version: matrix
         addon-id: script.module.codequick
         sub-directory: true
+        push-only: true
       env:
         GH_USERNAME: ${{ github.actor }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
